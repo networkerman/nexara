@@ -357,10 +357,11 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Custom Google Messages icon component
+// Custom Google Messages/RCS icon component
 const GoogleMessagesIcon = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 2.98.97 4.29L1 23l6.71-1.97C9.02 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm-1 15l-3-3h-2v-2h2l3-3v2h4v4h-4v2z"/>
+    <circle cx="12" cy="12" r="12" fill="#4285f4"/>
+    <path d="M18 7H6c-1.1 0-2 .9-2 2v6c0 1.1.9 2 2 2h10l2 2V9c0-1.1-.9-2-2-2zm-2 6H8v-1h8v1zm0-2H8v-1h8v1zm0-2H8V8h8v1z" fill="white"/>
   </svg>
 );
 
