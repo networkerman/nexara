@@ -70,6 +70,24 @@ interface CampaignFormData {
   controlGroupPercentage: number;
   specificTime: string;
   isPublished: boolean;
+  // Audience Limit fields
+  sendLimit: boolean;
+  maxRecipients: number;
+  samplingMethod: 'random' | 'priority';
+  // Retry Logic fields
+  retryEnabled: boolean;
+  retryDuration: number;
+  stopOnConversion: boolean;
+  stopOnManualPause: boolean;
+  stopOnTemplateChange: boolean;
+}
+
+interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: 'Marketing' | 'Promotional' | 'Utility';
+  status: 'Active' | 'Paused' | 'Disabled';
 }
 
 interface AdobeSegment {
@@ -89,21 +107,27 @@ const businessNumbers = [
   }
 ];
 
-const whatsappTemplates = [
+const whatsappTemplates: WhatsAppTemplate[] = [
   {
     id: 'static_carousel_recs_url',
     name: 'static_carousel_recs_url',
-    description: 'Carousel template for product recommendations'
+    description: 'Carousel template for product recommendations',
+    category: 'Marketing',
+    status: 'Active'
   },
   {
     id: 'welcome_message',
     name: 'welcome_message',
-    description: 'Welcome message template'
+    description: 'Welcome message template',
+    category: 'Utility',
+    status: 'Active'
   },
   {
     id: 'promotional_offer',
     name: 'promotional_offer', 
-    description: 'Promotional offer template'
+    description: 'Promotional offer template',
+    category: 'Promotional',
+    status: 'Active'
   }
 ];
 
@@ -485,6 +509,24 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
               <div>Exclude list/segment</div>
               <div>{formData.excludeContacts ? 'On' : 'Off'}</div>
             </div>
+            {formData.sendLimit && (
+              <>
+                <div>
+                  <span className="font-medium text-foreground">Send limit:</span>
+                  <div>Enabled - Max {formData.maxRecipients} recipients</div>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Sampling method:</span>
+                  <div>{formData.samplingMethod === 'random' ? 'Random sample' : 'Top-N by priority'}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Final count:</span>
+                  <div>{Math.min(formData.maxRecipients, formData.selectedSegments.length > 0 ? 
+                    adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                      .reduce((sum, s) => sum + s.users, 0) : 0)} contacts</div>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -541,6 +583,12 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
                     </div>
                   </>
                 )}
+                {formData.retryEnabled && (
+                  <div>
+                    <span className="font-medium text-foreground">Retries:</span>
+                    <div>Daily × {formData.retryDuration} days</div>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -574,7 +622,17 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     controlGroup: true,
     controlGroupPercentage: 5,
     specificTime: 'Sep 09, 2025 02:00 pm',
-    isPublished: false
+    isPublished: false,
+    // Audience Limit fields
+    sendLimit: false,
+    maxRecipients: 1000,
+    samplingMethod: 'random',
+    // Retry Logic fields
+    retryEnabled: false,
+    retryDuration: 7,
+    stopOnConversion: true,
+    stopOnManualPause: true,
+    stopOnTemplateChange: true
   });
 
   const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
@@ -645,7 +703,17 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       controlGroup: true,
       controlGroupPercentage: 5,
       specificTime: 'Sep 09, 2025 02:00 pm',
-      isPublished: false
+      isPublished: false,
+      // Audience Limit fields
+      sendLimit: false,
+      maxRecipients: 1000,
+      samplingMethod: 'random',
+      // Retry Logic fields
+      retryEnabled: false,
+      retryDuration: 7,
+      stopOnConversion: true,
+      stopOnManualPause: true,
+      stopOnTemplateChange: true
     });
     onClose();
   };
@@ -1115,6 +1183,126 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 )}
               </div>
             </div>
+
+            {/* Retry Logic Panel */}
+            <div className="mt-8">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-medium">Retry logic</h4>
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <Switch 
+                  checked={formData.retryEnabled}
+                  onCheckedChange={(checked) => updateFormData({ retryEnabled: checked })}
+                />
+              </div>
+
+              {/* Template Category Validation */}
+              {formData.selectedTemplate && whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.category === 'Utility' && (
+                <Alert className="mb-4">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Retry logic is not available for Utility templates. Please select a Marketing or Promotional template.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Template Status Warning */}
+              {formData.selectedTemplate && whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.status === 'Paused' && (
+                <Alert className="mb-4 border-warning bg-warning/10">
+                  <Info className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-warning-foreground">
+                    Warning: Selected template is paused by Meta. Retry logic will be blocked until template is reactivated.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {formData.retryEnabled && 
+               formData.selectedTemplate && 
+               whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.category !== 'Utility' && 
+               whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.status === 'Active' && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-muted/30 rounded-lg">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      <strong>Fixed cadence:</strong> Every 24 hours
+                    </p>
+                    
+                    {/* Duration Slider */}
+                    <div>
+                      <Label className="text-sm font-medium mb-2 block">Duration (days)</Label>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm">1</span>
+                        <Slider
+                          value={[formData.retryDuration]}
+                          onValueChange={(value) => updateFormData({ retryDuration: value[0] })}
+                          max={7}
+                          min={1}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="text-sm">7</span>
+                      </div>
+                      <div className="text-center text-sm text-muted-foreground mt-1">
+                        {formData.retryDuration} day{formData.retryDuration !== 1 ? 's' : ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Target Statuses */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Target statuses (auto-included)</Label>
+                    <div className="text-sm text-muted-foreground space-y-1">
+                      <div>• Failed messages</div>
+                      <div>• Undelivered messages</div>
+                      <div>• Rate-limited messages</div>
+                      <div>• Expired messages</div>
+                      <div className="mt-2 text-xs">
+                        <strong>Auto-excluded:</strong> Opted-out, Invalid numbers, Blocked contacts
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stop Conditions */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Stop conditions</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="stopOnConversion"
+                          checked={formData.stopOnConversion}
+                          onCheckedChange={(checked) => updateFormData({ stopOnConversion: !!checked })}
+                        />
+                        <Label htmlFor="stopOnConversion" className="text-sm">
+                          Stop on conversion
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="stopOnManualPause"
+                          checked={formData.stopOnManualPause}
+                          onCheckedChange={(checked) => updateFormData({ stopOnManualPause: !!checked })}
+                        />
+                        <Label htmlFor="stopOnManualPause" className="text-sm">
+                          Stop on manual pause
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="stopOnTemplateChange"
+                          checked={formData.stopOnTemplateChange}
+                          onCheckedChange={(checked) => updateFormData({ stopOnTemplateChange: !!checked })}
+                        />
+                        <Label htmlFor="stopOnTemplateChange" className="text-sm">
+                          Stop on template change
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1209,6 +1397,14 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   );
 
   const handlePublish = () => {
+    // Validation: Check if retry logic is enabled with Utility template
+    const selectedTemplate = whatsappTemplates.find(t => t.id === formData.selectedTemplate);
+    
+    if (formData.retryEnabled && selectedTemplate?.category === 'Utility') {
+      // This should already be prevented by UI, but adding extra validation
+      return;
+    }
+
     updateFormData({ isPublished: true });
     setShowProgressPopup(true);
     setCurrentProgressStep(0);
@@ -1241,6 +1437,17 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
             <Button onClick={handlePublish}>SAVE & PUBLISH</Button>
           </div>
         </DialogHeader>
+        
+        {/* Retry Logic Banner */}
+        {formData.retryEnabled && (
+          <Alert className="mt-4 border-info bg-info/10">
+            <Info className="h-4 w-4 text-info" />
+            <AlertDescription className="text-info-foreground">
+              <strong>Retry plan scheduled</strong> (24h cadence, up to {formData.retryDuration} days). 
+              Execution via Adobe; metrics sync back to Adobe. No customer data stored on Netcore.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {/* Progress Popup */}
@@ -1989,6 +2196,100 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                   onCheckedChange={(checked) => updateFormData({ excludeContacts: checked })}
                 />
               </div>
+            </div>
+
+            {/* Send Limit */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Send limit</h3>
+              
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg mb-4">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">Limit sends</span>
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <Switch 
+                  checked={formData.sendLimit}
+                  onCheckedChange={(checked) => updateFormData({ sendLimit: checked })}
+                />
+              </div>
+
+              {formData.sendLimit && (
+                <div className="space-y-4">
+                  {/* Max Recipients */}
+                  <div>
+                    <Label htmlFor="maxRecipients">Max recipients *</Label>
+                    <div className="mt-2 relative">
+                      <Input
+                        id="maxRecipients"
+                        type="number"
+                        min="1"
+                        value={formData.maxRecipients}
+                        onChange={(e) => {
+                          const value = Math.max(1, parseInt(e.target.value) || 1);
+                          updateFormData({ maxRecipients: value });
+                        }}
+                        className={`${
+                          formData.maxRecipients > (formData.selectedSegments.length > 0 ? 
+                            adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                              .reduce((sum, s) => sum + s.users, 0) : 0) 
+                            ? 'border-destructive' : ''
+                        }`}
+                      />
+                      {formData.maxRecipients > (formData.selectedSegments.length > 0 ? 
+                        adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                          .reduce((sum, s) => sum + s.users, 0) : 0) && (
+                        <p className="text-sm text-destructive mt-1">
+                          Max recipients cannot exceed reachable contacts ({formData.selectedSegments.length > 0 ? 
+                            adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                              .reduce((sum, s) => sum + s.users, 0) : 0})
+                        </p>
+                      )}
+                      <div className="text-sm text-muted-foreground mt-1">
+                        Live counter: {Math.min(formData.maxRecipients, formData.selectedSegments.length > 0 ? 
+                          adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                            .reduce((sum, s) => sum + s.users, 0) : 0)} contacts will receive this campaign
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Sampling Method */}
+                  <div>
+                    <Label className="text-sm font-medium">Sampling method</Label>
+                    <div className="mt-2 space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          id="randomSample"
+                          name="samplingMethod"
+                          checked={formData.samplingMethod === 'random'}
+                          onChange={() => updateFormData({ samplingMethod: 'random' })}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="randomSample" className="text-sm">
+                          Random sample (stable seed based on campaign ID)
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="radio"
+                          id="prioritySample"
+                          name="samplingMethod"
+                          checked={formData.samplingMethod === 'priority'}
+                          onChange={() => updateFormData({ samplingMethod: 'priority' })}
+                          className="w-4 h-4"
+                        />
+                        <Label htmlFor="prioritySample" className="text-sm">
+                          Top-N by priority score
+                          <span className="text-muted-foreground ml-1">
+                            (placeholder if score not available)
+                          </span>
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
