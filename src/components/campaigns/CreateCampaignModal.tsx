@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1374,6 +1375,8 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     </div>
   );
 
+  const navigate = useNavigate();
+  
   const handlePublish = () => {
     // Validation: Check if retry logic is enabled with Utility template
     const selectedTemplate = whatsappTemplates.find(t => t.id === formData.selectedTemplate);
@@ -1394,9 +1397,14 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       }, (index + 1) * 1000);
     });
 
-    // Auto close after all steps
+    // Auto close after all steps and navigate to campaigns page
     setTimeout(() => {
       setShowProgressPopup(false);
+      // Generate a campaign ID for the newly published campaign
+      const campaignId = `${Date.now()}`;
+      onClose();
+      // Redirect to campaigns page with success flag and campaign ID
+      navigate(`/engage/campaigns?published=true&campaignId=${campaignId}&channel=WhatsApp`);
     }, (progressSteps.length + 1) * 1000);
   };
 
