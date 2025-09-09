@@ -569,7 +569,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   const handleStartOptionClick = (optionId: string) => {
     if (optionId === 'engage') {
       setCurrentStep('channels');
-      setShowPersonalizationDrawer(true);
     }
   };
 
@@ -1524,68 +1523,73 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   );
 
   const renderChannelsStep = () => (
-    <div className="p-6">
-      <DialogHeader className="mb-6">
-        <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <DialogTitle className="text-xl font-semibold">
-            How do you want to engage with your users?
-          </DialogTitle>
-        </div>
-      </DialogHeader>
+    <>
+      <div className="fixed inset-0 bg-black/20 z-30" onClick={handleBack} />
+      <aside className="fixed right-0 top-0 h-full w-96 bg-background border-l border-border shadow-2xl z-40 animate-slide-in-right">
+        <div className="p-6">
+          <DialogHeader className="mb-6">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" onClick={handleBack}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <DialogTitle className="text-xl font-semibold">
+                How do you want to engage with your users?
+              </DialogTitle>
+            </div>
+          </DialogHeader>
 
-      <div className="space-y-6">
-        {channelOptions.map((category) => (
-          <div key={category.category}>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-              {category.category}
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {category.items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleChannelClick(item.id)}
-                  className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left flex items-center space-x-3"
-                >
-                  <item.icon className={`w-5 h-5 ${item.color}`} />
-                  <span className="font-medium text-foreground">{item.name}</span>
-                  {item.badge && (
-                    <span className="bg-warning text-warning-foreground text-xs px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
+          <div className="space-y-6">
+            {channelOptions.map((category) => (
+              <div key={category.category}>
+                <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
+                  {category.category}
+                </h3>
+                <div className="grid grid-cols-1 gap-3">
+                  {category.items.map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => handleChannelClick(item.id)}
+                      className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left flex items-center space-x-3"
+                    >
+                      <item.icon className={`w-5 h-5 ${item.color}`} />
+                      <span className="font-medium text-foreground">{item.name}</span>
+                      {item.badge && (
+                        <span className="bg-warning text-warning-foreground text-xs px-2 py-0.5 rounded-full">
+                          {item.badge}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+                  Personalization
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Advanced options to enhance your campaign
+                </p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowPersonalizationDrawer(true)}
+                className="flex items-center space-x-2"
+              >
+                <Settings className="w-4 h-4" />
+                <span>Configure</span>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
-        ))}
-      </div>
-
-      <div className="mt-8 pt-6 border-t border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">
-              Personalization
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Advanced options to enhance your campaign
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowPersonalizationDrawer(true)}
-            className="flex items-center space-x-2"
-          >
-            <Settings className="w-4 h-4" />
-            <span>Configure</span>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
         </div>
-      </div>
-    </div>
+      </aside>
+    </>
   );
 
   const renderSetupStep = () => (
