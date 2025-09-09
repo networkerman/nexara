@@ -1333,27 +1333,8 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 </Alert>
               )}
 
-              {/* Retry Configuration - Co-Marketer Mode */}
-              {formData.retryEnabled && formData.scheduleType === 'optimize' && isRetryAllowed() && (
-                <div className="space-y-4">
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm text-blue-800 mb-2">
-                      <strong>Retry timing managed by Co-Marketer</strong>
-                    </p>
-                    <div className="text-sm text-blue-700 space-y-1">
-                      <div>• Cadence: Determined by Co-Marketer optimization</div>
-                      <div>• Duration: Up to 7 days (Co-Marketer controlled)</div>
-                      <div>• Target statuses: Failed, Undelivered, Rate-limited, Expired</div>
-                      <div>• Auto-excluded: Opted-out, Invalid numbers, Blocked contacts</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Retry Configuration - User Controlled (Send Now/Later) */}
-              {formData.retryEnabled && 
-               (formData.scheduleType === 'now' || formData.scheduleType === 'later') && 
-               isRetryAllowed() && (
+              {/* Retry Configuration - Unified for all modes */}
+              {formData.retryEnabled && isRetryAllowed() && (
                 <div className="space-y-4">
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
