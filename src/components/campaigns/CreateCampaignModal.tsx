@@ -886,33 +886,45 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
             {/* Progress Steps */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
+              <button 
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                onClick={() => setCurrentStep('setup')}
+              >
                 <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
                   <Check className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-medium text-primary">Setup</span>
-              </div>
+              </button>
               <div className="flex-1 h-px bg-primary"></div>
-              <div className="flex items-center space-x-2">
+              <button 
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                onClick={() => setCurrentStep('audience')}
+              >
                 <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
                   <Check className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-medium text-primary">Audience</span>
-              </div>
+              </button>
               <div className="flex-1 h-px bg-primary"></div>
-              <div className="flex items-center space-x-2">
+              <button 
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                onClick={() => setCurrentStep('content')}
+              >
                 <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
                   <Check className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-medium text-primary">Content</span>
-              </div>
+              </button>
               <div className="flex-1 h-px bg-primary"></div>
-              <div className="flex items-center space-x-2">
+              <button 
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                onClick={() => setCurrentStep('schedule')}
+              >
                 <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-medium text-primary">Schedule</span>
-              </div>
+              </button>
             </div>
           </div>
         </div>
