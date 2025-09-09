@@ -1308,7 +1308,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 <div className="flex items-center space-x-2">
                   <h4 className="font-medium">Retry logic</h4>
                   <Info className="w-4 h-4 text-muted-foreground" />
-                  {formData.scheduleType === 'optimize' && (
+                  {formData.scheduleType === 'optimize' && formData.retryEnabled && (
                     <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
                       Managed by Co-Marketer
                     </Badge>
@@ -1317,44 +1317,86 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 <Switch 
                   checked={formData.retryEnabled}
                   onCheckedChange={(checked) => updateFormData({ retryEnabled: checked })}
-                  disabled={formData.scheduleType === 'optimize' || !isRetryAllowed()}
+                  disabled={!isRetryAllowed()}
                 />
               </div>
 
-              {/* Template Category Validation */}
+              {/* Template Category/Status Validation */}
               {formData.selectedTemplate && !isRetryAllowed() && (
                 <Alert className="mb-4">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
                     {whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.category === 'Utility'
-                      ? 'Retry logic is only available for Marketing/Promotional templates.'
-                      : 'Template is paused by Meta. Retry logic blocked until reactivated.'}
+                      ? 'Retry logic is only available for Marketing/Promotional campaign templates.'
+                      : 'Template is paused by Meta or auto-disabled. Retry logic blocked until reactivated.'}
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* Co-Marketer Retry Info */}
-              {formData.scheduleType === 'optimize' && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
-                  <p className="text-sm text-blue-800 mb-2">
-                    <strong>Retry settings managed by Co-Marketer:</strong>
-                  </p>
-                  <div className="text-sm text-blue-700 space-y-1">
-                    <div>• Cadence: Every 24 hours (read-only)</div>
-                    <div>• Duration: 7 days (read-only)</div>
-                    <div>• Target statuses: Failed, Undelivered, Rate-limited, Expired</div>
+              {/* Retry Configuration - Co-Marketer Mode */}
+              {formData.retryEnabled && formData.scheduleType === 'optimize' && isRetryAllowed() && (
+                <div className="space-y-4">
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800 mb-2">
+                      <strong>Retry timing managed by Co-Marketer</strong>
+                    </p>
+                    <div className="text-sm text-blue-700 space-y-1">
+                      <div>• Cadence: Determined by Co-Marketer optimization</div>
+                      <div>• Duration: Up to 7 days (Co-Marketer controlled)</div>
+                      <div>• Target statuses: Failed, Undelivered, Rate-limited, Expired</div>
+                      <div>• Auto-excluded: Opted-out, Invalid numbers, Blocked contacts</div>
+                    </div>
+                  </div>
+
+                  {/* Stop Conditions - Available for Co-Marketer too */}
+                  <div>
+                    <Label className="text-sm font-medium mb-3 block">Stop conditions</Label>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="stopOnConversion"
+                          checked={formData.stopOnConversion}
+                          onCheckedChange={(checked) => updateFormData({ stopOnConversion: !!checked })}
+                        />
+                        <Label htmlFor="stopOnConversion" className="text-sm">
+                          Stop on conversion
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="stopOnManualPause"
+                          checked={formData.stopOnManualPause}
+                          onCheckedChange={(checked) => updateFormData({ stopOnManualPause: !!checked })}
+                        />
+                        <Label htmlFor="stopOnManualPause" className="text-sm">
+                          Stop on manual pause
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="stopOnTemplateChange"
+                          checked={formData.stopOnTemplateChange}
+                          onCheckedChange={(checked) => updateFormData({ stopOnTemplateChange: !!checked })}
+                        />
+                        <Label htmlFor="stopOnTemplateChange" className="text-sm">
+                          Stop on template change
+                        </Label>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Retry Configuration */}
+              {/* Retry Configuration - User Controlled (Send Now/Later) */}
               {formData.retryEnabled && 
-               formData.scheduleType !== 'optimize' && 
+               (formData.scheduleType === 'now' || formData.scheduleType === 'later') && 
                isRetryAllowed() && (
                 <div className="space-y-4">
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
-                      <strong>Fixed cadence:</strong> Every 24 hours
+                      <strong>Fixed cadence:</strong> Every 24 hours (for non Co-Marketer campaigns)
                     </p>
                     
                     {/* Duration Slider */}
