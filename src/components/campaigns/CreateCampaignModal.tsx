@@ -65,6 +65,7 @@ interface CampaignFormData {
   controlGroup: boolean;
   controlGroupPercentage: number;
   specificTime: string;
+  isPublished: boolean;
 }
 
 interface AdobeSegment {
@@ -100,6 +101,31 @@ const whatsappTemplates = [
     name: 'promotional_offer', 
     description: 'Promotional offer template'
   }
+];
+
+const bfsiConversionEvents = [
+  'Account Opened (Savings)',
+  'Account Opened (Current)', 
+  'Credit Card Approved',
+  'Credit Card Activated',
+  'Loan Application Submitted',
+  'Loan Approved',
+  'Loan Disbursed',
+  'Overdraft Activated',
+  'First Transaction (UPI)',
+  'First Transaction (QR)',
+  'First Transaction (Netbanking)',
+  'Bill Payment Completed',
+  'Mandate Set Up (eMandate/SIP/Insurance)',
+  'Card Spend ₹1,000 Reached',
+  'Insurance Purchased (Life)',
+  'Insurance Purchased (Health)',
+  'Insurance Purchased (General)',
+  'Investment Started (FD)',
+  'Investment Started (RD)',
+  'Investment Started (MF/SIP)',
+  'Account Upgrade Accepted',
+  'Card Upgrade Accepted'
 ];
 
 const adobeSegments: AdobeSegment[] = [
@@ -513,7 +539,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     businessNumber: 'netcore',
     linkTracking: true,
     conversionGoal: true,
-    eventName: 'Add To Cart',
+    eventName: 'Account Opened (Savings)',
     conversionWindow: 1,
     revenueParameter: 'price',
     deduplication: true,
@@ -528,7 +554,8 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     frequencyCap: true,
     controlGroup: true,
     controlGroupPercentage: 5,
-    specificTime: 'Sep 09, 2025 02:00 pm'
+    specificTime: 'Sep 09, 2025 02:00 pm',
+    isPublished: false
   });
 
   const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
@@ -583,7 +610,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       businessNumber: 'netcore',
       linkTracking: true,
       conversionGoal: true,
-      eventName: 'Add To Cart',
+      eventName: 'Account Opened (Savings)',
       conversionWindow: 1,
       revenueParameter: 'price',
       deduplication: true,
@@ -598,7 +625,8 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       frequencyCap: true,
       controlGroup: true,
       controlGroupPercentage: 5,
-      specificTime: 'Sep 09, 2025 02:00 pm'
+      specificTime: 'Sep 09, 2025 02:00 pm',
+      isPublished: false
     });
     onClose();
   };
@@ -1066,239 +1094,251 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     </div>
   );
 
+  const handlePublish = () => {
+    updateFormData({ isPublished: true });
+  };
+
   const renderPreviewStep = () => (
-    <div className="p-6">
-      <DialogHeader className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={handleBack}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <DialogTitle className="text-xl font-semibold">Preview of Adobe</DialogTitle>
-          </div>
-          <Button>SAVE & PUBLISH</Button>
-        </div>
-      </DialogHeader>
-
-      <div className="grid grid-cols-2 gap-6">
-        {/* Left Column */}
-        <div className="space-y-4">
-          {/* Setup Details */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Settings className="w-4 h-4" />
-                <CardTitle className="text-sm">Setup details</CardTitle>
-              </div>
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                <Edit className="w-4 h-4 mr-1" />
-                EDIT
+    <div className="flex flex-col h-screen">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-50 bg-background border-b border-border p-6">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Button variant="ghost" size="sm" onClick={handleBack}>
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Campaign ID:</span>
-                  <span>263</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Campaign name:</span>
-                  <span>{formData.campaignName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Business number:</span>
-                  <span>Netcore Solutions Support (+91 2249757637)</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Link tracking:</span>
-                  <span>Enabled</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tags:</span>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    {formData.tags[0]}
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              <DialogTitle className="text-xl font-semibold">Preview of Adobe</DialogTitle>
+            </div>
+            <Button onClick={handlePublish}>SAVE & PUBLISH</Button>
+          </div>
+        </DialogHeader>
+      </div>
 
-          {/* Audience */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4" />
-                <CardTitle className="text-sm">Audience</CardTitle>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2 text-sm">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  <span className="text-muted-foreground">Reachable contacts</span>
-                  <span className="font-medium">{formData.selectedSegments.length > 0 ? 
-                    adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
-                      .reduce((sum, s) => sum + s.users, 0) : 0}</span>
+      {/* Adobe Sync Banner - Shows after publish */}
+      {formData.isPublished && (
+        <Alert className="mx-6 mt-4 border-blue-200 bg-blue-50">
+          <Info className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-800">
+            Execution handed off to Adobe Commerce. Delivery, read, click, fail metrics auto-sync to Adobe. No customer data stored on Netcore.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-hidden p-6">
+        <div className="grid grid-cols-2 gap-6 h-full">
+          {/* Left Column - Scrollable */}
+          <div className="overflow-y-auto max-h-screen space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+            {/* Setup Details */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Settings className="w-4 h-4" />
+                  <CardTitle className="text-sm">Setup details</CardTitle>
                 </div>
                 <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
                   <Edit className="w-4 h-4 mr-1" />
                   EDIT
                 </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Selected contacts</span>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Campaign ID:</span>
+                    <span>263</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Campaign name:</span>
+                    <span>{formData.campaignName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Business number:</span>
+                    <span>Netcore Solutions Support (+91 2249757637)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Link tracking:</span>
+                    <span>Enabled</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tags:</span>
+                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                      {formData.tags[0]}
+                    </Badge>
+                  </div>
                 </div>
-                <div>
-                  <span className="text-muted-foreground">Segments/Lists:</span>
-                  {formData.selectedSegments.length > 0 && (
-                    <div className="mt-1">
-                      {adobeSegments
-                        .filter(s => formData.selectedSegments.includes(s.id))
-                        .map(segment => (
-                          <Badge key={segment.id} variant="secondary" className="mr-1">
-                            ID: {segment.id} Test {segment.name}
-                          </Badge>
-                        ))}
-                    </div>
+              </CardContent>
+            </Card>
+
+            {/* Audience */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4" />
+                  <CardTitle className="text-sm">Audience</CardTitle>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span className="text-muted-foreground">Reachable contacts</span>
+                    <span className="font-medium">{formData.selectedSegments.length > 0 ? 
+                      adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                        .reduce((sum, s) => sum + s.users, 0) : 0}</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                    <Edit className="w-4 h-4 mr-1" />
+                    EDIT
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Selected contacts</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Segments/Lists:</span>
+                    {formData.selectedSegments.length > 0 && (
+                      <div className="mt-1">
+                        {adobeSegments
+                          .filter(s => formData.selectedSegments.includes(s.id))
+                          .map(segment => (
+                            <Badge key={segment.id} variant="secondary" className="mr-1">
+                              ID: {segment.id} Test {segment.name}
+                            </Badge>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Schedule */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="w-4 h-4" />
+                  <CardTitle className="text-sm">Schedule</CardTitle>
+                </div>
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                  <Edit className="w-4 h-4 mr-1" />
+                  EDIT
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Schedule campaign</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Frequency cap:</span>
+                    <span>{formData.frequencyCap ? 'On' : 'Off'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">When to send:</span>
+                    <span className="capitalize">{formData.scheduleType === 'optimize' ? 'Optimize with Co-marketer' : formData.scheduleType}</span>
+                  </div>
+                  {formData.scheduleType === 'optimize' && (
+                    <>
+                      <div className="text-xs text-muted-foreground">
+                        Start time - {formData.startTime}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        End time - {formData.endTime}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Send at end time - {formData.endTime}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Control group - {formData.controlGroupPercentage}%
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Specific time - {formData.specificTime}
+                      </div>
+                    </>
                   )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* Schedule */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4" />
-                <CardTitle className="text-sm">Schedule</CardTitle>
-              </div>
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                <Edit className="w-4 h-4 mr-1" />
-                EDIT
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Schedule campaign</span>
+          {/* Right Column - Scrollable */}
+          <div className="overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <MessageSquareText className="w-4 h-4" />
+                  <CardTitle className="text-sm">Content</CardTitle>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Frequency cap:</span>
-                  <span>{formData.frequencyCap ? 'On' : 'Off'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">When to send:</span>
-                  <span className="capitalize">{formData.scheduleType === 'optimize' ? 'Optimize with Co-marketer' : formData.scheduleType}</span>
-                </div>
-                {formData.scheduleType === 'optimize' && (
-                  <>
-                    <div className="text-xs text-muted-foreground">
-                      Start time - {formData.startTime}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      End time - {formData.endTime}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Send at end time - {formData.endTime}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Control group - {formData.controlGroupPercentage}%
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Specific time - {formData.specificTime}
-                    </div>
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                  <Edit className="w-4 h-4 mr-1" />
+                  EDIT
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-sm text-muted-foreground">Template Name:</span>
+                    <div className="font-medium">{formData.selectedTemplate}</div>
+                  </div>
+                  
+                  <div className="text-sm text-muted-foreground">
+                    Note: Test your template post-approval by Meta to confirm accuracy before sending it to users.
+                  </div>
 
-        {/* Right Column */}
-        <div>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <MessageSquareText className="w-4 h-4" />
-                <CardTitle className="text-sm">Content</CardTitle>
-              </div>
-              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                <Edit className="w-4 h-4 mr-1" />
-                EDIT
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <span className="text-sm text-muted-foreground">Template Name:</span>
-                  <div className="font-medium">{formData.selectedTemplate}</div>
-                </div>
-                
-                <div className="text-sm text-muted-foreground">
-                  Note: Test your template post-approval by Meta to confirm accuracy before sending it to users.
-                </div>
-
-                {/* Phone Preview */}
-                <div className="flex justify-center">
-                  <div className="relative w-48 h-80 bg-black rounded-2xl p-1">
-                    <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
-                      <div className="bg-green-600 text-white p-2 flex items-center space-x-2 text-xs">
-                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                          <MessageCircle className="w-4 h-4 text-green-600" />
-                        </div>
-                        <span className="font-medium">Netcore Cloud</span>
-                      </div>
-                      
-                      <div className="p-2 bg-gray-50 h-full">
-                        <div className="bg-white rounded-lg p-2 text-xs shadow-sm">
-                          <p className="mb-2">Check out our top deals and grab your favorites before the stock runs out!</p>
-                          
-                          <div className="grid grid-cols-2 gap-1 mb-2">
-                            <div className="bg-green-100 rounded p-1">
-                              <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
-                              <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                              <div className="flex flex-col space-y-0.5 mt-1">
-                                <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
-                                <div className="text-[8px] text-blue-600">🔗 View Product</div>
-                              </div>
-                            </div>
-                            <div className="bg-green-100 rounded p-1">
-                              <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
-                              <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                              <div className="flex flex-col space-y-0.5 mt-1">
-                                <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
-                                <div className="text-[8px] text-blue-600">🔗 View Product</div>
-                              </div>
-                            </div>
+                  {/* Phone Preview */}
+                  <div className="flex justify-center">
+                    <div className="relative w-48 h-80 bg-black rounded-2xl p-1">
+                      <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
+                        <div className="bg-green-600 text-white p-2 flex items-center space-x-2 text-xs">
+                          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                            <MessageCircle className="w-4 h-4 text-green-600" />
                           </div>
-                          
-                          <div className="flex items-center justify-between text-[8px] text-gray-500">
-                            <span>😊</span>
-                            <span>📎</span>
-                            <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center">
-                              ✓
-                            </span>
+                          <span className="font-medium">Netcore Cloud</span>
+                        </div>
+                        
+                        <div className="p-2 bg-gray-50 h-full">
+                          <div className="bg-white rounded-lg p-2 text-xs shadow-sm">
+                            <p className="mb-2">Check out our top deals and grab your favorites before the stock runs out!</p>
+                            
+                            <div className="grid grid-cols-2 gap-1 mb-2">
+                              <div className="bg-green-100 rounded p-1">
+                                <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
+                                <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                                <div className="flex flex-col space-y-0.5 mt-1">
+                                  <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
+                                  <div className="text-[8px] text-blue-600">🔗 View Product</div>
+                                </div>
+                              </div>
+                              <div className="bg-green-100 rounded p-1">
+                                <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
+                                <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                                <div className="flex flex-col space-y-0.5 mt-1">
+                                  <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
+                                  <div className="text-[8px] text-blue-600">🔗 View Product</div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center justify-between text-[8px] text-gray-500">
+                              <span>😊</span>
+                              <span>📎</span>
+                              <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center">
+                                ✓
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-
-      {/* Adobe Sync Banner */}
-      <Alert className="mt-6 border-blue-200 bg-blue-50">
-        <Info className="h-4 w-4 text-blue-600" />
-        <AlertDescription className="text-blue-800">
-          Once the campaign is fully sent out and send out; Sent/delivery/read/click/fail metrics will auto-sync back to Adobe. No customer data stored on Netcore.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 
@@ -1554,9 +1594,9 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Add To Cart">Add To Cart</SelectItem>
-                        <SelectItem value="Purchase">Purchase</SelectItem>
-                        <SelectItem value="Sign Up">Sign Up</SelectItem>
+                        {bfsiConversionEvents.map((event) => (
+                          <SelectItem key={event} value={event}>{event}</SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1781,7 +1821,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
+      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
         {currentStep === 'start' && renderStartStep()}
         {currentStep === 'channels' && renderChannelsStep()}
         {currentStep === 'setup' && renderSetupStep()}
