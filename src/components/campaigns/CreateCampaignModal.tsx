@@ -1654,7 +1654,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 </div>
                 <div className="flex space-x-2">
                   <Button variant="outline">FINISH LATER</Button>
-                  <Button>NEXT STEP</Button>
+                  <Button onClick={handleNext}>NEXT STEP</Button>
                 </div>
               </div>
             </DialogHeader>
