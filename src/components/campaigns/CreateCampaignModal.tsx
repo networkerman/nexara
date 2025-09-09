@@ -1106,8 +1106,35 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     </div>
   );
 
+  const [showProgressPopup, setShowProgressPopup] = useState(false);
+  const [currentProgressStep, setCurrentProgressStep] = useState(0);
+
+  const progressSteps = [
+    "Campaign Setup Done",
+    "Audience Fetched",
+    "Content Checked", 
+    "Schedule - Campaign Execution Started",
+    "Send, Delivered, Opened/Read, Clicked, Failed",
+    "Metrics will auto sync to Adobe in sometime",
+    "No customer data stored in Netcore"
+  ];
+
   const handlePublish = () => {
     updateFormData({ isPublished: true });
+    setShowProgressPopup(true);
+    setCurrentProgressStep(0);
+    
+    // Animate through progress steps
+    progressSteps.forEach((_, index) => {
+      setTimeout(() => {
+        setCurrentProgressStep(index + 1);
+      }, (index + 1) * 1000);
+    });
+
+    // Auto close after all steps
+    setTimeout(() => {
+      setShowProgressPopup(false);
+    }, (progressSteps.length + 1) * 1000);
   };
 
   const renderPreviewStep = () => (
@@ -1127,14 +1154,53 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
         </DialogHeader>
       </div>
 
-      {/* Adobe Sync Banner - Shows after publish */}
-      {formData.isPublished && (
-        <Alert className="mx-6 mt-4 border-blue-200 bg-blue-50">
-          <Info className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-800">
-            Execution handed off to Adobe Commerce. Delivery, read, click, fail metrics auto-sync to Adobe. No customer data stored on Netcore.
-          </AlertDescription>
-        </Alert>
+      {/* Progress Popup */}
+      {showProgressPopup && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-background rounded-lg p-8 max-w-md w-full mx-4 animate-scale-in">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+              </div>
+              <h3 className="text-lg font-semibold mb-6">Campaign Execution Progress</h3>
+              
+              <div className="space-y-3 text-left">
+                {progressSteps.map((step, index) => (
+                  <div key={index} className={`flex items-center space-x-3 transition-all duration-300 ${
+                    index < currentProgressStep 
+                      ? 'text-green-600' 
+                      : index === currentProgressStep 
+                      ? 'text-primary' 
+                      : 'text-muted-foreground'
+                  }`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      index < currentProgressStep 
+                        ? 'bg-green-100 text-green-600' 
+                        : index === currentProgressStep 
+                        ? 'bg-primary/10 text-primary' 
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {index < currentProgressStep ? (
+                        <Check className="w-3 h-3" />
+                      ) : index === currentProgressStep ? (
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <div className="w-2 h-2 rounded-full bg-current" />
+                      )}
+                    </div>
+                    <span className="text-sm">{step}</span>
+                  </div>
+                ))}
+              </div>
+              
+              {currentProgressStep >= progressSteps.length && (
+                <div className="mt-6 pt-4 border-t border-border">
+                  <p className="text-sm text-green-600 font-medium">✓ Campaign execution completed successfully</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Scrollable Content */}
