@@ -1149,7 +1149,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   ];
 
   const PersonalizationDrawer = () => (
-    <div className={`fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-40 transform transition-transform duration-300 ease-in-out ${
+    <div className={`fixed right-0 top-0 h-full w-80 bg-background border-l border-border shadow-2xl z-50 transform transition-all duration-300 ease-in-out ${
       showPersonalizationDrawer ? 'translate-x-0' : 'translate-x-full'
     }`}>
       <div className="p-6 border-b border-border">
