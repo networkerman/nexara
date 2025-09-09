@@ -146,7 +146,7 @@ const SummaryPanel = ({ formData }: { formData: CampaignFormData }) => {
   };
 
   return (
-    <div className="w-80 bg-muted/20 p-6 border-l border-border">
+    <div className="bg-muted/20 p-6 border-l border-border h-full">
       <h3 className="text-lg font-semibold mb-6">Summary</h3>
       
       <div className="space-y-4">
@@ -403,60 +403,62 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   );
 
   const renderSetupStep = () => (
-    <div className="flex h-full">
+    <div className="h-screen flex gap-6">
       <div className="flex-1 flex flex-col">
-        {/* Fixed Header */}
-        <div className="flex-shrink-0 p-6 pb-0">
-          <DialogHeader className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Button variant="ghost" size="sm" onClick={handleBack}>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-background border-b border-border">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Button variant="ghost" size="sm" onClick={handleBack}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline">FINISH LATER</Button>
+                  <Button onClick={handleNext}>NEXT STEP</Button>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Button variant="outline">FINISH LATER</Button>
-                <Button onClick={handleNext}>NEXT STEP</Button>
-              </div>
-            </div>
-          </DialogHeader>
+            </DialogHeader>
 
-          {/* Progress Steps */}
-          <div className="flex items-center space-x-4 mb-8">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-                <Check className="w-4 h-4" />
+            {/* Progress Steps */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Setup</span>
               </div>
-              <span className="text-sm font-medium text-primary">Setup</span>
-            </div>
-            <div className="flex-1 h-px bg-border"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center">
-                <Users className="w-4 h-4 text-muted-foreground" />
+              <div className="flex-1 h-px bg-border"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <span className="text-sm text-muted-foreground">Audience</span>
               </div>
-              <span className="text-sm text-muted-foreground">Audience</span>
-            </div>
-            <div className="flex-1 h-px bg-border"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                3
+              <div className="flex-1 h-px bg-border"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                  3
+                </div>
+                <span className="text-sm text-muted-foreground">Content</span>
               </div>
-              <span className="text-sm text-muted-foreground">Content</span>
-            </div>
-            <div className="flex-1 h-px bg-border"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                4
+              <div className="flex-1 h-px bg-border"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                  4
+                </div>
+                <span className="text-sm text-muted-foreground">Schedule</span>
               </div>
-              <span className="text-sm text-muted-foreground">Schedule</span>
             </div>
           </div>
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6">
-          <div className="space-y-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-6 pt-6">
             {/* Campaign Details */}
             <div>
               <h3 className="text-lg font-semibold mb-4">Campaign details</h3>
@@ -651,65 +653,69 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
         </div>
       </div>
       
-      <SummaryPanel formData={formData} />
+      <div className="w-80 overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <SummaryPanel formData={formData} />
+      </div>
     </div>
   );
 
   const renderAudienceStep = () => (
-    <div className="flex h-full">
+    <div className="h-screen flex gap-6">
       <div className="flex-1 flex flex-col">
-        {/* Fixed Header */}
-        <div className="flex-shrink-0 p-6 pb-0">
-          <DialogHeader className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Button variant="ghost" size="sm" onClick={handleBack}>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-background border-b border-border">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Button variant="ghost" size="sm" onClick={handleBack}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline">FINISH LATER</Button>
+                  <Button>NEXT STEP</Button>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Button variant="outline">FINISH LATER</Button>
-                <Button>NEXT STEP</Button>
-              </div>
-            </div>
-          </DialogHeader>
+            </DialogHeader>
 
-          {/* Progress Steps */}
-          <div className="flex items-center space-x-4 mb-8">
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-                <Check className="w-4 h-4" />
+            {/* Progress Steps */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Setup</span>
               </div>
-              <span className="text-sm font-medium text-primary">Setup</span>
-            </div>
-            <div className="flex-1 h-px bg-primary"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                <Users className="w-4 h-4" />
+              <div className="flex-1 h-px bg-primary"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Audience</span>
               </div>
-              <span className="text-sm font-medium text-primary">Audience</span>
-            </div>
-            <div className="flex-1 h-px bg-border"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                3
+              <div className="flex-1 h-px bg-border"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                  3
+                </div>
+                <span className="text-sm text-muted-foreground">Content</span>
               </div>
-              <span className="text-sm text-muted-foreground">Content</span>
-            </div>
-            <div className="flex-1 h-px bg-border"></div>
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                4
+              <div className="flex-1 h-px bg-border"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                  4
+                </div>
+                <span className="text-sm text-muted-foreground">Schedule</span>
               </div>
-              <span className="text-sm text-muted-foreground">Schedule</span>
             </div>
           </div>
         </div>
 
         {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6">
-          <div className="space-y-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-6 pt-6">
             {/* Target Audience */}
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -834,13 +840,15 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
         </div>
       </div>
       
-      <SummaryPanel formData={formData} />
+      <div className="w-80 overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <SummaryPanel formData={formData} />
+      </div>
     </div>
   );
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' ? 'max-w-6xl h-[90vh]' : 'max-w-2xl'} p-0`}>
+      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
         {currentStep === 'start' && renderStartStep()}
         {currentStep === 'channels' && renderChannelsStep()}
         {currentStep === 'setup' && renderSetupStep()}
