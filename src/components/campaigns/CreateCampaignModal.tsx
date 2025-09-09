@@ -1347,45 +1347,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                       <div>• Auto-excluded: Opted-out, Invalid numbers, Blocked contacts</div>
                     </div>
                   </div>
-
-                  {/* Stop Conditions - Available for Co-Marketer too */}
-                  <div>
-                    <Label className="text-sm font-medium mb-3 block">Stop conditions</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="stopOnConversion"
-                          checked={formData.stopOnConversion}
-                          onCheckedChange={(checked) => updateFormData({ stopOnConversion: !!checked })}
-                        />
-                        <Label htmlFor="stopOnConversion" className="text-sm">
-                          Stop on conversion
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="stopOnManualPause"
-                          checked={formData.stopOnManualPause}
-                          onCheckedChange={(checked) => updateFormData({ stopOnManualPause: !!checked })}
-                        />
-                        <Label htmlFor="stopOnManualPause" className="text-sm">
-                          Stop on manual pause
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="stopOnTemplateChange"
-                          checked={formData.stopOnTemplateChange}
-                          onCheckedChange={(checked) => updateFormData({ stopOnTemplateChange: !!checked })}
-                        />
-                        <Label htmlFor="stopOnTemplateChange" className="text-sm">
-                          Stop on template change
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -1430,45 +1391,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                       <div>• Expired messages</div>
                       <div className="mt-2 text-xs">
                         <strong>Auto-excluded:</strong> Opted-out, Invalid numbers, Blocked contacts
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Stop Conditions */}
-                  <div>
-                    <Label className="text-sm font-medium mb-3 block">Stop conditions</Label>
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="stopOnConversion"
-                          checked={formData.stopOnConversion}
-                          onCheckedChange={(checked) => updateFormData({ stopOnConversion: !!checked })}
-                        />
-                        <Label htmlFor="stopOnConversion" className="text-sm">
-                          Stop on conversion
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="stopOnManualPause"
-                          checked={formData.stopOnManualPause}
-                          onCheckedChange={(checked) => updateFormData({ stopOnManualPause: !!checked })}
-                        />
-                        <Label htmlFor="stopOnManualPause" className="text-sm">
-                          Stop on manual pause
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="stopOnTemplateChange"
-                          checked={formData.stopOnTemplateChange}
-                          onCheckedChange={(checked) => updateFormData({ stopOnTemplateChange: !!checked })}
-                        />
-                        <Label htmlFor="stopOnTemplateChange" className="text-sm">
-                          Stop on template change
-                        </Label>
                       </div>
                     </div>
                   </div>
