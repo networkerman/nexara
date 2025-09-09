@@ -17,7 +17,7 @@ import {
   Info
 } from 'lucide-react';
 import { CampaignTable } from './CampaignTable';
-import CreateCampaignModal from './CreateCampaignModal';
+import { CreateCampaignModal } from './CreateCampaignModal';
 
 const statusTabs = [
   { id: 'all', label: 'All', count: 196 },
