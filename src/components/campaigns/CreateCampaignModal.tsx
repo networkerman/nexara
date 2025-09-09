@@ -357,6 +357,13 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
+// Custom Google Messages icon component
+const GoogleMessagesIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 2.98.97 4.29L1 23l6.71-1.97C9.02 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm-1 15l-3-3h-2v-2h2l3-3v2h4v4h-4v2z"/>
+  </svg>
+);
+
 const channelOptions = [
   {
     category: 'Journey',
@@ -377,7 +384,7 @@ const channelOptions = [
     category: 'Messaging',
     items: [
       { id: 'whatsapp', name: 'WhatsApp', icon: WhatsAppIcon, color: 'text-green-600', badge: 'New' },
-      { id: 'rcs', name: 'RCS', icon: MessageCircle, color: 'text-blue-600', badge: 'New' },
+      { id: 'rcs', name: 'RCS', icon: GoogleMessagesIcon, color: 'text-blue-600', badge: 'New' },
     ]
   },
   {
