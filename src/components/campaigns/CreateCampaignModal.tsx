@@ -14,6 +14,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Calendar } from '@/components/ui/calendar';
+import { format } from 'date-fns';
 import { 
   ChevronLeft,
   MessageSquare, 
@@ -31,7 +33,7 @@ import {
   ChevronDown,
   Check,
   Send,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Settings,
   Edit,
@@ -65,7 +67,10 @@ interface CampaignFormData {
   scheduleType: 'now' | 'later' | 'optimize';
   startTime: string;
   endTime: string;
+  scheduledDate: Date | null;
+  scheduledTime: string;
   timezone: string;
+  fallbackOption: 'start' | 'end';
   frequencyCap: boolean;
   controlGroup: boolean;
   controlGroupPercentage: number;
@@ -615,10 +620,13 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     selectedSegments: [],
     excludeContacts: false,
     selectedTemplate: '',
-    scheduleType: 'optimize',
-    startTime: 'Sep 09, 2025 01:00 pm',
-    endTime: 'Sep 10, 2025 12:00 pm',
-    timezone: 'Asia/Calcutta | Sep 09, 2025 12:57 pm',
+    scheduleType: 'now',
+    startTime: 'Sep 09, 2025 03:45 pm',
+    endTime: 'Sep 10, 2025 02:45 pm',
+    scheduledDate: null,
+    scheduledTime: '4:00 PM',
+    timezone: 'Asia/Calcutta',
+    fallbackOption: 'end',
     frequencyCap: true,
     controlGroup: true,
     controlGroupPercentage: 5,
@@ -696,10 +704,13 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       selectedSegments: [],
       excludeContacts: false,
       selectedTemplate: '',
-      scheduleType: 'optimize',
-      startTime: 'Sep 09, 2025 01:00 pm',
-      endTime: 'Sep 10, 2025 12:00 pm',
-      timezone: 'Asia/Calcutta | Sep 09, 2025 12:57 pm',
+      scheduleType: 'now',
+      startTime: 'Sep 09, 2025 03:45 pm',
+      endTime: 'Sep 10, 2025 02:45 pm',
+      scheduledDate: null,
+      scheduledTime: '4:00 PM',
+      timezone: 'Asia/Calcutta',
+      fallbackOption: 'end',
       frequencyCap: true,
       controlGroup: true,
       controlGroupPercentage: 5,
@@ -955,6 +966,34 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     </div>
   );
 
+  // Helper function to validate schedule times
+  const validateScheduleTimes = () => {
+    if (formData.scheduleType === 'later' || formData.scheduleType === 'optimize') {
+      const startDate = new Date(formData.startTime);
+      const endDate = new Date(formData.endTime);
+      return startDate < endDate;
+    }
+    return true;
+  };
+
+  // Helper function to check if template allows retry
+  const isRetryAllowed = () => {
+    const selectedTemplate = whatsappTemplates.find(t => t.id === formData.selectedTemplate);
+    return selectedTemplate && 
+           (selectedTemplate.category === 'Marketing' || selectedTemplate.category === 'Promotional') &&
+           selectedTemplate.status === 'Active';
+  };
+
+  // Available timezones
+  const timezones = [
+    'Asia/Calcutta',
+    'America/New_York', 
+    'Europe/London',
+    'America/Los_Angeles',
+    'Asia/Tokyo',
+    'Australia/Sydney'
+  ];
+
   const renderScheduleStep = () => (
     <div className="h-screen flex gap-6">
       <div className="flex-1 flex flex-col">
@@ -971,7 +1010,12 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 </div>
                 <div className="flex space-x-2">
                   <Button variant="outline">FINISH LATER</Button>
-                  <Button onClick={handleNext}>SAVE AND PREVIEW</Button>
+                  <Button 
+                    onClick={handleNext}
+                    disabled={!validateScheduleTimes()}
+                  >
+                    SAVE AND PREVIEW
+                  </Button>
                 </div>
               </div>
             </DialogHeader>
@@ -1013,7 +1057,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 onClick={() => setCurrentStep('schedule')}
               >
                 <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <Calendar className="w-4 h-4" />
+                  <CalendarIcon className="w-4 h-4" />
                 </div>
                 <span className="text-sm font-medium text-primary">Schedule</span>
               </button>
@@ -1029,7 +1073,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold">Schedule campaign</h3>
                 <div className="text-sm text-muted-foreground">
-                  Timezone: {formData.timezone}
+                  Timezone: {formData.timezone} | {format(new Date(), "MMM dd, yyyy hh:mm a")}
                 </div>
               </div>
 
@@ -1094,43 +1138,112 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                   </div>
                 </div>
 
-                {(formData.scheduleType === 'later' || formData.scheduleType === 'optimize') && (
-                  <div className="mt-4 grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="startTime">Start time *</Label>
-                      <Input
-                        id="startTime"
-                        value={formData.startTime}
-                        onChange={(e) => updateFormData({ startTime: e.target.value })}
-                        className="mt-1"
-                      />
+                {/* Send Later DateTime Picker */}
+                {formData.scheduleType === 'later' && (
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Select date and time *</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-full justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.scheduledDate ? format(formData.scheduledDate, "MMM dd, yyyy") : "Pick a date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={formData.scheduledDate || undefined}
+                              onSelect={(date) => updateFormData({ scheduledDate: date || null })}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                              className="p-3 pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      <div>
+                        <Label>Timezone</Label>
+                        <Select 
+                          value={formData.timezone} 
+                          onValueChange={(value) => updateFormData({ timezone: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {timezones.map(tz => (
+                              <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="endTime">End time *</Label>
+                    <div className="w-1/2">
                       <Input
-                        id="endTime"
-                        value={formData.endTime}
-                        onChange={(e) => updateFormData({ endTime: e.target.value })}
-                        className="mt-1"
+                        placeholder="4:00 PM"
+                        value={formData.scheduledTime}
+                        onChange={(e) => updateFormData({ scheduledTime: e.target.value })}
                       />
                     </div>
                   </div>
                 )}
 
-                <div className="mt-4">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    For unpredictable users and users whose preferred time doesn't fall in the selected time range
-                  </p>
-                  <Select value="end">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="end">Send at end time</SelectItem>
-                      <SelectItem value="start">Send at start time</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {/* Co-Marketer Optimization Window */}
+                {formData.scheduleType === 'optimize' && (
+                  <div className="mt-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Start time *</Label>
+                        <Input
+                          placeholder="Sep 09, 2025 03:45 pm"
+                          value={formData.startTime}
+                          onChange={(e) => updateFormData({ startTime: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>End time *</Label>
+                        <Input
+                          placeholder="Sep 10, 2025 02:45 pm" 
+                          value={formData.endTime}
+                          onChange={(e) => updateFormData({ endTime: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Validation Error */}
+                    {!validateScheduleTimes() && (
+                      <Alert className="border-destructive bg-destructive/10">
+                        <Info className="h-4 w-4 text-destructive" />
+                        <AlertDescription className="text-destructive">
+                          Start time must be before end time
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                    
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        For unpredictable users and users whose preferred time doesn't fall in the selected time range
+                      </p>
+                      <Select 
+                        value={formData.fallbackOption} 
+                        onValueChange={(value: 'start' | 'end') => updateFormData({ fallbackOption: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="end">Send at end time</SelectItem>
+                          <SelectItem value="start">Send at start time</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Control Group */}
@@ -1195,37 +1308,49 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 <div className="flex items-center space-x-2">
                   <h4 className="font-medium">Retry logic</h4>
                   <Info className="w-4 h-4 text-muted-foreground" />
+                  {formData.scheduleType === 'optimize' && (
+                    <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
+                      Managed by Co-Marketer
+                    </Badge>
+                  )}
                 </div>
                 <Switch 
                   checked={formData.retryEnabled}
                   onCheckedChange={(checked) => updateFormData({ retryEnabled: checked })}
+                  disabled={formData.scheduleType === 'optimize' || !isRetryAllowed()}
                 />
               </div>
 
               {/* Template Category Validation */}
-              {formData.selectedTemplate && whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.category === 'Utility' && (
+              {formData.selectedTemplate && !isRetryAllowed() && (
                 <Alert className="mb-4">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
-                    Retry logic is not available for Utility templates. Please select a Marketing or Promotional template.
+                    {whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.category === 'Utility'
+                      ? 'Retry logic is only available for Marketing/Promotional templates.'
+                      : 'Template is paused by Meta. Retry logic blocked until reactivated.'}
                   </AlertDescription>
                 </Alert>
               )}
 
-              {/* Template Status Warning */}
-              {formData.selectedTemplate && whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.status === 'Paused' && (
-                <Alert className="mb-4 border-warning bg-warning/10">
-                  <Info className="h-4 w-4 text-warning" />
-                  <AlertDescription className="text-warning-foreground">
-                    Warning: Selected template is paused by Meta. Retry logic will be blocked until template is reactivated.
-                  </AlertDescription>
-                </Alert>
+              {/* Co-Marketer Retry Info */}
+              {formData.scheduleType === 'optimize' && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+                  <p className="text-sm text-blue-800 mb-2">
+                    <strong>Retry settings managed by Co-Marketer:</strong>
+                  </p>
+                  <div className="text-sm text-blue-700 space-y-1">
+                    <div>• Cadence: Every 24 hours (read-only)</div>
+                    <div>• Duration: 7 days (read-only)</div>
+                    <div>• Target statuses: Failed, Undelivered, Rate-limited, Expired</div>
+                  </div>
+                </div>
               )}
 
+              {/* Retry Configuration */}
               {formData.retryEnabled && 
-               formData.selectedTemplate && 
-               whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.category !== 'Utility' && 
-               whatsappTemplates.find(t => t.id === formData.selectedTemplate)?.status === 'Active' && (
+               formData.scheduleType !== 'optimize' && 
+               isRetryAllowed() && (
                 <div className="space-y-4">
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
