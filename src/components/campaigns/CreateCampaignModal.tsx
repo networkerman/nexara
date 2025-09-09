@@ -1357,7 +1357,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 <div className="space-y-4">
                   <div className="p-4 bg-muted/30 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">
-                      <strong>Fixed cadence:</strong> Every 24 hours (for non Co-Marketer campaigns)
+                      <strong>Fixed cadence:</strong> Every 24 hours
                     </p>
                     
                     {/* Duration Slider */}
