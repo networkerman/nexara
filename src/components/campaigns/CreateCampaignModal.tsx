@@ -403,244 +403,251 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   );
 
   const renderSetupStep = () => (
-    <div className="flex">
-      <div className="flex-1 p-6">
-        <DialogHeader className="mb-6">
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={handleBack}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
-          </div>
-        </DialogHeader>
+    <div className="flex h-full">
+      <div className="flex-1 flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 p-6 pb-0">
+          <DialogHeader className="mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Button variant="ghost" size="sm" onClick={handleBack}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+              </div>
+              <div className="flex space-x-2">
+                <Button variant="outline">FINISH LATER</Button>
+                <Button onClick={handleNext}>NEXT STEP</Button>
+              </div>
+            </div>
+          </DialogHeader>
 
-        {/* Progress Steps */}
-        <div className="flex items-center space-x-4 mb-8">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-              <Check className="w-4 h-4" />
+          {/* Progress Steps */}
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
+                <Check className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium text-primary">Setup</span>
             </div>
-            <span className="text-sm font-medium text-primary">Setup</span>
-          </div>
-          <div className="flex-1 h-px bg-border"></div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center">
-              <Users className="w-4 h-4 text-muted-foreground" />
+            <div className="flex-1 h-px bg-border"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center">
+                <Users className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <span className="text-sm text-muted-foreground">Audience</span>
             </div>
-            <span className="text-sm text-muted-foreground">Audience</span>
-          </div>
-          <div className="flex-1 h-px bg-border"></div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-              3
+            <div className="flex-1 h-px bg-border"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                3
+              </div>
+              <span className="text-sm text-muted-foreground">Content</span>
             </div>
-            <span className="text-sm text-muted-foreground">Content</span>
-          </div>
-          <div className="flex-1 h-px bg-border"></div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-              4
+            <div className="flex-1 h-px bg-border"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                4
+              </div>
+              <span className="text-sm text-muted-foreground">Schedule</span>
             </div>
-            <span className="text-sm text-muted-foreground">Schedule</span>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Campaign Details */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Campaign details</h3>
-            <p className="text-sm text-muted-foreground mb-4">Provide basic details about your campaign</p>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="campaignName">Campaign name *</Label>
-                <Input
-                  id="campaignName"
-                  value={formData.campaignName}
-                  onChange={(e) => updateFormData({ campaignName: e.target.value })}
-                  placeholder="Campaign name"
-                  className="mt-1"
-                />
-                <div className="flex justify-end text-xs text-muted-foreground mt-1">
-                  {formData.campaignName.length}/100
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="businessNumber">Business number *</Label>
-                <Select 
-                  value={formData.businessNumber} 
-                  onValueChange={(value) => updateFormData({ businessNumber: value })}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {businessNumbers.map((number) => (
-                      <SelectItem key={number.id} value={number.id}>
-                        {number.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                <div className="mt-2 p-3 bg-muted/30 rounded-lg">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Quality rating:</span>
-                    <Badge variant="secondary" className="bg-green-100 text-green-800">HIGH</Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-muted-foreground">Messaging limit:</span>
-                    <span className="text-foreground">10000 Messaging limit per 24hrs.</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm mt-1">
-                    <span className="text-muted-foreground">Last updated:</span>
-                    <span className="text-foreground">Sep 09, 2025 12:03 PM</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <Label>Add tags <Info className="w-4 h-4 inline ml-1 text-muted-foreground" /></Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {formData.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="flex items-center space-x-1">
-                      <span>{tag}</span>
-                      <X 
-                        className="w-3 h-3 cursor-pointer" 
-                        onClick={() => removeTag(tag)}
-                      />
-                    </Badge>
-                  ))}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Select upto 5 tags</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Link Tracking */}
-          <div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Link tracking</h4>
-                <p className="text-sm text-muted-foreground">Link tracking has been enabled</p>
-              </div>
-            </div>
-            <div className="mt-3">
-              <Label htmlFor="domain">Domain name</Label>
-              <Input
-                id="domain"
-                value="nctrckg.com"
-                disabled
-                className="mt-1 bg-muted"
-              />
-            </div>
-          </div>
-
-          {/* Conversion Goal */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h4 className="font-medium">Set conversion goal</h4>
-                <p className="text-sm text-muted-foreground">Select the event you would like to count as a conversion</p>
-              </div>
-              <Switch 
-                checked={formData.conversionGoal}
-                onCheckedChange={(checked) => updateFormData({ conversionGoal: checked })}
-              />
-            </div>
-            
-            {formData.conversionGoal && (
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="space-y-6 pb-6">
+            {/* Campaign Details */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Campaign details</h3>
+              <p className="text-sm text-muted-foreground mb-4">Provide basic details about your campaign</p>
+              
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="eventName">Event name</Label>
+                  <Label htmlFor="campaignName">Campaign name *</Label>
+                  <Input
+                    id="campaignName"
+                    value={formData.campaignName}
+                    onChange={(e) => updateFormData({ campaignName: e.target.value })}
+                    placeholder="Campaign name"
+                    className="mt-1"
+                  />
+                  <div className="flex justify-end text-xs text-muted-foreground mt-1">
+                    {formData.campaignName.length}/100
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="businessNumber">Business number *</Label>
                   <Select 
-                    value={formData.eventName} 
-                    onValueChange={(value) => updateFormData({ eventName: value })}
+                    value={formData.businessNumber} 
+                    onValueChange={(value) => updateFormData({ businessNumber: value })}
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Add To Cart">Add To Cart</SelectItem>
-                      <SelectItem value="Purchase">Purchase</SelectItem>
-                      <SelectItem value="Sign Up">Sign Up</SelectItem>
+                      {businessNumbers.map((number) => (
+                        <SelectItem key={number.id} value={number.id}>
+                          {number.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <Checkbox 
-                    id="payloadParams"
-                    className="mt-1"
-                  />
-                  <Label htmlFor="payloadParams" className="text-sm">
-                    Specify payload parameters
-                  </Label>
-                </div>
-
-                <div className="flex space-x-4">
-                  <div className="flex-1">
-                    <Label htmlFor="conversionWindow">Conversion window</Label>
-                    <div className="flex mt-1">
-                      <Input
-                        id="conversionWindow"
-                        type="number"
-                        value={formData.conversionWindow}
-                        onChange={(e) => updateFormData({ conversionWindow: Number(e.target.value) })}
-                        className="rounded-r-none"
-                      />
-                      <Select value="Days">
-                        <SelectTrigger className="w-20 rounded-l-none border-l-0">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Days">Days</SelectItem>
-                          <SelectItem value="Hours">Hours</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  
+                  <div className="mt-2 p-3 bg-muted/30 rounded-lg">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Quality rating:</span>
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">HIGH</Badge>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Messaging limit:</span>
+                      <span className="text-foreground">10000 Messaging limit per 24hrs.</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm mt-1">
+                      <span className="text-muted-foreground">Last updated:</span>
+                      <span className="text-foreground">Sep 09, 2025 12:03 PM</span>
                     </div>
                   </div>
-                  
-                  <div className="flex-1">
-                    <Label htmlFor="revenueParameter">Revenue parameter</Label>
+                </div>
+
+                <div>
+                  <Label>Add tags <Info className="w-4 h-4 inline ml-1 text-muted-foreground" /></Label>
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {formData.tags.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="flex items-center space-x-1">
+                        <span>{tag}</span>
+                        <X 
+                          className="w-3 h-3 cursor-pointer" 
+                          onClick={() => removeTag(tag)}
+                        />
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">Select upto 5 tags</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Link Tracking */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Link tracking</h4>
+                  <p className="text-sm text-muted-foreground">Link tracking has been enabled</p>
+                </div>
+              </div>
+              <div className="mt-3">
+                <Label htmlFor="domain">Domain name</Label>
+                <Input
+                  id="domain"
+                  value="nctrckg.com"
+                  disabled
+                  className="mt-1 bg-muted"
+                />
+              </div>
+            </div>
+
+            {/* Conversion Goal */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="font-medium">Set conversion goal</h4>
+                  <p className="text-sm text-muted-foreground">Select the event you would like to count as a conversion</p>
+                </div>
+                <Switch 
+                  checked={formData.conversionGoal}
+                  onCheckedChange={(checked) => updateFormData({ conversionGoal: checked })}
+                />
+              </div>
+              
+              {formData.conversionGoal && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="eventName">Event name</Label>
                     <Select 
-                      value={formData.revenueParameter} 
-                      onValueChange={(value) => updateFormData({ revenueParameter: value })}
+                      value={formData.eventName} 
+                      onValueChange={(value) => updateFormData({ eventName: value })}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="price">price</SelectItem>
-                        <SelectItem value="amount">amount</SelectItem>
-                        <SelectItem value="total">total</SelectItem>
+                        <SelectItem value="Add To Cart">Add To Cart</SelectItem>
+                        <SelectItem value="Purchase">Purchase</SelectItem>
+                        <SelectItem value="Sign Up">Sign Up</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* Deduplication */}
-          <div>
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">Deduplication</h4>
-                <p className="text-sm text-muted-foreground">Avoid duplicate communication to contacts</p>
+                  <div className="flex items-center space-x-4">
+                    <Checkbox 
+                      id="payloadParams"
+                      className="mt-1"
+                    />
+                    <Label htmlFor="payloadParams" className="text-sm">
+                      Specify payload parameters
+                    </Label>
+                  </div>
+
+                  <div className="flex space-x-4">
+                    <div className="flex-1">
+                      <Label htmlFor="conversionWindow">Conversion window</Label>
+                      <div className="flex mt-1">
+                        <Input
+                          id="conversionWindow"
+                          type="number"
+                          value={formData.conversionWindow}
+                          onChange={(e) => updateFormData({ conversionWindow: Number(e.target.value) })}
+                          className="rounded-r-none"
+                        />
+                        <Select value="Days">
+                          <SelectTrigger className="w-20 rounded-l-none border-l-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Days">Days</SelectItem>
+                            <SelectItem value="Hours">Hours</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    
+                    <div className="flex-1">
+                      <Label htmlFor="revenueParameter">Revenue parameter</Label>
+                      <Select 
+                        value={formData.revenueParameter} 
+                        onValueChange={(value) => updateFormData({ revenueParameter: value })}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="price">price</SelectItem>
+                          <SelectItem value="amount">amount</SelectItem>
+                          <SelectItem value="total">total</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Deduplication */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium">Deduplication</h4>
+                  <p className="text-sm text-muted-foreground">Avoid duplicate communication to contacts</p>
+                </div>
+                <Switch 
+                  checked={formData.deduplication}
+                  onCheckedChange={(checked) => updateFormData({ deduplication: checked })}
+                />
               </div>
-              <Switch 
-                checked={formData.deduplication}
-                onCheckedChange={(checked) => updateFormData({ deduplication: checked })}
-              />
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-between mt-8 pt-6 border-t border-border">
-          <Button variant="outline">FINISH LATER</Button>
-          <Button onClick={handleNext}>NEXT STEP</Button>
         </div>
       </div>
       
@@ -649,174 +656,181 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   );
 
   const renderAudienceStep = () => (
-    <div className="flex">
-      <div className="flex-1 p-6">
-        <DialogHeader className="mb-6">
-          <div className="flex items-center space-x-3">
-            <Button variant="ghost" size="sm" onClick={handleBack}>
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
-          </div>
-        </DialogHeader>
-
-        {/* Progress Steps */}
-        <div className="flex items-center space-x-4 mb-8">
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-              <Check className="w-4 h-4" />
-            </div>
-            <span className="text-sm font-medium text-primary">Setup</span>
-          </div>
-          <div className="flex-1 h-px bg-primary"></div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-              <Users className="w-4 h-4" />
-            </div>
-            <span className="text-sm font-medium text-primary">Audience</span>
-          </div>
-          <div className="flex-1 h-px bg-border"></div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-              3
-            </div>
-            <span className="text-sm text-muted-foreground">Content</span>
-          </div>
-          <div className="flex-1 h-px bg-border"></div>
-          <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-              4
-            </div>
-            <span className="text-sm text-muted-foreground">Schedule</span>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {/* Target Audience */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h3 className="text-lg font-semibold">Target audience</h3>
-                <p className="text-sm text-muted-foreground">Select your target audience for the campaign</p>
+    <div className="flex h-full">
+      <div className="flex-1 flex flex-col">
+        {/* Fixed Header */}
+        <div className="flex-shrink-0 p-6 pb-0">
+          <DialogHeader className="mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Button variant="ghost" size="sm" onClick={handleBack}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
               </div>
-              <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <div className="flex space-x-2">
+                <Button variant="outline">FINISH LATER</Button>
+                <Button>NEXT STEP</Button>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Progress Steps */}
+          <div className="flex items-center space-x-4 mb-8">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
+                <Check className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium text-primary">Setup</span>
+            </div>
+            <div className="flex-1 h-px bg-primary"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
                 <Users className="w-4 h-4" />
-                <span>Reachable contacts</span>
-                <span className="font-medium">3</span>
-                <Info className="w-4 h-4" />
               </div>
+              <span className="text-sm font-medium text-primary">Audience</span>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="allContacts"
-                  name="targetAudience"
-                  checked={formData.targetAudience === 'all'}
-                  onChange={() => updateFormData({ targetAudience: 'all' })}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="allContacts">All contacts</Label>
+            <div className="flex-1 h-px bg-border"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                3
               </div>
-
-              <div className="flex items-center space-x-3">
-                <input
-                  type="radio"
-                  id="segments"
-                  name="targetAudience"
-                  checked={formData.targetAudience === 'segments'}
-                  onChange={() => updateFormData({ targetAudience: 'segments' })}
-                  className="w-4 h-4"
-                />
-                <Label htmlFor="segments">Lists/Segments</Label>
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </div>
+              <span className="text-sm text-muted-foreground">Content</span>
             </div>
-          </div>
-
-          {formData.targetAudience === 'segments' && (
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  Adobe Campaign -segment 31
-                  <X className="w-3 h-3 ml-1 cursor-pointer" />
-                </Badge>
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            <div className="flex-1 h-px bg-border"></div>
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                4
               </div>
-
-              <div className="relative mb-4">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
-                <Input 
-                  placeholder="Search" 
-                  className="pl-10"
-                />
-              </div>
-
-              <div className="border border-border rounded-lg">
-                <div className="grid grid-cols-4 gap-4 p-3 bg-muted/30 text-sm font-medium text-muted-foreground border-b border-border">
-                  <div>Name</div>
-                  <div>ID No.</div>
-                  <div>No. of Users</div>
-                  <div>Last refreshed on</div>
-                </div>
-                
-                {adobeSegments.map((segment) => (
-                  <div key={segment.id} className="grid grid-cols-4 gap-4 p-3 border-b border-border last:border-b-0 hover:bg-muted/20">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id={segment.id}
-                        checked={formData.selectedSegments.includes(segment.id)}
-                        onCheckedChange={(checked) => {
-                          if (checked) {
-                            updateFormData({
-                              selectedSegments: [...formData.selectedSegments, segment.id]
-                            });
-                          } else {
-                            updateFormData({
-                              selectedSegments: formData.selectedSegments.filter(id => id !== segment.id)
-                            });
-                          }
-                        }}
-                      />
-                      <span className="text-sm">{segment.name}</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground">{segment.id}</div>
-                    <div className="text-sm text-muted-foreground">{segment.users}</div>
-                    <div className="text-sm text-muted-foreground">{segment.lastRefreshed}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
-                <div className="flex items-center space-x-4">
-                  <span>List selected: {formData.selectedSegments.length}</span>
-                  <span>Segment selected: {formData.selectedSegments.length}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Exclude Contacts */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Exclude contacts</h3>
-            
-            <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm">Exclude list/segment</span>
-                <Info className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <Switch 
-                checked={formData.excludeContacts}
-                onCheckedChange={(checked) => updateFormData({ excludeContacts: checked })}
-              />
+              <span className="text-sm text-muted-foreground">Schedule</span>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-between mt-8 pt-6 border-t border-border">
-          <Button variant="outline">FINISH LATER</Button>
-          <Button>NEXT STEP</Button>
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6">
+          <div className="space-y-6 pb-6">
+            {/* Target Audience */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold">Target audience</h3>
+                  <p className="text-sm text-muted-foreground">Select your target audience for the campaign</p>
+                </div>
+                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>Reachable contacts</span>
+                  <span className="font-medium">3</span>
+                  <Info className="w-4 h-4" />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    id="allContacts"
+                    name="targetAudience"
+                    checked={formData.targetAudience === 'all'}
+                    onChange={() => updateFormData({ targetAudience: 'all' })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="allContacts">All contacts</Label>
+                </div>
+
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="radio"
+                    id="segments"
+                    name="targetAudience"
+                    checked={formData.targetAudience === 'segments'}
+                    onChange={() => updateFormData({ targetAudience: 'segments' })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="segments">Lists/Segments</Label>
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                </div>
+              </div>
+            </div>
+
+            {formData.targetAudience === 'segments' && (
+              <div>
+                <div className="flex items-center space-x-2 mb-4">
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    Adobe Campaign -segment 31
+                    <X className="w-3 h-3 ml-1 cursor-pointer" />
+                  </Badge>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </div>
+
+                <div className="relative mb-4">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search" 
+                    className="pl-10"
+                  />
+                </div>
+
+                <div className="border border-border rounded-lg">
+                  <div className="grid grid-cols-4 gap-4 p-3 bg-muted/30 text-sm font-medium text-muted-foreground border-b border-border">
+                    <div>Name</div>
+                    <div>ID No.</div>
+                    <div>No. of Users</div>
+                    <div>Last refreshed on</div>
+                  </div>
+                  
+                  {adobeSegments.map((segment) => (
+                    <div key={segment.id} className="grid grid-cols-4 gap-4 p-3 border-b border-border last:border-b-0 hover:bg-muted/20">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id={segment.id}
+                          checked={formData.selectedSegments.includes(segment.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              updateFormData({
+                                selectedSegments: [...formData.selectedSegments, segment.id]
+                              });
+                            } else {
+                              updateFormData({
+                                selectedSegments: formData.selectedSegments.filter(id => id !== segment.id)
+                              });
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{segment.name}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground">{segment.id}</div>
+                      <div className="text-sm text-muted-foreground">{segment.users}</div>
+                      <div className="text-sm text-muted-foreground">{segment.lastRefreshed}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
+                  <div className="flex items-center space-x-4">
+                    <span>List selected: {formData.selectedSegments.length}</span>
+                    <span>Segment selected: {formData.selectedSegments.length}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Exclude Contacts */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Exclude contacts</h3>
+              
+              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">Exclude list/segment</span>
+                  <Info className="w-4 h-4 text-muted-foreground" />
+                </div>
+                <Switch 
+                  checked={formData.excludeContacts}
+                  onCheckedChange={(checked) => updateFormData({ excludeContacts: checked })}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -826,7 +840,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' ? 'max-w-6xl' : 'max-w-2xl'} p-0`}>
+      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' ? 'max-w-6xl h-[90vh]' : 'max-w-2xl'} p-0`}>
         {currentStep === 'start' && renderStartStep()}
         {currentStep === 'channels' && renderChannelsStep()}
         {currentStep === 'setup' && renderSetupStep()}
