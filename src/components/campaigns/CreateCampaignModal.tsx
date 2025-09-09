@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { 
   ChevronLeft,
   MessageSquare, 
@@ -48,6 +50,13 @@ interface CampaignFormData {
   excludeContacts: boolean;
 }
 
+interface AdobeSegment {
+  id: string;
+  name: string;
+  users: number;
+  lastRefreshed: string;
+}
+
 const businessNumbers = [
   {
     id: 'netcore',
@@ -58,18 +67,18 @@ const businessNumbers = [
   }
 ];
 
-const adobeSegments = [
+const adobeSegments: AdobeSegment[] = [
   {
     id: '66',
     name: 'Test 32 Africa',
     users: 295,
-    lastRefreshed: '2025-09-09 11:50:50'
+    lastRefreshed: '2025-09-09 12:42:05'
   },
   {
     id: '68', 
     name: 'test-segs',
     users: 43,
-    lastRefreshed: '2025-09-09 11:21:31'
+    lastRefreshed: '2025-09-09 12:11:04'
   },
   {
     id: '164',
@@ -78,6 +87,176 @@ const adobeSegments = [
     lastRefreshed: '2025-09-09 01:39:08'
   }
 ];
+
+// Segments Dropdown Component
+const SegmentsDropdown = ({ 
+  selectedSegments, 
+  onSelectionChange 
+}: { 
+  selectedSegments: string[];
+  onSelectionChange: (segments: string[]) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const filteredSegments = useMemo(() => {
+    return adobeSegments.filter(segment =>
+      segment.name.toLowerCase().includes(debouncedQuery.toLowerCase()) ||
+      segment.id.includes(debouncedQuery)
+    );
+  }, [debouncedQuery]);
+
+  const selectedSegmentsData = useMemo(() => {
+    return adobeSegments.filter(segment => selectedSegments.includes(segment.id));
+  }, [selectedSegments]);
+
+  const handleToggleSegment = useCallback((segmentId: string) => {
+    const newSelection = selectedSegments.includes(segmentId)
+      ? selectedSegments.filter(id => id !== segmentId)
+      : [...selectedSegments, segmentId];
+    onSelectionChange(newSelection);
+  }, [selectedSegments, onSelectionChange]);
+
+  const handleSelectAll = useCallback(() => {
+    onSelectionChange(filteredSegments.map(s => s.id));
+  }, [filteredSegments, onSelectionChange]);
+
+  const handleClearAll = useCallback(() => {
+    onSelectionChange([]);
+  }, [onSelectionChange]);
+
+  const handleRemoveSegment = useCallback((segmentId: string) => {
+    onSelectionChange(selectedSegments.filter(id => id !== segmentId));
+  }, [selectedSegments, onSelectionChange]);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between min-h-[40px] h-auto p-3"
+        >
+          <div className="flex flex-wrap gap-1 items-center flex-1">
+            {selectedSegmentsData.length === 0 ? (
+              <span className="text-muted-foreground">List / Segment</span>
+            ) : (
+              selectedSegmentsData.map((segment) => (
+                <Badge
+                  key={segment.id}
+                  variant="secondary"
+                  className="bg-blue-100 text-blue-800 flex items-center space-x-1"
+                >
+                  <span>{segment.name}</span>
+                  <X 
+                    className="w-3 h-3 cursor-pointer hover:bg-blue-200 rounded-full" 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemoveSegment(segment.id);
+                    }}
+                  />
+                </Badge>
+              ))
+            )}
+          </div>
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-full min-w-[600px] p-0" align="start">
+        <div className="flex flex-col max-h-[400px]">
+          {/* Search Input */}
+          <div className="p-3 border-b">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                placeholder="Search segments..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          {/* Segments Table */}
+          <div className="flex-1 overflow-y-auto">
+            {/* Header */}
+            <div className="grid grid-cols-4 gap-4 p-3 bg-muted/30 text-sm font-medium text-muted-foreground border-b sticky top-0">
+              <div>Name</div>
+              <div>ID No.</div>
+              <div>No. of Users</div>
+              <div>Last refreshed on</div>
+            </div>
+            
+            {/* Rows */}
+            {filteredSegments.length === 0 ? (
+              <div className="p-6 text-center text-muted-foreground">
+                No segments found
+              </div>
+            ) : (
+              filteredSegments.map((segment) => (
+                <div 
+                  key={segment.id} 
+                  className="grid grid-cols-4 gap-4 p-3 border-b hover:bg-muted/20 cursor-pointer"
+                  onClick={() => handleToggleSegment(segment.id)}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      checked={selectedSegments.includes(segment.id)}
+                      onChange={() => handleToggleSegment(segment.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span className="text-sm">{segment.name}</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground">{segment.id}</div>
+                  <div className="text-sm text-muted-foreground">{segment.users}</div>
+                  <div className="text-sm text-muted-foreground">{segment.lastRefreshed}</div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between p-3 border-t bg-muted/20">
+            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+              <span>List selected: 0</span>
+              <span>Segment selected: {selectedSegments.length}</span>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSelectAll}
+                disabled={filteredSegments.length === 0}
+              >
+                Select all
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClearAll}
+                disabled={selectedSegments.length === 0}
+              >
+                Clear all
+              </Button>
+            </div>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const startOptions = [
   {
@@ -266,6 +445,10 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     excludeContacts: false
   });
 
+  const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  }, []);
+
   const handleStartOptionClick = (optionId: string) => {
     if (optionId === 'engage') {
       setCurrentStep('channels');
@@ -311,10 +494,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       excludeContacts: false
     });
     onClose();
-  };
-
-  const updateFormData = (updates: Partial<CampaignFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
   };
 
   const removeTag = (tagToRemove: string) => {
@@ -726,7 +905,9 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                   <Users className="w-4 h-4" />
                   <span>Reachable contacts</span>
-                  <span className="font-medium">3</span>
+                  <span className="font-medium">{formData.selectedSegments.length > 0 ? 
+                    adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                      .reduce((sum, s) => sum + s.users, 0) : 0}</span>
                   <Info className="w-4 h-4" />
                 </div>
               </div>
@@ -761,61 +942,13 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
             {formData.targetAudience === 'segments' && (
               <div>
-                <div className="flex items-center space-x-2 mb-4">
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    Adobe Campaign -segment 31
-                    <X className="w-3 h-3 ml-1 cursor-pointer" />
-                  </Badge>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
-
-                <div className="relative mb-4">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search" 
-                    className="pl-10"
-                  />
-                </div>
-
-                <div className="border border-border rounded-lg">
-                  <div className="grid grid-cols-4 gap-4 p-3 bg-muted/30 text-sm font-medium text-muted-foreground border-b border-border">
-                    <div>Name</div>
-                    <div>ID No.</div>
-                    <div>No. of Users</div>
-                    <div>Last refreshed on</div>
-                  </div>
-                  
-                  {adobeSegments.map((segment) => (
-                    <div key={segment.id} className="grid grid-cols-4 gap-4 p-3 border-b border-border last:border-b-0 hover:bg-muted/20">
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          id={segment.id}
-                          checked={formData.selectedSegments.includes(segment.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              updateFormData({
-                                selectedSegments: [...formData.selectedSegments, segment.id]
-                              });
-                            } else {
-                              updateFormData({
-                                selectedSegments: formData.selectedSegments.filter(id => id !== segment.id)
-                              });
-                            }
-                          }}
-                        />
-                        <span className="text-sm">{segment.name}</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">{segment.id}</div>
-                      <div className="text-sm text-muted-foreground">{segment.users}</div>
-                      <div className="text-sm text-muted-foreground">{segment.lastRefreshed}</div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
-                  <div className="flex items-center space-x-4">
-                    <span>List selected: {formData.selectedSegments.length}</span>
-                    <span>Segment selected: {formData.selectedSegments.length}</span>
+                <div className="mb-4">
+                  <Label>Select Lists/Segments</Label>
+                  <div className="mt-2">
+                    <SegmentsDropdown
+                      selectedSegments={formData.selectedSegments}
+                      onSelectionChange={(segments) => updateFormData({ selectedSegments: segments })}
+                    />
                   </div>
                 </div>
               </div>
