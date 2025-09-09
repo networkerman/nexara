@@ -569,6 +569,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   const handleStartOptionClick = (optionId: string) => {
     if (optionId === 'engage') {
       setCurrentStep('channels');
+      setShowPersonalizationDrawer(true);
     }
   };
 
