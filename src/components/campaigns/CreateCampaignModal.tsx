@@ -1371,28 +1371,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
         </p>
       </div>
       
-      <div className="p-6 space-y-4">
-        {personalizationOptions.map((option) => (
-          <div key={option.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <option.icon className="w-4 h-4 text-primary" />
-                </div>
-                <div>
-                  <h4 className="font-medium">{option.title}</h4>
-                </div>
-              </div>
-              <Switch checked={option.enabled} />
-            </div>
-            <p className="text-sm text-muted-foreground ml-11">{option.description}</p>
-          </div>
-        ))}
-        
-        <div className="pt-4 border-t border-border">
-          <Button className="w-full">Apply Personalization Settings</Button>
-        </div>
-      </div>
     </div>
   );
 
