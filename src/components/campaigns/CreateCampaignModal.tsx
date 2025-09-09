@@ -1521,9 +1521,9 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
         {formData.retryEnabled && (
           <Alert className="mt-4 border-info bg-info/10">
             <Info className="h-4 w-4 text-info" />
-            <AlertDescription className="text-info-foreground">
+            <AlertDescription className="text-foreground">
               <strong>Retry plan scheduled</strong> (24h cadence, up to {formData.retryDuration} days). 
-              Execution via Adobe; metrics sync back to Adobe. No customer data stored on Netcore.
+              Execution via Netcore; metrics sync back to Adobe. No customer data stored on Netcore.
             </AlertDescription>
           </Alert>
         )}
