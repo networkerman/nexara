@@ -10,6 +10,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Slider } from '@/components/ui/slider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   ChevronLeft,
   MessageSquare, 
@@ -25,7 +28,12 @@ import {
   Info,
   RefreshCw,
   ChevronDown,
-  Check
+  Check,
+  Send,
+  Calendar,
+  Clock,
+  Settings,
+  Edit
 } from 'lucide-react';
 
 interface CreateCampaignModalProps {
@@ -33,7 +41,7 @@ interface CreateCampaignModalProps {
   onClose: () => void;
 }
 
-type Step = 'start' | 'channels' | 'setup' | 'audience';
+type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
 
 interface CampaignFormData {
   campaignName: string;
@@ -48,6 +56,15 @@ interface CampaignFormData {
   targetAudience: 'all' | 'segments';
   selectedSegments: string[];
   excludeContacts: boolean;
+  selectedTemplate: string;
+  scheduleType: 'now' | 'later' | 'optimize';
+  startTime: string;
+  endTime: string;
+  timezone: string;
+  frequencyCap: boolean;
+  controlGroup: boolean;
+  controlGroupPercentage: number;
+  specificTime: string;
 }
 
 interface AdobeSegment {
@@ -64,6 +81,24 @@ const businessNumbers = [
     quality: 'HIGH',
     messagingLimit: '10000 Messaging limit per 24hrs',
     lastUpdated: 'Sep 09, 2025 12:03 PM'
+  }
+];
+
+const whatsappTemplates = [
+  {
+    id: 'static_carousel_recs_url',
+    name: 'static_carousel_recs_url',
+    description: 'Carousel template for product recommendations'
+  },
+  {
+    id: 'welcome_message',
+    name: 'welcome_message',
+    description: 'Welcome message template'
+  },
+  {
+    id: 'promotional_offer',
+    name: 'promotional_offer', 
+    description: 'Promotional offer template'
   }
 ];
 
@@ -317,7 +352,7 @@ const channelOptions = [
   }
 ];
 
-const SummaryPanel = ({ formData }: { formData: CampaignFormData }) => {
+const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; currentStep: Step }) => {
   const getSelectedSegmentData = () => {
     return adobeSegments.filter(segment => 
       formData.selectedSegments.includes(segment.id)
@@ -414,6 +449,14 @@ const SummaryPanel = ({ formData }: { formData: CampaignFormData }) => {
             <span className="text-sm font-medium">Content</span>
             <ChevronDown className="w-4 h-4" />
           </div>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            {formData.selectedTemplate && (
+              <div>
+                <span className="font-medium text-foreground">Template:</span>
+                <div>{formData.selectedTemplate}</div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Schedule Summary */}
@@ -421,6 +464,40 @@ const SummaryPanel = ({ formData }: { formData: CampaignFormData }) => {
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium">Schedule</span>
             <ChevronDown className="w-4 h-4" />
+          </div>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            {currentStep === 'schedule' && (
+              <>
+                <div>
+                  <span className="font-medium text-foreground">When to send:</span>
+                  <div>{formData.scheduleType === 'optimize' ? 'Optimize with Co-marketer' : formData.scheduleType}</div>
+                </div>
+                {formData.scheduleType === 'optimize' && (
+                  <>
+                    <div>
+                      <span className="font-medium text-foreground">Start time:</span>
+                      <div>{formData.startTime}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-foreground">End time:</span>
+                      <div>{formData.endTime}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-foreground">Send at end time:</span>
+                      <div>{formData.endTime}</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-foreground">Control group:</span>
+                      <div>{formData.controlGroupPercentage}%</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-foreground">Specific time:</span>
+                      <div>{formData.specificTime}</div>
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -442,7 +519,16 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     deduplication: true,
     targetAudience: 'segments',
     selectedSegments: [],
-    excludeContacts: false
+    excludeContacts: false,
+    selectedTemplate: '',
+    scheduleType: 'optimize',
+    startTime: 'Sep 09, 2025 01:00 pm',
+    endTime: 'Sep 10, 2025 12:00 pm',
+    timezone: 'Asia/Calcutta | Sep 09, 2025 12:57 pm',
+    frequencyCap: true,
+    controlGroup: true,
+    controlGroupPercentage: 5,
+    specificTime: 'Sep 09, 2025 02:00 pm'
   });
 
   const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
@@ -468,12 +554,24 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       setCurrentStep('channels');
     } else if (currentStep === 'audience') {
       setCurrentStep('setup');
+    } else if (currentStep === 'content') {
+      setCurrentStep('audience');
+    } else if (currentStep === 'schedule') {
+      setCurrentStep('content');
+    } else if (currentStep === 'preview') {
+      setCurrentStep('schedule');
     }
   };
 
   const handleNext = () => {
     if (currentStep === 'setup') {
       setCurrentStep('audience');
+    } else if (currentStep === 'audience') {
+      setCurrentStep('content');
+    } else if (currentStep === 'content') {
+      setCurrentStep('schedule');
+    } else if (currentStep === 'schedule') {
+      setCurrentStep('preview');
     }
   };
 
@@ -491,7 +589,16 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       deduplication: true,
       targetAudience: 'segments',
       selectedSegments: [],
-      excludeContacts: false
+      excludeContacts: false,
+      selectedTemplate: '',
+      scheduleType: 'optimize',
+      startTime: 'Sep 09, 2025 01:00 pm',
+      endTime: 'Sep 10, 2025 12:00 pm',
+      timezone: 'Asia/Calcutta | Sep 09, 2025 12:57 pm',
+      frequencyCap: true,
+      controlGroup: true,
+      controlGroupPercentage: 5,
+      specificTime: 'Sep 09, 2025 02:00 pm'
     });
     onClose();
   };
@@ -501,6 +608,699 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       tags: formData.tags.filter(tag => tag !== tagToRemove)
     });
   };
+
+  // Template Selection Dropdown Component
+  const TemplateDropdown = ({ selectedTemplate, onTemplateChange }: { 
+    selectedTemplate: string;
+    onTemplateChange: (template: string) => void;
+  }) => {
+    const [open, setOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedQuery, setDebouncedQuery] = useState('');
+
+    useEffect(() => {
+      const timer = setTimeout(() => {
+        setDebouncedQuery(searchQuery);
+      }, 300);
+      return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    const filteredTemplates = useMemo(() => {
+      return whatsappTemplates.filter(template =>
+        template.name.toLowerCase().includes(debouncedQuery.toLowerCase())
+      );
+    }, [debouncedQuery]);
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" role="combobox" className="w-full justify-between">
+            {selectedTemplate || "Select template"}
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0">
+          <Command>
+            <CommandInput 
+              placeholder="Search templates..." 
+              value={searchQuery}
+              onValueChange={setSearchQuery}
+            />
+            <CommandEmpty>No templates found.</CommandEmpty>
+            <CommandGroup>
+              {filteredTemplates.map((template) => (
+                <CommandItem
+                  key={template.id}
+                  value={template.name}
+                  onSelect={() => {
+                    onTemplateChange(template.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      selectedTemplate === template.id ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  {template.name}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  };
+
+  const renderContentStep = () => (
+    <div className="h-screen flex gap-6">
+      <div className="flex-1 flex flex-col">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-background border-b border-border">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Button variant="ghost" size="sm" onClick={handleBack}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline">FINISH LATER</Button>
+                  <Button onClick={handleNext}>NEXT STEP</Button>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {/* Progress Steps */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Setup</span>
+              </div>
+              <div className="flex-1 h-px bg-primary"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Audience</span>
+              </div>
+              <div className="flex-1 h-px bg-primary"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  <MessageSquareText className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Content</span>
+              </div>
+              <div className="flex-1 h-px bg-border"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
+                  4
+                </div>
+                <span className="text-sm text-muted-foreground">Schedule</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-6 pt-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Select template</h3>
+              <p className="text-sm text-muted-foreground mb-4">Select pre-approved message for whatsapp campaign</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="template">Template *</Label>
+                  <div className="mt-1">
+                    <TemplateDropdown
+                      selectedTemplate={formData.selectedTemplate}
+                      onTemplateChange={(template) => updateFormData({ selectedTemplate: template })}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Preview Panel */}
+      <div className="w-80 border-l border-border bg-muted/20 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold">Preview</h3>
+          <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <Send className="w-4 h-4" />
+            <span>SEND TEST MESSAGE</span>
+          </Button>
+        </div>
+        
+        <div className="mb-4">
+          <h4 className="font-medium mb-2">See how your customers will receive it! 😊</h4>
+          <p className="text-sm text-muted-foreground">
+            Note: Test your template post-approval by Meta to confirm accuracy before sending it to users.
+          </p>
+        </div>
+
+        {/* Phone Mockup */}
+        <div className="flex justify-center">
+          <div className="relative w-64 h-[500px] bg-black rounded-[2rem] p-2">
+            <div className="w-full h-full bg-white rounded-[1.5rem] overflow-hidden">
+              {/* WhatsApp Header */}
+              <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                  <MessageCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <span className="font-medium">Netcore Cloud</span>
+              </div>
+              
+              {/* Message Content */}
+              <div className="p-4 bg-gray-50 flex-1 h-full">
+                {formData.selectedTemplate ? (
+                  <div className="bg-white rounded-lg p-3 max-w-[200px] ml-auto shadow-sm">
+                    <p className="text-sm mb-2">
+                      Check out our top deals and grab your favorites before the stock runs out!
+                    </p>
+                    
+                    <div className="flex space-x-2 mb-3">
+                      <div className="flex-1 bg-green-100 rounded-lg p-2">
+                        <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
+                        <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                        <div className="flex flex-col space-y-1 mt-2">
+                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
+                            🔗 Visit Website
+                          </Button>
+                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
+                            🔗 View Product
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex-1 bg-green-100 rounded-lg p-2">
+                        <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
+                        <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                        <div className="flex flex-col space-y-1 mt-2">
+                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
+                            🔗 Visit Website
+                          </Button>
+                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
+                            🔗 View Product
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs text-gray-500">
+                      <span>😊</span>
+                      <span>🗂️</span>
+                      <span>📎</span>
+                      <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                        ↓
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted-foreground text-sm">
+                    Select a template to see preview
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderScheduleStep = () => (
+    <div className="h-screen flex gap-6">
+      <div className="flex-1 flex flex-col">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-background border-b border-border">
+          <div className="p-6 pb-4">
+            <DialogHeader className="mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Button variant="ghost" size="sm" onClick={handleBack}>
+                    <ChevronLeft className="w-4 h-4" />
+                  </Button>
+                  <DialogTitle className="text-xl font-semibold">WhatsApp campaign</DialogTitle>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline">FINISH LATER</Button>
+                  <Button onClick={handleNext}>SAVE AND PREVIEW</Button>
+                </div>
+              </div>
+            </DialogHeader>
+
+            {/* Progress Steps */}
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Setup</span>
+              </div>
+              <div className="flex-1 h-px bg-primary"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Audience</span>
+              </div>
+              <div className="flex-1 h-px bg-primary"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  <Check className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Content</span>
+              </div>
+              <div className="flex-1 h-px bg-primary"></div>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <span className="text-sm font-medium text-primary">Schedule</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="space-y-6 pt-6">
+            {/* Schedule Campaign */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Schedule campaign</h3>
+                <div className="text-sm text-muted-foreground">
+                  Timezone: {formData.timezone}
+                </div>
+              </div>
+
+              {/* Frequency Cap */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-orange-50 border-orange-200">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">Frequency cap</span>
+                  </div>
+                  <Switch 
+                    checked={formData.frequencyCap}
+                    onCheckedChange={(checked) => updateFormData({ frequencyCap: checked })}
+                  />
+                </div>
+                {formData.frequencyCap && (
+                  <p className="text-sm text-orange-600 mt-2">
+                    Running 2 consecutive campaigns within 30 minutes time-frame could potentially bypass the frequency cap check due to data synchronisation delay.
+                  </p>
+                )}
+              </div>
+
+              {/* When to send */}
+              <div>
+                <h4 className="font-medium mb-4">When to send</h4>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="sendNow"
+                      name="scheduleType"
+                      checked={formData.scheduleType === 'now'}
+                      onChange={() => updateFormData({ scheduleType: 'now' })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="sendNow">Send now</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="sendLater"
+                      name="scheduleType"
+                      checked={formData.scheduleType === 'later'}
+                      onChange={() => updateFormData({ scheduleType: 'later' })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="sendLater">Send later</Label>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="radio"
+                      id="optimize"
+                      name="scheduleType"
+                      checked={formData.scheduleType === 'optimize'}
+                      onChange={() => updateFormData({ scheduleType: 'optimize' })}
+                      className="w-4 h-4"
+                    />
+                    <Label htmlFor="optimize">Optimize with Co-marketer</Label>
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </div>
+
+                {(formData.scheduleType === 'later' || formData.scheduleType === 'optimize') && (
+                  <div className="mt-4 grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="startTime">Start time *</Label>
+                      <Input
+                        id="startTime"
+                        value={formData.startTime}
+                        onChange={(e) => updateFormData({ startTime: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="endTime">End time *</Label>
+                      <Input
+                        id="endTime"
+                        value={formData.endTime}
+                        onChange={(e) => updateFormData({ endTime: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    For unpredictable users and users whose preferred time doesn't fall in the selected time range
+                  </p>
+                  <Select value="end">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="end">Send at end time</SelectItem>
+                      <SelectItem value="start">Send at start time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Control Group */}
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center space-x-2">
+                    <h4 className="font-medium">Control group</h4>
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <Switch 
+                    checked={formData.controlGroup}
+                    onCheckedChange={(checked) => updateFormData({ controlGroup: checked })}
+                  />
+                </div>
+                
+                {formData.controlGroup && (
+                  <div>
+                    <div className="mb-4">
+                      <Label>Select control group</Label>
+                      <div className="mt-2">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm">1%</span>
+                          <Slider
+                            value={[formData.controlGroupPercentage]}
+                            onValueChange={(value) => updateFormData({ controlGroupPercentage: value[0] })}
+                            max={99}
+                            min={1}
+                            step={1}
+                            className="flex-1"
+                          />
+                          <span className="text-sm">99%</span>
+                        </div>
+                        <div className="text-center text-sm text-muted-foreground mt-1">
+                          {formData.controlGroupPercentage}%
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h5 className="font-medium">Specific time</h5>
+                        <Info className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <Label htmlFor="specificTime">Set default time *</Label>
+                        <Input
+                          id="specificTime"
+                          value={formData.specificTime}
+                          onChange={(e) => updateFormData({ specificTime: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div className="w-80 overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <SummaryPanel formData={formData} currentStep={currentStep} />
+      </div>
+    </div>
+  );
+
+  const renderPreviewStep = () => (
+    <div className="p-6">
+      <DialogHeader className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Button variant="ghost" size="sm" onClick={handleBack}>
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <DialogTitle className="text-xl font-semibold">Preview of Adobe</DialogTitle>
+          </div>
+          <Button>SAVE & PUBLISH</Button>
+        </div>
+      </DialogHeader>
+
+      <div className="grid grid-cols-2 gap-6">
+        {/* Left Column */}
+        <div className="space-y-4">
+          {/* Setup Details */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Settings className="w-4 h-4" />
+                <CardTitle className="text-sm">Setup details</CardTitle>
+              </div>
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                <Edit className="w-4 h-4 mr-1" />
+                EDIT
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Campaign ID:</span>
+                  <span>263</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Campaign name:</span>
+                  <span>{formData.campaignName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Business number:</span>
+                  <span>Netcore Solutions Support (+91 2249757637)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Link tracking:</span>
+                  <span>Enabled</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tags:</span>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    {formData.tags[0]}
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Audience */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Users className="w-4 h-4" />
+                <CardTitle className="text-sm">Audience</CardTitle>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-sm">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="text-muted-foreground">Reachable contacts</span>
+                  <span className="font-medium">{formData.selectedSegments.length > 0 ? 
+                    adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+                      .reduce((sum, s) => sum + s.users, 0) : 0}</span>
+                </div>
+                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                  <Edit className="w-4 h-4 mr-1" />
+                  EDIT
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Selected contacts</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Segments/Lists:</span>
+                  {formData.selectedSegments.length > 0 && (
+                    <div className="mt-1">
+                      {adobeSegments
+                        .filter(s => formData.selectedSegments.includes(s.id))
+                        .map(segment => (
+                          <Badge key={segment.id} variant="secondary" className="mr-1">
+                            ID: {segment.id} Test {segment.name}
+                          </Badge>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Schedule */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-4 h-4" />
+                <CardTitle className="text-sm">Schedule</CardTitle>
+              </div>
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                <Edit className="w-4 h-4 mr-1" />
+                EDIT
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Schedule campaign</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Frequency cap:</span>
+                  <span>{formData.frequencyCap ? 'On' : 'Off'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">When to send:</span>
+                  <span className="capitalize">{formData.scheduleType === 'optimize' ? 'Optimize with Co-marketer' : formData.scheduleType}</span>
+                </div>
+                {formData.scheduleType === 'optimize' && (
+                  <>
+                    <div className="text-xs text-muted-foreground">
+                      Start time - {formData.startTime}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      End time - {formData.endTime}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Send at end time - {formData.endTime}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Control group - {formData.controlGroupPercentage}%
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Specific time - {formData.specificTime}
+                    </div>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column */}
+        <div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <MessageSquareText className="w-4 h-4" />
+                <CardTitle className="text-sm">Content</CardTitle>
+              </div>
+              <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                <Edit className="w-4 h-4 mr-1" />
+                EDIT
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm text-muted-foreground">Template Name:</span>
+                  <div className="font-medium">{formData.selectedTemplate}</div>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  Note: Test your template post-approval by Meta to confirm accuracy before sending it to users.
+                </div>
+
+                {/* Phone Preview */}
+                <div className="flex justify-center">
+                  <div className="relative w-48 h-80 bg-black rounded-2xl p-1">
+                    <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
+                      <div className="bg-green-600 text-white p-2 flex items-center space-x-2 text-xs">
+                        <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                          <MessageCircle className="w-4 h-4 text-green-600" />
+                        </div>
+                        <span className="font-medium">Netcore Cloud</span>
+                      </div>
+                      
+                      <div className="p-2 bg-gray-50 h-full">
+                        <div className="bg-white rounded-lg p-2 text-xs shadow-sm">
+                          <p className="mb-2">Check out our top deals and grab your favorites before the stock runs out!</p>
+                          
+                          <div className="grid grid-cols-2 gap-1 mb-2">
+                            <div className="bg-green-100 rounded p-1">
+                              <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
+                              <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                              <div className="flex flex-col space-y-0.5 mt-1">
+                                <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
+                                <div className="text-[8px] text-blue-600">🔗 View Product</div>
+                              </div>
+                            </div>
+                            <div className="bg-green-100 rounded p-1">
+                              <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
+                              <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                              <div className="flex flex-col space-y-0.5 mt-1">
+                                <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
+                                <div className="text-[8px] text-blue-600">🔗 View Product</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between text-[8px] text-gray-500">
+                            <span>😊</span>
+                            <span>📎</span>
+                            <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center">
+                              ✓
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Adobe Sync Banner */}
+      <Alert className="mt-6 border-blue-200 bg-blue-50">
+        <Info className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          Once the campaign is fully sent out and send out; Sent/delivery/read/click/fail metrics will auto-sync back to Adobe. No customer data stored on Netcore.
+        </AlertDescription>
+      </Alert>
+    </div>
+  );
 
   const renderStartStep = () => (
     <div className="p-6">
@@ -833,7 +1633,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       </div>
       
       <div className="w-80 overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <SummaryPanel formData={formData} />
+        <SummaryPanel formData={formData} currentStep={currentStep} />
       </div>
     </div>
   );
@@ -974,18 +1774,21 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       </div>
       
       <div className="w-80 overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <SummaryPanel formData={formData} />
+        <SummaryPanel formData={formData} currentStep={currentStep} />
       </div>
     </div>
   );
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
+      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
         {currentStep === 'start' && renderStartStep()}
         {currentStep === 'channels' && renderChannelsStep()}
         {currentStep === 'setup' && renderSetupStep()}
         {currentStep === 'audience' && renderAudienceStep()}
+        {currentStep === 'content' && renderContentStep()}
+        {currentStep === 'schedule' && renderScheduleStep()}
+        {currentStep === 'preview' && renderPreviewStep()}
       </DialogContent>
     </Dialog>
   );
