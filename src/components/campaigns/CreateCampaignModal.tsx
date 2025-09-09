@@ -33,7 +33,11 @@ import {
   Calendar,
   Clock,
   Settings,
-  Edit
+  Edit,
+  ChevronRight,
+  Palette,
+  Target,
+  Zap
 } from 'lucide-react';
 
 interface CreateCampaignModalProps {
@@ -1108,6 +1112,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
   const [showProgressPopup, setShowProgressPopup] = useState(false);
   const [currentProgressStep, setCurrentProgressStep] = useState(0);
+  const [showPersonalizationDrawer, setShowPersonalizationDrawer] = useState(false);
 
   const progressSteps = [
     "Campaign Setup Done",
@@ -1118,6 +1123,75 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     "Metrics will auto sync to Adobe in sometime",
     "No customer data stored in Netcore"
   ];
+
+  const personalizationOptions = [
+    {
+      id: 'ai-optimization',
+      title: 'AI Optimization',
+      description: 'Automatically optimize send times and content',
+      icon: Zap,
+      enabled: true
+    },
+    {
+      id: 'dynamic-content',
+      title: 'Dynamic Content',
+      description: 'Personalize content based on user behavior',
+      icon: Target,
+      enabled: false
+    },
+    {
+      id: 'custom-branding',
+      title: 'Custom Branding',
+      description: 'Apply your brand colors and styling',
+      icon: Palette,
+      enabled: true
+    }
+  ];
+
+  const PersonalizationDrawer = () => (
+    <div className={`fixed right-0 top-0 h-full w-80 bg-background border-l border-border z-40 transform transition-transform duration-300 ease-in-out ${
+      showPersonalizationDrawer ? 'translate-x-0' : 'translate-x-full'
+    }`}>
+      <div className="p-6 border-b border-border">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Personalization Options</h3>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setShowPersonalizationDrawer(false)}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        <p className="text-sm text-muted-foreground mt-2">
+          Enhance your campaign with advanced personalization features
+        </p>
+      </div>
+      
+      <div className="p-6 space-y-4">
+        {personalizationOptions.map((option) => (
+          <div key={option.id} className="p-4 border border-border rounded-lg hover:bg-muted/20 transition-colors">
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                  <option.icon className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <h4 className="font-medium">{option.title}</h4>
+                </div>
+              </div>
+              <Switch checked={option.enabled} />
+            </div>
+            <p className="text-sm text-muted-foreground ml-11">{option.description}</p>
+          </div>
+        ))}
+        
+        <div className="pt-4 border-t border-border">
+          <Button className="w-full">Apply Personalization Settings</Button>
+        </div>
+      </div>
+    </div>
+  );
 
   const handlePublish = () => {
     updateFormData({ isPublished: true });
@@ -1489,11 +1563,25 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       </div>
 
       <div className="mt-8 pt-6 border-t border-border">
-        <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-          Personalization
-        </h3>
-        <div className="text-center text-muted-foreground text-sm">
-          Additional personalization options available
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">
+              Personalization
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Advanced options to enhance your campaign
+            </p>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowPersonalizationDrawer(true)}
+            className="flex items-center space-x-2"
+          >
+            <Settings className="w-4 h-4" />
+            <span>Configure</span>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </div>
@@ -1898,16 +1986,29 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   );
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
-        {currentStep === 'start' && renderStartStep()}
-        {currentStep === 'channels' && renderChannelsStep()}
-        {currentStep === 'setup' && renderSetupStep()}
-        {currentStep === 'audience' && renderAudienceStep()}
-        {currentStep === 'content' && renderContentStep()}
-        {currentStep === 'schedule' && renderScheduleStep()}
-        {currentStep === 'preview' && renderPreviewStep()}
-      </DialogContent>
-    </Dialog>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
+          {currentStep === 'start' && renderStartStep()}
+          {currentStep === 'channels' && renderChannelsStep()}
+          {currentStep === 'setup' && renderSetupStep()}
+          {currentStep === 'audience' && renderAudienceStep()}
+          {currentStep === 'content' && renderContentStep()}
+          {currentStep === 'schedule' && renderScheduleStep()}
+          {currentStep === 'preview' && renderPreviewStep()}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Personalization Drawer Backdrop */}
+      {showPersonalizationDrawer && (
+        <div 
+          className="fixed inset-0 bg-black/20 z-30 animate-fade-in"
+          onClick={() => setShowPersonalizationDrawer(false)}
+        />
+      )}
+      
+      {/* Personalization Drawer */}
+      <PersonalizationDrawer />
+    </>
   );
 }
