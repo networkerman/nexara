@@ -131,19 +131,19 @@ const bfsiConversionEvents = [
 const adobeSegments: AdobeSegment[] = [
   {
     id: '66',
-    name: 'Test 32 Africa',
+    name: 'Adobe Segment 1',
     users: 295,
     lastRefreshed: '2025-09-09 12:42:05'
   },
   {
     id: '68', 
-    name: 'test-segs',
+    name: 'Adobe Segment 2',
     users: 43,
     lastRefreshed: '2025-09-09 12:11:04'
   },
   {
     id: '164',
-    name: 'Unique-RCS-Sent',
+    name: 'Adobe Segment 3',
     users: 0,
     lastRefreshed: '2025-09-09 01:39:08'
   }
