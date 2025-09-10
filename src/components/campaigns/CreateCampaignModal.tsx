@@ -54,17 +54,28 @@ interface CreateCampaignModalProps {
 
 type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
 type StepKey = 'setup' | 'audience' | 'content' | 'schedule';
+type StepIndex = 0 | 1 | 2 | 3;
+type StepStatus = 'idle' | 'editing' | 'valid' | 'invalid';
 
 type SamplingMethod = 'RANDOM_SAMPLE' | 'HEPF';
 type SendMode = 'OPTIMIZE' | 'SPECIFIC_TIME' | 'SEND_AT_END';
 
-interface StepProgress {
-  completed: boolean;
+interface StepMeta {
+  index: StepIndex;
+  status: StepStatus;
   touched: boolean;
+  errors?: string[];
 }
 
-interface WizardState {
-  progress: Record<StepKey, StepProgress>;
+interface WizardProgress {
+  current: StepKey;
+  steps: Record<StepKey, StepMeta>;
+}
+
+interface WizardPersist {
+  progress: WizardProgress;
+  campaign: Partial<CampaignFormData>;
+  timestamp: number;
 }
 
 interface ScheduleConfig {
@@ -809,72 +820,111 @@ const normalizeCampaignData = (data: any): CampaignFormData => {
   return normalized;
 };
 
+const WIZARD_STORAGE_KEY = 'hdfc-campaign-wizard-state';
+const WIZARD_STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
+
 export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('start');
   const [legacyMigrationNote, setLegacyMigrationNote] = useState<string | null>(null);
   
-  // Wizard state management
-  const [wizardState, setWizardState] = useState<WizardState>({
-    progress: {
-      setup: { completed: false, touched: false },
-      audience: { completed: false, touched: false },
-      content: { completed: false, touched: false },
-      schedule: { completed: false, touched: false }
+  // Initialize wizard progress with proper state model
+  const initializeWizardProgress = (): WizardProgress => ({
+    current: 'setup',
+    steps: {
+      setup: { index: 0, status: 'idle', touched: false },
+      audience: { index: 1, status: 'idle', touched: false },
+      content: { index: 2, status: 'idle', touched: false },
+      schedule: { index: 3, status: 'idle', touched: false }
     }
   });
-  
-  const [formData, setFormData] = useState<CampaignFormData>(normalizeCampaignData({
-    campaignName: 'Adobe',
-    tags: ['Adobe'],
-    businessNumber: 'netcore',
-    linkTracking: true,
-    conversionGoalEnabled: true,
-    eventName: 'Account Opened (Savings)',
-    conversionWindow: 1,
-    revenueParameter: 100,
-    deduplicationEnabled: true,
-    targetAudience: 'segments',
-    selectedSegments: [],
-    excludeSegments: [],
-    selectedTemplate: 'static_carousel_recs_url',
-    ctaUrls: {
-      visitWebsite: '',
-      viewProduct: ''
-    },
-    scheduleType: 'now',
-    startTime: 'Sep 09, 2025 03:45 pm',
-    endTime: 'Sep 10, 2025 02:45 pm',
-    scheduledDate: null,
-    scheduledTime: '4:00 PM',
-    timezone: 'Asia/Calcutta',
-    fallbackOption: 'end',
-    frequencyCap: true,
-    controlGroup: true,
-    controlGroupPercentage: 5,
-    specificTime: 'Sep 09, 2025 02:00 pm',
-    isPublished: false,
-    // Audience Limit fields
-    sendLimit: false,
-    maxRecipients: 1000,
-    samplingMethod: 'RANDOM_SAMPLE',
-    // Retry Logic fields
-    retryEnabled: false,
-    retryDuration: 7,
-    stopOnConversion: true,
-    stopOnManualPause: true,
-    stopOnTemplateChange: true,
-    // Schedule configuration
-    scheduleConfig: {
-      frequencyCapEnabled: true,
-      mode: 'OPTIMIZE' as SendMode,
-      startAt: new Date('2025-09-09T15:45:00').toISOString(),
-      endAt: new Date('2025-09-10T14:45:00').toISOString(),
-      sendAtEndAt: new Date('2025-09-10T14:45:00').toISOString(),
-      controlGroupPct: 5,
-      specificTimeAt: new Date('2025-09-09T14:00:00').toISOString(),
-      timezone: 'Asia/Kolkata'
+
+  // Load persisted state or initialize fresh
+  const loadPersistedState = (): { progress: WizardProgress; campaign: Partial<CampaignFormData> } => {
+    try {
+      const stored = localStorage.getItem(WIZARD_STORAGE_KEY);
+      if (stored) {
+        const parsed: WizardPersist = JSON.parse(stored);
+        const isExpired = Date.now() - parsed.timestamp > WIZARD_STORAGE_TTL;
+        
+        if (!isExpired && parsed.progress && parsed.campaign) {
+          return { progress: parsed.progress, campaign: parsed.campaign };
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to load persisted wizard state:', error);
     }
-  }));
+    
+    return { progress: initializeWizardProgress(), campaign: {} };
+  };
+
+  const { progress: initialProgress, campaign: persistedCampaign } = loadPersistedState();
+  const [wizardProgress, setWizardProgress] = useState<WizardProgress>(initialProgress);
+
+  // Initialize current step from persisted state when modal opens
+  useEffect(() => {
+    if (open && wizardProgress.current) {
+      setCurrentStep(wizardProgress.current);
+    }
+  }, [open, wizardProgress.current]);
+  
+  const [formData, setFormData] = useState<CampaignFormData>(() => {
+    const defaultData = {
+      campaignName: 'Adobe',
+      tags: ['Adobe'],
+      businessNumber: 'netcore',
+      linkTracking: true,
+      conversionGoalEnabled: true,
+      eventName: 'Account Opened (Savings)',
+      conversionWindow: 1,
+      revenueParameter: 100,
+      deduplicationEnabled: true,
+      targetAudience: 'segments',
+      selectedSegments: [],
+      excludeSegments: [],
+      selectedTemplate: 'static_carousel_recs_url',
+      ctaUrls: {
+        visitWebsite: '',
+        viewProduct: ''
+      },
+      scheduleType: 'now',
+      startTime: 'Sep 09, 2025 03:45 pm',
+      endTime: 'Sep 10, 2025 02:45 pm',
+      scheduledDate: null,
+      scheduledTime: '4:00 PM',
+      timezone: 'Asia/Calcutta',
+      fallbackOption: 'end',
+      frequencyCap: true,
+      controlGroup: true,
+      controlGroupPercentage: 5,
+      specificTime: 'Sep 09, 2025 02:00 pm',
+      isPublished: false,
+      // Audience Limit fields
+      sendLimit: false,
+      maxRecipients: 1000,
+      samplingMethod: 'RANDOM_SAMPLE',
+      // Retry Logic fields
+      retryEnabled: false,
+      retryDuration: 7,
+      stopOnConversion: true,
+      stopOnManualPause: true,
+      stopOnTemplateChange: true,
+      // Schedule configuration
+      scheduleConfig: {
+        frequencyCapEnabled: true,
+        mode: 'OPTIMIZE' as SendMode,
+        startAt: new Date('2025-09-09T15:45:00').toISOString(),
+        endAt: new Date('2025-09-10T14:45:00').toISOString(),
+        sendAtEndAt: new Date('2025-09-10T14:45:00').toISOString(),
+        controlGroupPct: 5,
+        specificTimeAt: new Date('2025-09-09T14:00:00').toISOString(),
+        timezone: 'Asia/Kolkata'
+      },
+      // Merge persisted data
+      ...persistedCampaign
+    };
+    
+    return normalizeCampaignData(defaultData);
+  });
 
   const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
     setFormData(prev => {
@@ -900,50 +950,85 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     });
   }, []);
 
-  // Step validation functions
-  const validateSetupStep = useCallback((): boolean => {
-    return !!(
-      formData.campaignName.trim() &&
-      formData.tags.length > 0 &&
-      formData.businessNumber.trim()
-    );
+  // Step validation functions with error details
+  const validateSetupStep = useCallback((): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (!formData.campaignName.trim()) {
+      errors.push('Campaign name is required');
+    }
+    if (formData.tags.length === 0) {
+      errors.push('At least one tag is required');
+    }
+    if (!formData.businessNumber.trim()) {
+      errors.push('Business number is required');
+    }
+    
+    return { isValid: errors.length === 0, errors };
   }, [formData.campaignName, formData.tags, formData.businessNumber]);
 
-  const validateAudienceStep = useCallback((): boolean => {
-    if (formData.targetAudience === 'segments') {
-      return formData.selectedSegments.length > 0;
+  const validateAudienceStep = useCallback((): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (formData.targetAudience === 'segments' && formData.selectedSegments.length === 0) {
+      errors.push('At least one segment must be selected');
     }
-    return true; // 'all' audience is always valid
+    
+    return { isValid: errors.length === 0, errors };
   }, [formData.targetAudience, formData.selectedSegments]);
 
-  const validateContentStep = useCallback((): boolean => {
-    return !!formData.selectedTemplate;
+  const validateContentStep = useCallback((): { isValid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    if (!formData.selectedTemplate) {
+      errors.push('Template selection is required');
+    }
+    
+    return { isValid: errors.length === 0, errors };
   }, [formData.selectedTemplate]);
 
-  const validateScheduleStep = useCallback((): boolean => {
-    return scheduleSchema.safeParse(formData.scheduleConfig).success;
+  const validateScheduleStep = useCallback((): { isValid: boolean; errors: string[] } => {
+    const result = scheduleSchema.safeParse(formData.scheduleConfig);
+    const errors: string[] = [];
+    
+    if (!result.success) {
+      result.error.issues.forEach(issue => {
+        errors.push(issue.message);
+      });
+    }
+    
+    return { isValid: result.success, errors };
   }, [formData.scheduleConfig]);
 
   // Update wizard progress when form data changes
   const updateWizardProgress = useCallback(() => {
-    setWizardState(prev => ({
+    const setupValidation = validateSetupStep();
+    const audienceValidation = validateAudienceStep();
+    const contentValidation = validateContentStep();
+    const scheduleValidation = validateScheduleStep();
+
+    setWizardProgress(prev => ({
       ...prev,
-      progress: {
+      steps: {
         setup: {
-          ...prev.progress.setup,
-          completed: validateSetupStep()
+          ...prev.steps.setup,
+          status: setupValidation.isValid ? 'valid' : 'invalid',
+          errors: setupValidation.errors
         },
         audience: {
-          ...prev.progress.audience,
-          completed: validateAudienceStep()
+          ...prev.steps.audience,
+          status: audienceValidation.isValid ? 'valid' : 'invalid',
+          errors: audienceValidation.errors
         },
         content: {
-          ...prev.progress.content,
-          completed: validateContentStep()
+          ...prev.steps.content,
+          status: contentValidation.isValid ? 'valid' : 'invalid',
+          errors: contentValidation.errors
         },
         schedule: {
-          ...prev.progress.schedule,
-          completed: validateScheduleStep()
+          ...prev.steps.schedule,
+          status: scheduleValidation.isValid ? 'valid' : 'invalid',
+          errors: scheduleValidation.errors
         }
       }
     }));
@@ -954,39 +1039,79 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     updateWizardProgress();
   }, [updateWizardProgress]);
 
-  // Mark step as touched when navigating to it
-  const markStepAsTouched = useCallback((step: StepKey) => {
-    setWizardState(prev => ({
+  // Persist wizard state to localStorage
+  const persistWizardState = useCallback(() => {
+    try {
+      const persistData: WizardPersist = {
+        progress: wizardProgress,
+        campaign: formData,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(WIZARD_STORAGE_KEY, JSON.stringify(persistData));
+    } catch (error) {
+      console.warn('Failed to persist wizard state:', error);
+    }
+  }, [wizardProgress, formData]);
+
+  // Persist state when it changes
+  useEffect(() => {
+    if (open) {
+      persistWizardState();
+    }
+  }, [open, persistWizardState]);
+
+  // Mark step as touched and update current step
+  const navigateToStep = useCallback((step: StepKey) => {
+    setWizardProgress(prev => ({
       ...prev,
-      progress: {
-        ...prev.progress,
+      current: step,
+      steps: {
+        ...prev.steps,
         [step]: {
-          ...prev.progress[step],
-          touched: true
+          ...prev.steps[step],
+          touched: true,
+          status: prev.steps[step].status === 'idle' ? 'editing' : prev.steps[step].status
         }
       }
     }));
+  }, []);
+
+  // Clear persisted state
+  const clearPersistedState = useCallback(() => {
+    try {
+      localStorage.removeItem(WIZARD_STORAGE_KEY);
+    } catch (error) {
+      console.warn('Failed to clear persisted state:', error);
+    }
   }, []);
 
   // Check if user can navigate to a specific step
   const canNavigateToStep = useCallback((targetStep: StepKey): boolean => {
     const stepOrder: StepKey[] = ['setup', 'audience', 'content', 'schedule'];
     const targetIndex = stepOrder.indexOf(targetStep);
+    const currentIndex = stepOrder.indexOf(wizardProgress.current);
     
     // Can always go back to completed or touched steps
-    if (wizardState.progress[targetStep].completed || wizardState.progress[targetStep].touched) {
+    if (wizardProgress.steps[targetStep].status === 'valid' || wizardProgress.steps[targetStep].touched) {
       return true;
     }
     
-    // For forward navigation, check if all previous steps are completed
-    for (let i = 0; i < targetIndex; i++) {
-      if (!wizardState.progress[stepOrder[i]].completed) {
-        return false;
+    // Can navigate to the next step if current step is valid
+    if (targetIndex === currentIndex + 1) {
+      return wizardProgress.steps[wizardProgress.current].status === 'valid';
+    }
+    
+    // For forward navigation beyond next step, check if all previous steps are completed
+    if (targetIndex > currentIndex + 1) {
+      for (let i = 0; i < targetIndex; i++) {
+        if (wizardProgress.steps[stepOrder[i]].status !== 'valid') {
+          return false;
+        }
       }
     }
     
     return true;
-  }, [wizardState.progress]);
+  }, [wizardProgress]);
 
   // Row helper component for schedule preview
   const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
@@ -1097,45 +1222,60 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     return (
       <div className="flex items-center space-x-4">
         {steps.map((step, index) => {
-          const isCompleted = wizardState.progress[step.key].completed;
-          const isCurrent = currentStep === step.key;
+          const stepMeta = wizardProgress.steps[step.key];
+          const isCompleted = stepMeta.status === 'valid';
+          const isCurrent = wizardProgress.current === step.key;
+          const isInvalid = stepMeta.status === 'invalid' && stepMeta.touched;
           const canNavigate = canNavigateToStep(step.key);
           const IconComponent = step.icon;
 
           return (
             <React.Fragment key={step.key}>
               <button
-                className={`flex items-center space-x-2 transition-opacity ${
+                className={`flex items-center space-x-2 transition-all duration-200 ${
                   canNavigate ? 'hover:opacity-80 cursor-pointer' : 'cursor-not-allowed opacity-50'
-                }`}
+                } ${isCurrent ? 'transform scale-105' : ''}`}
                 onClick={() => {
                   if (canNavigate) {
-                    markStepAsTouched(step.key);
+                    navigateToStep(step.key);
                     setCurrentStep(step.key);
                   }
                 }}
                 disabled={!canNavigate}
+                title={stepMeta.errors?.join(', ') || ''}
               >
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm transition-all duration-200 ${
                   isCompleted
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-green-500 text-white shadow-lg'
+                    : isInvalid
+                    ? 'bg-red-500 text-white'
                     : isCurrent
-                    ? 'bg-primary text-primary-foreground'
+                    ? 'bg-blue-500 text-white shadow-md'
+                    : stepMeta.touched
+                    ? 'border-2 border-yellow-500 text-yellow-500 bg-yellow-50'
                     : canNavigate
                     ? 'border-2 border-muted-foreground text-muted-foreground'
                     : 'border-2 border-muted text-muted'
                 }`}>
                   {isCompleted ? (
                     <Check className="w-4 h-4" />
+                  ) : isInvalid ? (
+                    <X className="w-3 h-3" />
                   ) : isCurrent ? (
                     <IconComponent className="w-4 h-4" />
                   ) : (
                     <span>{index + 1}</span>
                   )}
                 </div>
-                <span className={`text-sm font-medium ${
-                  isCompleted || isCurrent
-                    ? 'text-primary'
+                <span className={`text-sm font-medium transition-colors duration-200 ${
+                  isCurrent 
+                    ? 'text-blue-600 font-semibold' 
+                    : isCompleted 
+                    ? 'text-green-600' 
+                    : isInvalid
+                    ? 'text-red-600'
+                    : stepMeta.touched
+                    ? 'text-yellow-600'
                     : canNavigate
                     ? 'text-muted-foreground'
                     : 'text-muted'
@@ -1144,10 +1284,10 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 </span>
               </button>
               {index < steps.length - 1 && (
-                <div className={`flex-1 h-px ${
-                  wizardState.progress[steps[index + 1].key].completed || 
-                  wizardState.progress[step.key].completed
-                    ? 'bg-primary'
+                <div className={`flex-1 h-px transition-colors duration-200 ${
+                  wizardProgress.steps[steps[index + 1].key].status === 'valid' || 
+                  wizardProgress.steps[steps[index + 1].key].touched
+                    ? 'bg-blue-300' 
                     : 'bg-border'
                 }`}></div>
               )}
@@ -1187,44 +1327,74 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   };
 
   const handleNext = () => {
+    const stepOrder: StepKey[] = ['setup', 'audience', 'content', 'schedule'];
+    const currentStepKey = currentStep as StepKey;
+    const currentIndex = stepOrder.indexOf(currentStepKey);
+    
     // Validate current step before proceeding
-    let isCurrentStepValid = false;
+    let validation: { isValid: boolean; errors: string[] };
     let nextStep: Step | null = null;
 
     if (currentStep === 'setup') {
-      isCurrentStepValid = validateSetupStep();
+      validation = validateSetupStep();
       nextStep = 'audience';
     } else if (currentStep === 'audience') {
-      isCurrentStepValid = validateAudienceStep();
+      validation = validateAudienceStep();
       nextStep = 'content';
     } else if (currentStep === 'content') {
-      isCurrentStepValid = validateContentStep();
+      validation = validateContentStep();
       nextStep = 'schedule';
     } else if (currentStep === 'schedule') {
-      isCurrentStepValid = validateScheduleStep();
+      validation = validateScheduleStep();
       nextStep = 'preview';
+    } else {
+      return; // Invalid current step
     }
 
-    if (isCurrentStepValid && nextStep) {
-      // Mark current step as touched and completed
-      if (currentStep !== 'channels' && currentStep !== 'start' && currentStep !== 'preview') {
-        markStepAsTouched(currentStep as StepKey);
-      }
+    if (validation.isValid && nextStep) {
+      // Update current step status to valid
+      setWizardProgress(prev => ({
+        ...prev,
+        current: nextStep === 'preview' ? currentStepKey : (nextStep as StepKey),
+        steps: {
+          ...prev.steps,
+          [currentStepKey]: {
+            ...prev.steps[currentStepKey],
+            status: 'valid',
+            touched: true,
+            errors: []
+          }
+        }
+      }));
       
-      // Mark next step as touched if it's a wizard step
-      if (nextStep !== 'preview' && nextStep !== 'channels' && nextStep !== 'start') {
-        markStepAsTouched(nextStep as StepKey);
+      // Navigate to next step
+      if (nextStep !== 'preview') {
+        navigateToStep(nextStep as StepKey);
       }
-      
       setCurrentStep(nextStep);
     } else {
-      // Show validation errors or prevent navigation
-      console.warn(`Cannot proceed from ${currentStep}: validation failed`);
+      // Update step status to invalid with errors
+      setWizardProgress(prev => ({
+        ...prev,
+        steps: {
+          ...prev.steps,
+          [currentStepKey]: {
+            ...prev.steps[currentStepKey],
+            status: 'invalid',
+            touched: true,
+            errors: validation.errors
+          }
+        }
+      }));
+      
+      console.warn(`Cannot proceed from ${currentStep}:`, validation.errors);
     }
   };
 
   const handleClose = () => {
     setCurrentStep('start');
+    setWizardProgress(initializeWizardProgress());
+    clearPersistedState();
     setFormData(normalizeCampaignData({
       campaignName: 'Adobe',
       tags: ['Adobe'],
