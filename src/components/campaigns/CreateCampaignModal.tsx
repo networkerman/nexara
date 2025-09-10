@@ -18,6 +18,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { 
   ChevronLeft,
+  Plus,
   MessageSquare, 
   Search, 
   Mail, 
