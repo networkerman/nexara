@@ -89,6 +89,75 @@ export function AppLayout({
             </div>)}
         </nav>
 
+        {/* Business Number Section */}
+        <div className="px-4 mt-8">
+          <h3 className="px-3 text-xs font-semibold text-primary-foreground/50 uppercase tracking-wider">
+            Business Number
+          </h3>
+          <div className="mt-2 space-y-1">
+            {/* Current Business Number */}
+            <div className="flex items-center justify-between px-3 py-2 text-sm text-primary-foreground/70 rounded-md">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-success rounded-full"></div>
+                <span>+91 98765 43210</span>
+              </div>
+              <span className="text-xs text-success font-medium">Active</span>
+            </div>
+            
+            {/* Add Number Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 rounded-md transition-colors"
+                >
+                  <div className="flex items-center space-x-2">
+                    <Plus className="w-3 h-3" />
+                    <span>Add Number</span>
+                  </div>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                side="right" 
+                align="start"
+                className="w-64 bg-background border border-border shadow-lg z-[100]"
+                sideOffset={8}
+              >
+                <DropdownMenuItem 
+                  className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    // TODO: Open onboarding flow to add new number
+                    console.log('Opening onboarding flow to add new number');
+                  }}
+                >
+                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Plus className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-foreground">Add Business Number</span>
+                    <p className="text-xs text-muted-foreground">Connect a new WhatsApp Business number</p>
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    console.log('Opening number management');
+                  }}
+                >
+                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
+                    <Smartphone className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-sm font-medium text-foreground">Manage Numbers</span>
+                    <p className="text-xs text-muted-foreground">View and configure existing numbers</p>
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
         {/* Personalization Section */}
         <div className="px-4 mt-8">
           <h3 className="px-3 text-xs font-semibold text-primary-foreground/50 uppercase tracking-wider">
@@ -116,56 +185,13 @@ export function AppLayout({
               <h1 className="text-xl font-semibold text-foreground">Engage</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    className="flex items-center space-x-2 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                        <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
-                      </div>
-                      <span className="text-sm text-foreground">HDFC</span>
-                      <span className="text-xs text-success font-medium">Live</span>
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent 
-                  align="end" 
-                  className="w-64 bg-background border border-border shadow-lg z-[100] min-w-0"
-                  sideOffset={5}
-                >
-                  <DropdownMenuItem className="flex items-center space-x-2 p-3 cursor-default hover:bg-muted/50">
-                    <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm font-medium text-foreground">HDFC Bank</span>
-                        <span className="text-xs text-success font-medium">Live</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground">Current active account</p>
-                    </div>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem 
-                    className="flex items-center space-x-2 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => {
-                      // TODO: Open onboarding flow to add new number
-                      console.log('Opening onboarding flow to add new number');
-                    }}
-                  >
-                    <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
-                      <Plus className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <span className="text-sm font-medium text-foreground">Add Number</span>
-                      <p className="text-xs text-muted-foreground">Connect a new account</p>
-                    </div>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center space-x-2">
+                <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                  <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
+                </div>
+                <span className="text-sm text-foreground">HDFC</span>
+                <span className="text-xs text-success font-medium">Live</span>
+              </div>
             </div>
           </div>
         </header>
