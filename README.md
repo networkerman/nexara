@@ -1,8 +1,11 @@
-# Welcome to your Lovable project
+# HDFC Netcore Customer Engagement Platform
 
-## Project info
+A comprehensive customer engagement platform built with React, TypeScript, and modern web technologies.
 
-**URL**: https://lovable.dev/projects/402b3d7e-4c88-4c28-b1aa-ae33f228fa2c
+## 🚀 Live Deployment
+
+**Production URL**: https://netcorehdfc.netlify.app  
+**Lovable Project**: https://lovable.dev/projects/402b3d7e-4c88-4c28-b1aa-ae33f228fa2c
 
 ## How can I edit this code?
 
@@ -50,24 +53,83 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## 🏗️ Architecture & Features
 
-This project is built with:
+### **Core Technologies**
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Routing**: React Router 6 with deep linking support
+- **State Management**: React Query + React hooks
+- **Hosting**: Netlify with SPA fallback configuration
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### **Key Features**
+- ✅ **Campaign Management**: Full-featured campaign creation and management
+- ✅ **Responsive Design**: Mobile-first approach with full viewport utilization
+- ✅ **Deep Linking**: All routes directly accessible via URL
+- ✅ **Premium Gates**: Upsell pages for unfinished features
+- ✅ **Form Validation**: Comprehensive validation with legacy migration
+- ✅ **Collapsible UI**: Enhanced UX with collapsible summary sections
 
-## How can I deploy this project?
+### **Available Routes**
+- `/` → Redirects to campaigns
+- `/engage/campaigns` → Campaign management (active)
+- `/audiences` → Premium gate
+- `/analytics` → Premium gate  
+- `/content` → Premium gate
+- `/dashboards` → Premium gate
+- `/engage/journey` → Premium gate
+- `/engage/onsite` → Premium gate
 
-Simply open [Lovable](https://lovable.dev/projects/402b3d7e-4c88-4c28-b1aa-ae33f228fa2c) and click on Share -> Publish.
+## 🚀 Deployment
 
-## Can I connect a custom domain to my Lovable project?
+### **Automatic Deployment**
+- **Netlify**: Auto-deploys from `main` branch
+- **SPA Routing**: Configured with `_redirects` and `netlify.toml`
+- **Build Command**: `npm run build`
+- **Publish Directory**: `dist`
 
-Yes, you can!
+### **Manual Deployment**
+1. Push changes to `main` branch
+2. Netlify automatically builds and deploys
+3. Changes live within 1-2 minutes
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 🛠️ Development
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### **Local Development**
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+### **Project Structure**
+```
+src/
+├── components/          # Reusable UI components
+│   ├── campaigns/      # Campaign-specific components
+│   ├── layout/         # Layout components
+│   └── ui/            # shadcn/ui components
+├── pages/              # Route components
+├── hooks/              # Custom React hooks
+└── lib/               # Utilities and helpers
+```
+
+## 📞 Contact & Support
+
+For premium feature access or support:
+- **Email**: networker.udayan@gmail.com
+- **Subject**: Premium Access Request - [Feature Name]
+
+## 🔗 Links
+
+- **Production**: https://netcorehdfc.netlify.app
+- **Lovable Project**: https://lovable.dev/projects/402b3d7e-4c88-4c28-b1aa-ae33f228fa2c
+- **Repository**: https://github.com/Product-Netcore/Hdfc-Netcore
