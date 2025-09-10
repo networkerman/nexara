@@ -11,6 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -50,8 +51,18 @@ interface CreateCampaignModalProps {
 }
 
 type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
+type StepKey = 'setup' | 'audience' | 'content' | 'schedule';
 
 type SamplingMethod = 'RANDOM_SAMPLE' | 'HEPF';
+
+interface StepProgress {
+  completed: boolean;
+  touched: boolean;
+}
+
+interface WizardState {
+  progress: Record<StepKey, StepProgress>;
+}
 
 interface CampaignFormData {
   campaignName: string;
@@ -67,6 +78,11 @@ interface CampaignFormData {
   selectedSegments: string[];
   excludeSegments: string[];
   selectedTemplate: string;
+  // CTA URLs for WhatsApp template
+  ctaUrls: {
+    visitWebsite?: string;
+    viewProduct?: string;
+  };
   scheduleType: 'now' | 'later' | 'optimize';
   startTime: string;
   endTime: string;
@@ -742,6 +758,16 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   const [currentStep, setCurrentStep] = useState<Step>('start');
   const [legacyMigrationNote, setLegacyMigrationNote] = useState<string | null>(null);
   
+  // Wizard state management
+  const [wizardState, setWizardState] = useState<WizardState>({
+    progress: {
+      setup: { completed: false, touched: false },
+      audience: { completed: false, touched: false },
+      content: { completed: false, touched: false },
+      schedule: { completed: false, touched: false }
+    }
+  });
+  
   const [formData, setFormData] = useState<CampaignFormData>(normalizeCampaignData({
     campaignName: 'Adobe',
     tags: ['Adobe'],
@@ -756,6 +782,10 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     selectedSegments: [],
     excludeSegments: [],
     selectedTemplate: 'static_carousel_recs_url',
+    ctaUrls: {
+      visitWebsite: '',
+      viewProduct: ''
+    },
     scheduleType: 'now',
     startTime: 'Sep 09, 2025 03:45 pm',
     endTime: 'Sep 10, 2025 02:45 pm',
@@ -804,6 +834,233 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     });
   }, []);
 
+  // Step validation functions
+  const validateSetupStep = useCallback((): boolean => {
+    return !!(
+      formData.campaignName.trim() &&
+      formData.tags.length > 0 &&
+      formData.businessNumber.trim()
+    );
+  }, [formData.campaignName, formData.tags, formData.businessNumber]);
+
+  const validateAudienceStep = useCallback((): boolean => {
+    if (formData.targetAudience === 'segments') {
+      return formData.selectedSegments.length > 0;
+    }
+    return true; // 'all' audience is always valid
+  }, [formData.targetAudience, formData.selectedSegments]);
+
+  const validateContentStep = useCallback((): boolean => {
+    return !!formData.selectedTemplate;
+  }, [formData.selectedTemplate]);
+
+  const validateScheduleStep = useCallback((): boolean => {
+    if (formData.scheduleType === 'later' || formData.scheduleType === 'optimize') {
+      return !!(formData.scheduledDate && formData.scheduledTime);
+    }
+    return true; // 'now' schedule is always valid
+  }, [formData.scheduleType, formData.scheduledDate, formData.scheduledTime]);
+
+  // Update wizard progress when form data changes
+  const updateWizardProgress = useCallback(() => {
+    setWizardState(prev => ({
+      ...prev,
+      progress: {
+        setup: {
+          ...prev.progress.setup,
+          completed: validateSetupStep()
+        },
+        audience: {
+          ...prev.progress.audience,
+          completed: validateAudienceStep()
+        },
+        content: {
+          ...prev.progress.content,
+          completed: validateContentStep()
+        },
+        schedule: {
+          ...prev.progress.schedule,
+          completed: validateScheduleStep()
+        }
+      }
+    }));
+  }, [validateSetupStep, validateAudienceStep, validateContentStep, validateScheduleStep]);
+
+  // Update progress when form data changes
+  useEffect(() => {
+    updateWizardProgress();
+  }, [updateWizardProgress]);
+
+  // Mark step as touched when navigating to it
+  const markStepAsTouched = useCallback((step: StepKey) => {
+    setWizardState(prev => ({
+      ...prev,
+      progress: {
+        ...prev.progress,
+        [step]: {
+          ...prev.progress[step],
+          touched: true
+        }
+      }
+    }));
+  }, []);
+
+  // Check if user can navigate to a specific step
+  const canNavigateToStep = useCallback((targetStep: StepKey): boolean => {
+    const stepOrder: StepKey[] = ['setup', 'audience', 'content', 'schedule'];
+    const targetIndex = stepOrder.indexOf(targetStep);
+    
+    // Can always go back to completed or touched steps
+    if (wizardState.progress[targetStep].completed || wizardState.progress[targetStep].touched) {
+      return true;
+    }
+    
+    // For forward navigation, check if all previous steps are completed
+    for (let i = 0; i < targetIndex; i++) {
+      if (!wizardState.progress[stepOrder[i]].completed) {
+        return false;
+      }
+    }
+    
+    return true;
+  }, [wizardState.progress]);
+
+  // CTA Button Component with accessibility
+  const CTAButton = ({ 
+    url, 
+    label, 
+    ariaLabel, 
+    className = "" 
+  }: { 
+    url?: string; 
+    label: string; 
+    ariaLabel: string; 
+    className?: string; 
+  }) => {
+    const isDisabled = !url || url.trim() === '';
+    
+    const handleClick = (e: React.MouseEvent) => {
+      e.preventDefault();
+      if (!isDisabled && url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if ((e.key === 'Enter' || e.key === ' ') && !isDisabled && url) {
+        e.preventDefault();
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    };
+
+    if (isDisabled) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className={`text-xs p-0 h-auto text-gray-400 cursor-not-allowed ${className}`}
+                disabled
+                aria-label={ariaLabel}
+                aria-describedby="cta-tooltip"
+              >
+                🔗 {label}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent id="cta-tooltip">
+              <p>Add a URL to enable this action</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return (
+      <button
+        onClick={handleClick}
+        onKeyDown={handleKeyDown}
+        className={`text-xs p-0 h-auto text-blue-600 hover:text-blue-800 active:text-blue-900 cursor-pointer transition-colors ${className}`}
+        aria-label={ariaLabel}
+        tabIndex={0}
+      >
+        🔗 {label}
+      </button>
+    );
+  };
+
+  // Render stepper with validation states
+  const renderStepper = () => {
+    const steps = [
+      { key: 'setup' as StepKey, label: 'Setup', icon: Settings },
+      { key: 'audience' as StepKey, label: 'Audience', icon: Users },
+      { key: 'content' as StepKey, label: 'Content', icon: MessageSquareText },
+      { key: 'schedule' as StepKey, label: 'Schedule', icon: CalendarIcon }
+    ];
+
+    return (
+      <div className="flex items-center space-x-4">
+        {steps.map((step, index) => {
+          const isCompleted = wizardState.progress[step.key].completed;
+          const isCurrent = currentStep === step.key;
+          const canNavigate = canNavigateToStep(step.key);
+          const IconComponent = step.icon;
+
+          return (
+            <React.Fragment key={step.key}>
+              <button
+                className={`flex items-center space-x-2 transition-opacity ${
+                  canNavigate ? 'hover:opacity-80 cursor-pointer' : 'cursor-not-allowed opacity-50'
+                }`}
+                onClick={() => {
+                  if (canNavigate) {
+                    markStepAsTouched(step.key);
+                    setCurrentStep(step.key);
+                  }
+                }}
+                disabled={!canNavigate}
+              >
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm ${
+                  isCompleted
+                    ? 'bg-primary text-primary-foreground'
+                    : isCurrent
+                    ? 'bg-primary text-primary-foreground'
+                    : canNavigate
+                    ? 'border-2 border-muted-foreground text-muted-foreground'
+                    : 'border-2 border-muted text-muted'
+                }`}>
+                  {isCompleted ? (
+                    <Check className="w-4 h-4" />
+                  ) : isCurrent ? (
+                    <IconComponent className="w-4 h-4" />
+                  ) : (
+                    <span>{index + 1}</span>
+                  )}
+                </div>
+                <span className={`text-sm font-medium ${
+                  isCompleted || isCurrent
+                    ? 'text-primary'
+                    : canNavigate
+                    ? 'text-muted-foreground'
+                    : 'text-muted'
+                }`}>
+                  {step.label}
+                </span>
+              </button>
+              {index < steps.length - 1 && (
+                <div className={`flex-1 h-px ${
+                  wizardState.progress[steps[index + 1].key].completed || 
+                  wizardState.progress[step.key].completed
+                    ? 'bg-primary'
+                    : 'bg-border'
+                }`}></div>
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  };
+
   const handleStartOptionClick = (optionId: string) => {
     if (optionId === 'engage') {
       setCurrentStep('channels');
@@ -833,14 +1090,39 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   };
 
   const handleNext = () => {
+    // Validate current step before proceeding
+    let isCurrentStepValid = false;
+    let nextStep: Step | null = null;
+
     if (currentStep === 'setup') {
-      setCurrentStep('audience');
+      isCurrentStepValid = validateSetupStep();
+      nextStep = 'audience';
     } else if (currentStep === 'audience') {
-      setCurrentStep('content');
+      isCurrentStepValid = validateAudienceStep();
+      nextStep = 'content';
     } else if (currentStep === 'content') {
-      setCurrentStep('schedule');
+      isCurrentStepValid = validateContentStep();
+      nextStep = 'schedule';
     } else if (currentStep === 'schedule') {
-      setCurrentStep('preview');
+      isCurrentStepValid = validateScheduleStep();
+      nextStep = 'preview';
+    }
+
+    if (isCurrentStepValid && nextStep) {
+      // Mark current step as touched and completed
+      if (currentStep !== 'channels' && currentStep !== 'start' && currentStep !== 'preview') {
+        markStepAsTouched(currentStep as StepKey);
+      }
+      
+      // Mark next step as touched if it's a wizard step
+      if (nextStep !== 'preview' && nextStep !== 'channels' && nextStep !== 'start') {
+        markStepAsTouched(nextStep as StepKey);
+      }
+      
+      setCurrentStep(nextStep);
+    } else {
+      // Show validation errors or prevent navigation
+      console.warn(`Cannot proceed from ${currentStep}: validation failed`);
     }
   };
 
@@ -978,35 +1260,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
             </DialogHeader>
 
             {/* Progress Steps */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Setup</span>
-              </div>
-              <div className="flex-1 h-px bg-primary"></div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Audience</span>
-              </div>
-              <div className="flex-1 h-px bg-primary"></div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <MessageSquareText className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Content</span>
-              </div>
-              <div className="flex-1 h-px bg-border"></div>
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                  4
-                </div>
-                <span className="text-sm text-muted-foreground">Schedule</span>
-              </div>
-            </div>
+            {renderStepper()}
           </div>
         </div>
 
@@ -1027,6 +1281,47 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                     />
                   </div>
                 </div>
+                
+                {/* CTA URL Configuration */}
+                {formData.selectedTemplate && (
+                  <div className="mt-6">
+                    <h4 className="text-md font-semibold mb-4">Configure Call-to-Action URLs</h4>
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="visitWebsiteUrl">Visit Website URL</Label>
+                        <Input
+                          id="visitWebsiteUrl"
+                          type="url"
+                          value={formData.ctaUrls.visitWebsite || ''}
+                          onChange={(e) => updateFormData({ 
+                            ctaUrls: { 
+                              ...formData.ctaUrls, 
+                              visitWebsite: e.target.value 
+                            } 
+                          })}
+                          placeholder="https://example.com"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="viewProductUrl">View Product URL</Label>
+                        <Input
+                          id="viewProductUrl"
+                          type="url"
+                          value={formData.ctaUrls.viewProduct || ''}
+                          onChange={(e) => updateFormData({ 
+                            ctaUrls: { 
+                              ...formData.ctaUrls, 
+                              viewProduct: e.target.value 
+                            } 
+                          })}
+                          placeholder="https://example.com/product"
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1079,24 +1374,32 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                         <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
                         <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
                         <div className="flex flex-col space-y-1 mt-2">
-                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
-                            🔗 Visit Website
-                          </Button>
-                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
-                            🔗 View Product
-                          </Button>
+                          <CTAButton
+                            url={formData.ctaUrls.visitWebsite}
+                            label="Visit Website"
+                            ariaLabel="Visit Website - opens in new tab"
+                          />
+                          <CTAButton
+                            url={formData.ctaUrls.viewProduct}
+                            label="View Product"
+                            ariaLabel="View Product - opens in new tab"
+                          />
                         </div>
                       </div>
                       <div className="flex-1 bg-green-100 rounded-lg p-2">
                         <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
                         <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
                         <div className="flex flex-col space-y-1 mt-2">
-                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
-                            🔗 Visit Website
-                          </Button>
-                          <Button variant="link" size="sm" className="text-xs p-0 h-auto text-blue-600">
-                            🔗 View Product
-                          </Button>
+                          <CTAButton
+                            url={formData.ctaUrls.visitWebsite}
+                            label="Visit Website"
+                            ariaLabel="Visit Website - opens in new tab"
+                          />
+                          <CTAButton
+                            url={formData.ctaUrls.viewProduct}
+                            label="View Product"
+                            ariaLabel="View Product - opens in new tab"
+                          />
                         </div>
                       </div>
                     </div>
@@ -1178,47 +1481,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
             </DialogHeader>
 
             {/* Progress Steps */}
-            <div className="flex items-center space-x-4">
-              <button 
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                onClick={() => setCurrentStep('setup')}
-              >
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Setup</span>
-              </button>
-              <div className="flex-1 h-px bg-primary"></div>
-              <button 
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                onClick={() => setCurrentStep('audience')}
-              >
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Audience</span>
-              </button>
-              <div className="flex-1 h-px bg-primary"></div>
-              <button 
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                onClick={() => setCurrentStep('content')}
-              >
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Content</span>
-              </button>
-              <div className="flex-1 h-px bg-primary"></div>
-              <button 
-                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                onClick={() => setCurrentStep('schedule')}
-              >
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  <CalendarIcon className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-primary">Schedule</span>
-              </button>
-            </div>
+            {renderStepper()}
           </div>
         </div>
 
@@ -1718,7 +1981,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-hidden p-6">
-        <div className="grid grid-cols-2 gap-6 h-full">
+        <div className="grid grid-cols-3 gap-6 h-full">
           {/* Left Column - Scrollable */}
           <div className="overflow-y-auto max-h-screen space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
             {/* Setup Details */}
@@ -1898,16 +2161,36 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                                 <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
                                 <p className="text-[0.625rem] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
                                 <div className="flex flex-col space-y-0.5 mt-1">
-                                  <div className="text-[0.5rem] text-blue-600">🔗 Visit Website</div>
-                                  <div className="text-[0.5rem] text-blue-600">🔗 View Product</div>
+                                  <CTAButton
+                                    url={formData.ctaUrls.visitWebsite}
+                                    label="Visit Website"
+                                    ariaLabel="Visit Website - opens in new tab"
+                                    className="text-[0.5rem]"
+                                  />
+                                  <CTAButton
+                                    url={formData.ctaUrls.viewProduct}
+                                    label="View Product"
+                                    ariaLabel="View Product - opens in new tab"
+                                    className="text-[0.5rem]"
+                                  />
                                 </div>
                               </div>
                               <div className="bg-green-100 rounded p-1">
                                 <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
                                 <p className="text-[0.625rem] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
                                 <div className="flex flex-col space-y-0.5 mt-1">
-                                  <div className="text-[0.5rem] text-blue-600">🔗 Visit Website</div>
-                                  <div className="text-[0.5rem] text-blue-600">🔗 View Product</div>
+                                  <CTAButton
+                                    url={formData.ctaUrls.visitWebsite}
+                                    label="Visit Website"
+                                    ariaLabel="Visit Website - opens in new tab"
+                                    className="text-[0.5rem]"
+                                  />
+                                  <CTAButton
+                                    url={formData.ctaUrls.viewProduct}
+                                    label="View Product"
+                                    ariaLabel="View Product - opens in new tab"
+                                    className="text-[0.5rem]"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -1927,6 +2210,11 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Third Column - Summary Panel */}
+          <div className="overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <SummaryPanel formData={formData} currentStep={currentStep} />
           </div>
         </div>
       </div>
@@ -2048,35 +2336,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
             </DialogHeader>
 
             {/* Progress Steps */}
-            <div className="flex items-center space-x-2 sm:space-x-4 overflow-x-auto">
-              <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                <div className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm">
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-xs sm:text-sm font-medium text-primary hidden sm:inline">Setup</span>
-              </div>
-              <div className="flex-1 h-px bg-border min-w-[20px]"></div>
-              <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                </div>
-                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">Audience</span>
-              </div>
-              <div className="flex-1 h-px bg-border min-w-[20px]"></div>
-              <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                  3
-                </div>
-                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">Content</span>
-              </div>
-              <div className="flex-1 h-px bg-border min-w-[20px]"></div>
-              <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-                <div className="w-6 h-6 border-2 border-muted-foreground rounded-full flex items-center justify-center text-sm">
-                  4
-                </div>
-                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">Schedule</span>
-              </div>
-            </div>
+            {renderStepper()}
           </div>
         </div>
 
