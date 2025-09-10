@@ -1,0 +1,16 @@
+# Netlify configuration for SPA routing
+# Alternative to _redirects file - both work, but _redirects is simpler
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Build settings
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# Environment variables (if needed)
+[build.environment]
+  NODE_VERSION = "18"
