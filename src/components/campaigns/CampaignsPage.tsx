@@ -146,7 +146,7 @@ export function CampaignsPage() {
       )}
 
       {/* Filters and Tabs - Sticky */}
-      <div className="sticky top-30 z-30 bg-background border-b border-border px-6 py-4 space-y-4">
+      <div className="sticky top-30 z-30 bg-background border-b border-border px-4 sm:px-6 py-4 space-y-4">
         {/* Channel Filter */}
         <div className="flex items-center space-x-2">
           <span className="text-sm text-muted-foreground">Channel:</span>
