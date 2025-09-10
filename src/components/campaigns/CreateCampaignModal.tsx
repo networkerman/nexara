@@ -428,6 +428,20 @@ const channelOptions = [
 ];
 
 const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; currentStep: Step }) => {
+  const [expandedSections, setExpandedSections] = useState({
+    setup: true,
+    audience: true,
+    content: true,
+    schedule: true
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
   const getSelectedSegmentData = () => {
     return adobeSegments.filter(segment => 
       formData.selectedSegments.includes(segment.id)
@@ -441,11 +455,15 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
       <div className="space-y-4">
         {/* Setup Summary */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <button 
+            onClick={() => toggleSection('setup')}
+            className="flex items-center justify-between w-full mb-2 hover:bg-muted/50 p-2 rounded -m-2 transition-colors"
+          >
             <span className="text-sm font-medium">Setup</span>
-            <ChevronDown className="w-4 h-4" />
-          </div>
-          <div className="space-y-2 text-sm text-muted-foreground">
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedSections.setup ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {expandedSections.setup && (
+            <div className="space-y-2 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200">
             <div>
               <span className="font-medium text-foreground">Campaign name:</span>
               <div>{formData.campaignName}</div>
@@ -484,16 +502,21 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
               <span className="font-medium text-foreground">Deduplication:</span>
               <div>{formData.deduplication ? 'On' : 'Off'}</div>
             </div>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Audience Summary */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <button 
+            onClick={() => toggleSection('audience')}
+            className="flex items-center justify-between w-full mb-2 hover:bg-muted/50 p-2 rounded -m-2 transition-colors"
+          >
             <span className="text-sm font-medium">Audience</span>
-            <ChevronDown className="w-4 h-4" />
-          </div>
-          <div className="space-y-2 text-sm text-muted-foreground">
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedSections.audience ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {expandedSections.audience && (
+            <div className="space-y-2 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200">
             <div>
               <span className="font-medium text-foreground">Target audience:</span>
               <div>{formData.targetAudience === 'all' ? 'All contacts' : 'Lists/Segments'}</div>
@@ -533,71 +556,110 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
                 </div>
               </>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Content Summary */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <button 
+            onClick={() => toggleSection('content')}
+            className="flex items-center justify-between w-full mb-2 hover:bg-muted/50 p-2 rounded -m-2 transition-colors"
+          >
             <span className="text-sm font-medium">Content</span>
-            <ChevronDown className="w-4 h-4" />
-          </div>
-          <div className="space-y-2 text-sm text-muted-foreground">
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedSections.content ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {expandedSections.content && (
+            <div className="space-y-2 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200">
             {formData.selectedTemplate && (
               <div>
                 <span className="font-medium text-foreground">Template:</span>
                 <div>{formData.selectedTemplate}</div>
               </div>
             )}
-          </div>
+            <div>
+              <span className="font-medium text-foreground">Link tracking:</span>
+              <div>{formData.linkTracking ? 'Enabled' : 'Disabled'}</div>
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Deduplication:</span>
+              <div>{formData.deduplication ? 'On' : 'Off'}</div>
+            </div>
+            </div>
+          )}
         </div>
 
         {/* Schedule Summary */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <button 
+            onClick={() => toggleSection('schedule')}
+            className="flex items-center justify-between w-full mb-2 hover:bg-muted/50 p-2 rounded -m-2 transition-colors"
+          >
             <span className="text-sm font-medium">Schedule</span>
-            <ChevronDown className="w-4 h-4" />
-          </div>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            {currentStep === 'schedule' && (
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedSections.schedule ? 'rotate-0' : '-rotate-90'}`} />
+          </button>
+          {expandedSections.schedule && (
+            <div className="space-y-2 text-sm text-muted-foreground animate-in slide-in-from-top-2 duration-200">
+            <div>
+              <span className="font-medium text-foreground">When to send:</span>
+              <div>{formData.scheduleType === 'now' ? 'Send now' : formData.scheduleType === 'later' ? 'Send later' : 'Optimize with Co-marketer'}</div>
+            </div>
+            {formData.scheduleType === 'later' && formData.scheduledDate && (
               <>
                 <div>
-                  <span className="font-medium text-foreground">When to send:</span>
-                  <div>{formData.scheduleType === 'optimize' ? 'Optimize with Co-marketer' : formData.scheduleType}</div>
+                  <span className="font-medium text-foreground">Scheduled date:</span>
+                  <div>{formData.scheduledDate.toLocaleDateString()}</div>
                 </div>
-                {formData.scheduleType === 'optimize' && (
-                  <>
-                    <div>
-                      <span className="font-medium text-foreground">Start time:</span>
-                      <div>{formData.startTime}</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-foreground">End time:</span>
-                      <div>{formData.endTime}</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-foreground">Send at end time:</span>
-                      <div>{formData.endTime}</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-foreground">Control group:</span>
-                      <div>{formData.controlGroupPercentage}%</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-foreground">Specific time:</span>
-                      <div>{formData.specificTime}</div>
-                    </div>
-                  </>
-                )}
-                {formData.retryEnabled && (
-                  <div>
-                    <span className="font-medium text-foreground">Retries:</span>
-                    <div>Daily × {formData.retryDuration} days</div>
-                  </div>
-                )}
+                <div>
+                  <span className="font-medium text-foreground">Scheduled time:</span>
+                  <div>{formData.scheduledTime}</div>
+                </div>
               </>
             )}
-          </div>
+            {formData.scheduleType === 'optimize' && (
+              <>
+                <div>
+                  <span className="font-medium text-foreground">Start time:</span>
+                  <div>{formData.startTime}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">End time:</span>
+                  <div>{formData.endTime}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Fallback option:</span>
+                  <div>{formData.fallbackOption === 'start' ? 'Send at start time' : 'Send at end time'}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Specific time:</span>
+                  <div>{formData.specificTime}</div>
+                </div>
+              </>
+            )}
+            <div>
+              <span className="font-medium text-foreground">Timezone:</span>
+              <div>{formData.timezone}</div>
+            </div>
+            {formData.frequencyCap && (
+              <div>
+                <span className="font-medium text-foreground">Frequency cap:</span>
+                <div>Enabled</div>
+              </div>
+            )}
+            {formData.controlGroup && (
+              <div>
+                <span className="font-medium text-foreground">Control group:</span>
+                <div>{formData.controlGroupPercentage}%</div>
+              </div>
+            )}
+            {formData.retryEnabled && (
+              <div>
+                <span className="font-medium text-foreground">Retry logic:</span>
+                <div>Daily × {formData.retryDuration} days</div>
+              </div>
+            )}
+            </div>
+          )}
         </div>
       </div>
     </div>
