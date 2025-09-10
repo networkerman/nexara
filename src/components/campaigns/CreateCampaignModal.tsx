@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { DateTime } from 'luxon';
+import { z } from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +56,7 @@ type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule'
 type StepKey = 'setup' | 'audience' | 'content' | 'schedule';
 
 type SamplingMethod = 'RANDOM_SAMPLE' | 'HEPF';
+type SendMode = 'OPTIMIZE' | 'SPECIFIC_TIME' | 'SEND_AT_END';
 
 interface StepProgress {
   completed: boolean;
@@ -62,6 +65,56 @@ interface StepProgress {
 
 interface WizardState {
   progress: Record<StepKey, StepProgress>;
+}
+
+interface ScheduleConfig {
+  frequencyCapEnabled: boolean;
+  mode: SendMode;
+  startAt?: string;        // ISO 8601
+  endAt?: string;          // ISO 8601
+  sendAtEndAt?: string;    // ISO 8601 (optional; derive from endAt if absent when mode=SEND_AT_END)
+  specificTimeAt?: string; // ISO 8601 (when mode=SPECIFIC_TIME)
+  controlGroupPct?: number; // 0–100
+  timezone: string;        // IANA, e.g. "Asia/Kolkata"
+}
+
+interface FinalPreviewData {
+  name: string;
+  tags: string[];
+  reachableContacts: number;
+  includeSegments: { id: string; name: string }[];
+  excludeSegments: { id: string; name: string }[];
+  deduplicationEnabled: boolean;
+  samplingMethod: SamplingMethod;
+  templateName: string;
+  previewCtas: { label: string; url?: string }[];
+  schedule: ScheduleConfig;
+  conversionGoalEnabled: boolean;
+  conversionGoal?: string;
+  revenueParameter?: number | null;
+}
+
+// Zod validation schema
+export const scheduleSchema = z.object({
+  frequencyCapEnabled: z.boolean().default(false),
+  mode: z.enum(['OPTIMIZE','SPECIFIC_TIME','SEND_AT_END']),
+  startAt: z.string().datetime().optional(),
+  endAt: z.string().datetime().optional(),
+  sendAtEndAt: z.string().datetime().optional(),
+  specificTimeAt: z.string().datetime().optional(),
+  controlGroupPct: z.number().int().min(0).max(100).optional(),
+  timezone: z.string().min(1),
+})
+.refine(s => s.mode !== 'SPECIFIC_TIME' || !!s.specificTimeAt, { path:['specificTimeAt'], message:'Specific time is required' })
+.refine(s => s.mode !== 'SEND_AT_END' || (!!s.endAt || !!s.sendAtEndAt), { path:['endAt'], message:'End time required for Send at end' })
+.refine(s => !s.startAt || !s.endAt || new Date(s.startAt) <= new Date(s.endAt), { path:['endAt'], message:'End must be after Start' });
+
+// Date/time formatting utility (Luxon; required format "MMM dd, yyyy hh:mm a")
+export function fmt(iso?: string, tz?: string) {
+  if (!iso) return '—';
+  const zone = tz || 'UTC';
+  const d = DateTime.fromISO(iso, { zone: 'utc' }).setZone(zone);
+  return d.isValid ? d.toFormat('MMM dd, yyyy hh:mm a') : '—';
 }
 
 interface CampaignFormData {
@@ -107,6 +160,8 @@ interface CampaignFormData {
   stopOnTemplateChange: boolean;
   // Legacy migration flags
   _legacySamplingMigrated?: boolean;
+  // Schedule configuration
+  scheduleConfig: ScheduleConfig;
 }
 
 interface WhatsAppTemplate {
@@ -807,7 +862,18 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     retryDuration: 7,
     stopOnConversion: true,
     stopOnManualPause: true,
-    stopOnTemplateChange: true
+    stopOnTemplateChange: true,
+    // Schedule configuration
+    scheduleConfig: {
+      frequencyCapEnabled: true,
+      mode: 'OPTIMIZE' as SendMode,
+      startAt: new Date('2025-09-09T15:45:00').toISOString(),
+      endAt: new Date('2025-09-10T14:45:00').toISOString(),
+      sendAtEndAt: new Date('2025-09-10T14:45:00').toISOString(),
+      controlGroupPct: 5,
+      specificTimeAt: new Date('2025-09-09T14:00:00').toISOString(),
+      timezone: 'Asia/Kolkata'
+    }
   }));
 
   const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
@@ -855,11 +921,8 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   }, [formData.selectedTemplate]);
 
   const validateScheduleStep = useCallback((): boolean => {
-    if (formData.scheduleType === 'later' || formData.scheduleType === 'optimize') {
-      return !!(formData.scheduledDate && formData.scheduledTime);
-    }
-    return true; // 'now' schedule is always valid
-  }, [formData.scheduleType, formData.scheduledDate, formData.scheduledTime]);
+    return scheduleSchema.safeParse(formData.scheduleConfig).success;
+  }, [formData.scheduleConfig]);
 
   // Update wizard progress when form data changes
   const updateWizardProgress = useCallback(() => {
@@ -924,6 +987,40 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     
     return true;
   }, [wizardState.progress]);
+
+  // Row helper component for schedule preview
+  const Row = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div className="grid grid-cols-[160px_1fr] gap-4">
+      <div className="text-gray-500">{label}:</div>
+      <div className="break-words">{value}</div>
+    </div>
+  );
+
+  // Schedule Preview Component (binds dynamically)
+  const SchedulePreview = ({ schedule }: { schedule: ScheduleConfig }) => {
+    const { frequencyCapEnabled, mode, startAt, endAt, sendAtEndAt, specificTimeAt, controlGroupPct, timezone } = schedule;
+
+    const when =
+      mode === 'OPTIMIZE' ? 'Optimize with Co-marketer'
+      : mode === 'SPECIFIC_TIME' ? 'Specific time'
+      : 'Send at end';
+
+    const derivedSendAtEnd = mode === 'SEND_AT_END' ? (sendAtEndAt ?? endAt) : undefined;
+
+    return (
+      <div className="space-y-2">
+        <h2 className="text-base font-semibold">Schedule campaign</h2>
+        <Row label="Frequency cap" value={frequencyCapEnabled ? 'On' : 'Off'} />
+        <Row label="When to send" value={when} />
+        <Row label="Start time" value={fmt(startAt, timezone)} />
+        <Row label="End time" value={fmt(endAt, timezone)} />
+        {mode === 'SEND_AT_END' && <Row label="Send at end time" value={fmt(derivedSendAtEnd, timezone)} />}
+        {typeof controlGroupPct === 'number' && <Row label="Control group" value={`${controlGroupPct}%`} />}
+        {mode === 'SPECIFIC_TIME' && <Row label="Specific time" value={fmt(specificTimeAt, timezone)} />}
+        <Row label="Timezone" value={schedule.timezone} />
+      </div>
+    );
+  };
 
   // CTA Button Component with accessibility
   const CTAButton = ({ 
@@ -1902,240 +1999,254 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     }, (progressSteps.length + 1) * 1000);
   };
 
-  const renderPreviewStep = () => (
-    <div className="flex flex-col h-screen">
-      {/* Sticky Header */}
-      <div className="sticky top-0 z-50 bg-background border-b border-border p-6">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Button variant="ghost" size="sm" onClick={handleBack}>
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <DialogTitle className="text-xl font-semibold">Preview of Adobe</DialogTitle>
-            </div>
-            <Button onClick={handlePublish}>SAVE & PUBLISH</Button>
-          </div>
-        </DialogHeader>
-        
-        {/* Retry Logic Banner */}
-        {formData.retryEnabled && (
-          <Alert className="mt-4 border-info bg-info/10">
-            <Info className="h-4 w-4 text-info" />
-            <AlertDescription className="text-foreground">
-              <strong>Retry plan scheduled</strong> (24h cadence, up to {formData.retryDuration} days). 
-              Execution via Netcore; metrics sync back to Adobe. No customer data stored on Netcore.
-            </AlertDescription>
-          </Alert>
-        )}
-      </div>
+  const renderPreviewStep = () => {
+    // Calculate reachable contacts
+    const reachableContacts = formData.selectedSegments.length > 0 ? 
+      adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
+        .reduce((sum, s) => sum + s.users, 0) : 0;
 
-      {/* Progress Popup */}
-      {showProgressPopup && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-background rounded-lg p-8 w-full md:w-[28rem] mx-4 animate-scale-in">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <RefreshCw className="w-8 h-8 text-primary animate-spin" />
+    // Get segment data for display
+    const includeSegments = adobeSegments.filter(s => formData.selectedSegments.includes(s.id));
+    const excludeSegments = adobeSegments.filter(s => formData.excludeSegments.includes(s.id));
+
+    return (
+      <div className="flex flex-col h-screen">
+        {/* Sticky Header */}
+        <div className="sticky top-0 z-50 bg-background border-b border-border p-6">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <Button variant="ghost" size="sm" onClick={handleBack}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <div className="flex items-center space-x-3">
+                  <DialogTitle className="text-xl font-semibold">{formData.campaignName}</DialogTitle>
+                  <Badge variant="secondary" className="bg-gray-100 text-gray-800">DRAFT</Badge>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold mb-6">Campaign Execution Progress</h3>
-              
-              <div className="space-y-3 text-left">
-                {progressSteps.map((step, index) => (
-                  <div key={index} className={`flex items-center space-x-3 transition-all duration-300 ${
-                    index < currentProgressStep 
-                      ? 'text-green-600' 
-                      : index === currentProgressStep 
-                      ? 'text-primary' 
-                      : 'text-muted-foreground'
-                  }`}>
-                    <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors duration-300 ${
-                      index < currentProgressStep 
-                        ? 'bg-green-100 text-green-600' 
-                        : index === currentProgressStep 
-                        ? 'bg-primary/10 text-primary' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {index < currentProgressStep ? (
-                        <Check className="w-3 h-3" />
-                      ) : index === currentProgressStep ? (
-                        <RefreshCw className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <div className="w-2 h-2 rounded-full bg-current" />
-                      )}
-                    </div>
-                    <span className="text-sm">{step}</span>
-                  </div>
+              <Button onClick={handlePublish}>SAVE & PUBLISH</Button>
+            </div>
+            
+            {/* Tags */}
+            <div className="flex items-center space-x-2 mt-4">
+              <span className="text-sm text-muted-foreground">Tags:</span>
+              <div className="flex flex-wrap gap-1">
+                {formData.tags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="bg-blue-100 text-blue-800">
+                    {tag}
+                  </Badge>
                 ))}
               </div>
-              
-              {currentProgressStep >= progressSteps.length && (
-                <div className="mt-6 pt-4 border-t border-border">
-                  <p className="text-sm text-green-600 font-medium">✓ Campaign execution completed successfully</p>
+            </div>
+          </DialogHeader>
+          
+          {/* Retry Logic Banner */}
+          {formData.retryEnabled && (
+            <Alert className="mt-4 border-info bg-info/10">
+              <Info className="h-4 w-4 text-info" />
+              <AlertDescription className="text-foreground">
+                <strong>Retry plan scheduled</strong> (24h cadence, up to {formData.retryDuration} days). 
+                Execution via Netcore; metrics sync back to Adobe. No customer data stored on Netcore.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        {/* Progress Popup */}
+        {showProgressPopup && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+            <div className="bg-background rounded-lg p-8 w-full md:w-[28rem] mx-4 animate-scale-in">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <RefreshCw className="w-8 h-8 text-primary animate-spin" />
                 </div>
-              )}
+                <h3 className="text-lg font-semibold mb-6">Campaign Execution Progress</h3>
+                
+                <div className="space-y-3 text-left">
+                  {progressSteps.map((step, index) => (
+                    <div key={index} className={`flex items-center space-x-3 transition-all duration-300 ${
+                      index < currentProgressStep 
+                        ? 'text-green-600' 
+                        : index === currentProgressStep 
+                        ? 'text-primary' 
+                        : 'text-muted-foreground'
+                    }`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                        index < currentProgressStep 
+                          ? 'bg-green-100 text-green-600' 
+                          : index === currentProgressStep 
+                          ? 'bg-primary/10 text-primary' 
+                          : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {index < currentProgressStep ? (
+                          <Check className="w-3 h-3" />
+                        ) : index === currentProgressStep ? (
+                          <RefreshCw className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <div className="w-2 h-2 rounded-full bg-current" />
+                        )}
+                      </div>
+                      <span className="text-sm">{step}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {currentProgressStep >= progressSteps.length && (
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <p className="text-sm text-green-600 font-medium">✓ Campaign execution completed successfully</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Scrollable Content */}
-      <div className="flex-1 overflow-hidden p-6">
-        <div className="grid grid-cols-3 gap-6 h-full">
-          {/* Left Column - Scrollable */}
-          <div className="overflow-y-auto max-h-screen space-y-4" style={{ WebkitOverflowScrolling: 'touch' }}>
-            {/* Setup Details */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Settings className="w-4 h-4" />
-                  <CardTitle className="text-sm">Setup details</CardTitle>
-                </div>
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                  <Edit className="w-4 h-4 mr-1" />
-                  EDIT
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Campaign ID:</span>
-                    <span>263</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Campaign name:</span>
-                    <span>{formData.campaignName}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Business number:</span>
-                    <span>Netcore Solutions Support (+91 2249757637)</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Link tracking:</span>
-                    <span>Enabled</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tags:</span>
-                    <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                      {formData.tags[0]}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Audience */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Users className="w-4 h-4" />
-                  <CardTitle className="text-sm">Audience</CardTitle>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <Users className="w-4 h-4 text-blue-600" />
-                    <span className="text-muted-foreground">Reachable contacts</span>
-                    <span className="font-medium">{formData.selectedSegments.length > 0 ? 
-                      adobeSegments.filter(s => formData.selectedSegments.includes(s.id))
-                        .reduce((sum, s) => sum + s.users, 0) : 0}</span>
-                  </div>
-                  <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+        {/* Scrollable Content - 2 Column Layout */}
+        <div className="flex-1 overflow-y-auto p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <div className="grid xl:grid-cols-2 grid-cols-1 gap-6 max-w-7xl mx-auto">
+            
+            {/* Left Column - Audience & Schedule */}
+            <div className="space-y-6">
+              
+              {/* Audience Card */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center space-x-2">
+                    <Users className="w-5 h-5" />
+                    <span>Audience</span>
+                  </h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-blue-600 hover:text-blue-700"
+                    onClick={() => setCurrentStep('audience')}
+                    aria-describedby="audience-section"
+                  >
                     <Edit className="w-4 h-4 mr-1" />
                     EDIT
                   </Button>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Selected contacts</span>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span className="text-muted-foreground">Reachable contacts:</span>
+                    <span className="font-medium">{reachableContacts}</span>
                   </div>
+                  
                   <div>
-                    <span className="text-muted-foreground">Segments/Lists:</span>
-                    {formData.selectedSegments.length > 0 && (
-                      <div className="mt-1">
-                        {adobeSegments
-                          .filter(s => formData.selectedSegments.includes(s.id))
-                          .map(segment => (
-                            <Badge key={segment.id} variant="secondary" className="mr-1">
-                              ID: {segment.id} Test {segment.name}
-                            </Badge>
-                          ))}
+                    <span className="text-sm font-medium">Segments/Lists:</span>
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {includeSegments.slice(0, 5).map(segment => (
+                        <Badge key={segment.id} variant="secondary" className="text-xs">
+                          {segment.name}
+                        </Badge>
+                      ))}
+                      {includeSegments.length > 5 && (
+                        <Badge variant="secondary" className="text-xs bg-gray-100">
+                          +{includeSegments.length - 5} more
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {excludeSegments.length > 0 && (
+                    <div>
+                      <span className="text-sm font-medium">Excluded:</span>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {excludeSegments.slice(0, 5).map(segment => (
+                          <Badge key={segment.id} variant="outline" className="text-xs">
+                            {segment.name}
+                          </Badge>
+                        ))}
+                        {excludeSegments.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{excludeSegments.length - 5} more
+                          </Badge>
+                        )}
                       </div>
+                    </div>
+                  )}
+                  
+                  <Row label="Deduplication" value={formData.deduplicationEnabled ? 'Enabled' : 'Disabled'} />
+                  <Row label="Sampling method" value={formData.samplingMethod === 'RANDOM_SAMPLE' ? 'Random Sample' : 'HEPF (High Engagement Preferred First)'} />
+                </div>
+              </Card>
+
+              {/* Schedule Card */}
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center space-x-2">
+                    <CalendarIcon className="w-5 h-5" />
+                    <span>Schedule</span>
+                  </h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-blue-600 hover:text-blue-700"
+                    onClick={() => setCurrentStep('schedule')}
+                    aria-describedby="schedule-section"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    EDIT
+                  </Button>
+                </div>
+                
+                <SchedulePreview schedule={formData.scheduleConfig} />
+              </Card>
+
+              {/* Conversion Goal Card (conditional) */}
+              {formData.conversionGoalEnabled && (
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold flex items-center space-x-2">
+                      <Target className="w-5 h-5" />
+                      <span>Conversion Goal</span>
+                    </h2>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-blue-600 hover:text-blue-700"
+                      onClick={() => setCurrentStep('setup')}
+                      aria-describedby="conversion-section"
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      EDIT
+                    </Button>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Row label="Goal" value={formData.eventName} />
+                    {formData.revenueParameter !== null && (
+                      <Row label="Revenue Parameter" value={formData.revenueParameter} />
                     )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </Card>
+              )}
+            </div>
 
-            {/* Schedule */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="w-4 h-4" />
-                  <CardTitle className="text-sm">Schedule</CardTitle>
+            {/* Right Column - Content Preview */}
+            <div>
+              <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold flex items-center space-x-2">
+                    <MessageSquareText className="w-5 h-5" />
+                    <span>Content</span>
+                  </h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-blue-600 hover:text-blue-700"
+                    onClick={() => setCurrentStep('content')}
+                    aria-describedby="content-section"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    EDIT
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                  <Edit className="w-4 h-4 mr-1" />
-                  EDIT
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">Schedule campaign</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Frequency cap:</span>
-                    <span>{formData.frequencyCap ? 'On' : 'Off'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">When to send:</span>
-                    <span className="capitalize">{formData.scheduleType === 'optimize' ? 'Optimize with Co-marketer' : formData.scheduleType}</span>
-                  </div>
-                  {formData.scheduleType === 'optimize' && (
-                    <>
-                      <div className="text-xs text-muted-foreground">
-                        Start time - {formData.startTime}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        End time - {formData.endTime}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Send at end time - {formData.endTime}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Control group - {formData.controlGroupPercentage}%
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Specific time - {formData.specificTime}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Column - Scrollable */}
-          <div className="overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <MessageSquareText className="w-4 h-4" />
-                  <CardTitle className="text-sm">Content</CardTitle>
-                </div>
-                <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                  <Edit className="w-4 h-4 mr-1" />
-                  EDIT
-                </Button>
-              </CardHeader>
-              <CardContent>
+                
                 <div className="space-y-4">
-                  <div>
-                    <span className="text-sm text-muted-foreground">Template Name:</span>
-                    <div className="font-medium">{formData.selectedTemplate}</div>
-                  </div>
+                  <Row label="Template Name" value={formData.selectedTemplate} />
                   
                   <div className="text-sm text-muted-foreground">
                     Note: Test your template post-approval by Meta to confirm accuracy before sending it to users.
@@ -2143,63 +2254,68 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
                   {/* Phone Preview */}
                   <div className="flex justify-center">
-                    <div className="relative w-48 h-80 bg-black rounded-2xl p-1">
-                      <div className="w-full h-full bg-white rounded-2xl overflow-hidden">
-                        <div className="bg-green-600 text-white p-2 flex items-center space-x-2 text-xs">
-                          <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
-                            <MessageCircle className="w-4 h-4 text-green-600" />
+                    <div className="relative w-64 h-[31.25rem] bg-black rounded-[2rem] p-2">
+                      <div className="w-full h-full bg-white rounded-[1.5rem] overflow-hidden">
+                        {/* WhatsApp Header */}
+                        <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                            <img 
+                              src="/lovable-uploads/770b7510-d3df-445b-b9b0-7971f7f8105b.png" 
+                              alt="Netcore Logo" 
+                              className="w-5 h-5 rounded-sm"
+                            />
                           </div>
                           <span className="font-medium">Netcore Cloud</span>
                         </div>
                         
-                        <div className="p-2 bg-gray-50 h-full">
-                          <div className="bg-white rounded-lg p-2 text-xs shadow-sm">
-                            <p className="mb-2">Check out our top deals and grab your favorites before the stock runs out!</p>
+                        {/* Message Content */}
+                        <div className="p-4 bg-gray-50 flex-1 h-full">
+                          <div className="bg-white rounded-lg p-3 w-[12.5rem] ml-auto shadow-sm">
+                            <p className="text-sm mb-2">
+                              Check out our top deals and grab your favorites before the stock runs out!
+                            </p>
                             
-                            <div className="grid grid-cols-2 gap-1 mb-2">
-                              <div className="bg-green-100 rounded p-1">
-                                <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
-                                <p className="text-[0.625rem] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                                <div className="flex flex-col space-y-0.5 mt-1">
+                            <div className="flex space-x-2 mb-3">
+                              <div className="flex-1 bg-green-100 rounded-lg p-2">
+                                <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
+                                <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                                <div className="flex flex-col space-y-1 mt-2">
                                   <CTAButton
                                     url={formData.ctaUrls.visitWebsite}
                                     label="Visit Website"
                                     ariaLabel="Visit Website - opens in new tab"
-                                    className="text-[0.5rem]"
                                   />
                                   <CTAButton
                                     url={formData.ctaUrls.viewProduct}
                                     label="View Product"
                                     ariaLabel="View Product - opens in new tab"
-                                    className="text-[0.5rem]"
                                   />
                                 </div>
                               </div>
-                              <div className="bg-green-100 rounded p-1">
-                                <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
-                                <p className="text-[0.625rem] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                                <div className="flex flex-col space-y-0.5 mt-1">
+                              <div className="flex-1 bg-green-100 rounded-lg p-2">
+                                <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
+                                <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                                <div className="flex flex-col space-y-1 mt-2">
                                   <CTAButton
                                     url={formData.ctaUrls.visitWebsite}
                                     label="Visit Website"
                                     ariaLabel="Visit Website - opens in new tab"
-                                    className="text-[0.5rem]"
                                   />
                                   <CTAButton
                                     url={formData.ctaUrls.viewProduct}
                                     label="View Product"
                                     ariaLabel="View Product - opens in new tab"
-                                    className="text-[0.5rem]"
                                   />
                                 </div>
                               </div>
                             </div>
-
-                            <div className="flex items-center justify-between text-[0.5rem] text-gray-500">
+                            
+                            <div className="flex items-center justify-between text-xs text-gray-500">
                               <span>😊</span>
+                              <span>🗂️</span>
                               <span>📎</span>
-                              <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center">
-                                ✓
+                              <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center">
+                                ↓
                               </span>
                             </div>
                           </div>
@@ -2208,18 +2324,13 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Third Column - Summary Panel */}
-          <div className="overflow-y-auto max-h-screen" style={{ WebkitOverflowScrolling: 'touch' }}>
-            <SummaryPanel formData={formData} currentStep={currentStep} />
+              </Card>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderStartStep = () => (
     <div className="p-4 sm:p-6">
