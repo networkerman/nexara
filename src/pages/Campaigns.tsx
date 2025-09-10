@@ -1,10 +1,10 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { CampaignsPage } from '@/components/campaigns/CampaignsPage';
+import { CampaignsPageNew } from '@/components/campaigns/CampaignsPageNew';
 
 const Campaigns = () => {
   return (
     <AppLayout>
-      <CampaignsPage />
+      <CampaignsPageNew />
     </AppLayout>
   );
 };
