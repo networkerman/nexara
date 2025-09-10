@@ -2659,6 +2659,16 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                           {number.name}
                         </SelectItem>
                       ))}
+                      <div 
+                        className="relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 border-t"
+                        onClick={() => {
+                          // TODO: Open onboarding flow to add new number
+                          console.log('Opening onboarding flow to add new business number');
+                        }}
+                      >
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add a business number
+                      </div>
                     </SelectContent>
                   </Select>
                   
