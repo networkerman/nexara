@@ -241,7 +241,7 @@ const SegmentsDropdown = ({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between min-h-[40px] h-auto p-3"
+          className="w-full justify-between min-h-10 h-auto p-3"
         >
           <div className="flex flex-wrap gap-1 items-center flex-1">
             {selectedSegmentsData.length === 0 ? (
@@ -269,8 +269,8 @@ const SegmentsDropdown = ({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full min-w-[600px] p-0" align="start">
-        <div className="flex flex-col max-h-[400px]">
+      <PopoverContent className="w-full min-w-[37.5rem] p-0" align="start">
+        <div className="flex flex-col max-h-[25rem]">
           {/* Search Input */}
           <div className="p-3 border-b">
             <div className="relative">
@@ -895,7 +895,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
         {/* Phone Mockup */}
         <div className="flex justify-center">
-          <div className="relative w-64 h-[500px] bg-black rounded-[2rem] p-2">
+          <div className="relative w-64 h-[31.25rem] bg-black rounded-[2rem] p-2">
             <div className="w-full h-full bg-white rounded-[1.5rem] overflow-hidden">
               {/* WhatsApp Header */}
               <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
@@ -912,7 +912,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               {/* Message Content */}
               <div className="p-4 bg-gray-50 flex-1 h-full">
                 {formData.selectedTemplate ? (
-                  <div className="bg-white rounded-lg p-3 max-w-[200px] ml-auto shadow-sm">
+                  <div className="bg-white rounded-lg p-3 w-[12.5rem] ml-auto shadow-sm">
                     <p className="text-sm mb-2">
                       Check out our top deals and grab your favorites before the stock runs out!
                     </p>
@@ -1513,7 +1513,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       {/* Progress Popup */}
       {showProgressPopup && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-background rounded-lg p-8 max-w-md w-full mx-4 animate-scale-in">
+          <div className="bg-background rounded-lg p-8 w-full md:w-[28rem] mx-4 animate-scale-in">
             <div className="text-center">
               <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <RefreshCw className="w-8 h-8 text-primary animate-spin" />
@@ -1739,23 +1739,23 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                             <div className="grid grid-cols-2 gap-1 mb-2">
                               <div className="bg-green-100 rounded p-1">
                                 <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
-                                <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                                <p className="text-[0.625rem] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
                                 <div className="flex flex-col space-y-0.5 mt-1">
-                                  <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
-                                  <div className="text-[8px] text-blue-600">🔗 View Product</div>
+                                  <div className="text-[0.5rem] text-blue-600">🔗 Visit Website</div>
+                                  <div className="text-[0.5rem] text-blue-600">🔗 View Product</div>
                                 </div>
                               </div>
                               <div className="bg-green-100 rounded p-1">
                                 <div className="w-full h-8 bg-orange-200 rounded mb-1"></div>
-                                <p className="text-[10px] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
+                                <p className="text-[0.625rem] font-medium">Flat 30% OFF on our best-selling sneakers.</p>
                                 <div className="flex flex-col space-y-0.5 mt-1">
-                                  <div className="text-[8px] text-blue-600">🔗 Visit Website</div>
-                                  <div className="text-[8px] text-blue-600">🔗 View Product</div>
+                                  <div className="text-[0.5rem] text-blue-600">🔗 Visit Website</div>
+                                  <div className="text-[0.5rem] text-blue-600">🔗 View Product</div>
                                 </div>
                               </div>
                             </div>
-                            
-                            <div className="flex items-center justify-between text-[8px] text-gray-500">
+
+                            <div className="flex items-center justify-between text-[0.5rem] text-gray-500">
                               <span>😊</span>
                               <span>📎</span>
                               <span className="bg-green-600 text-white rounded-full w-4 h-4 flex items-center justify-center">
@@ -2364,7 +2364,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'max-w-6xl h-screen max-h-screen' : 'max-w-2xl'} p-0 overflow-hidden`}>
+        <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'w-[72rem] h-screen max-h-screen' : 'w-[36rem]'} p-0 overflow-hidden`}>
           {currentStep === 'start' && renderStartStep()}
           {currentStep === 'channels' && renderChannelsStep()}
           {currentStep === 'setup' && renderSetupStep()}
