@@ -110,9 +110,9 @@ export function CampaignsPage() {
   }, [activeTab, activeChannelFilter, scrollPosition]);
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col min-h-screen w-full">
       {/* Page Header - Sticky */}
-      <div className="sticky top-0 z-40 bg-background border-b border-border px-6 py-4">
+      <div className="sticky top-0 z-40 bg-background border-b border-border px-4 sm:px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-foreground">Campaigns</h2>
@@ -135,7 +135,7 @@ export function CampaignsPage() {
 
       {/* Success Banner */}
       {showSuccessBanner && (
-        <div className="px-6 pt-4">
+        <div className="px-4 sm:px-6 pt-4">
           <Alert className="border-success bg-success/10">
             <Info className="h-4 w-4 text-success" />
             <AlertDescription className="text-success-foreground">
@@ -206,7 +206,7 @@ export function CampaignsPage() {
         {/* Search and Actions */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="relative w-80">
+            <div className="relative basis-1/4">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search campaigns..."
@@ -224,9 +224,9 @@ export function CampaignsPage() {
       </div>
 
       {/* Scrollable Table Container */}
-      <div 
+      <div
         ref={tableContainerRef}
-        className="flex-1 overflow-y-auto px-6 pb-6" 
+        className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div className="pt-4">
