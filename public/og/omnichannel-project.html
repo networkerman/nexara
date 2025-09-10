@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            width: 1200px;
+            height: 630px;
+            background: linear-gradient(135deg, #1E4078 0%, #2B5AA0 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial', sans-serif;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+            margin-bottom: 80px;
+        }
+        
+        .netcore-container {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        
+        .netcore {
+            font-size: 64px;
+            font-weight: bold;
+            letter-spacing: -2px;
+        }
+        
+        .netcore .orange {
+            color: #FF6700;
+        }
+        
+        .netcore .white {
+            color: white;
+        }
+        
+        .x {
+            font-size: 80px;
+            font-weight: bold;
+            margin: 0 30px;
+            color: white;
+        }
+        
+        .hdfc-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .hdfc-logo {
+            width: 80px;
+            height: 80px;
+            background: #DC1725;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .hdfc-logo::before {
+            content: '';
+            width: 40px;
+            height: 40px;
+            background: white;
+            position: absolute;
+        }
+        
+        .hdfc-logo::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            background: #DC1725;
+            position: absolute;
+            z-index: 1;
+        }
+        
+        .hdfc-text {
+            font-size: 64px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: -1px;
+        }
+        
+        .title {
+            text-align: center;
+            line-height: 1.1;
+        }
+        
+        .omnichannel {
+            font-size: 96px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: white;
+            letter-spacing: -3px;
+        }
+        
+        .project {
+            font-size: 96px;
+            font-weight: bold;
+            color: white;
+            letter-spacing: -3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="netcore-container">
+            <div class="netcore">
+                <span class="orange">netco</span><span class="white">re</span>
+            </div>
+        </div>
+        <div class="x">×</div>
+        <div class="hdfc-container">
+            <div class="hdfc-logo"></div>
+            <div class="hdfc-text">HDFC</div>
+        </div>
+    </div>
+    
+    <div class="title">
+        <div class="omnichannel">Omnichannel</div>
+        <div class="project">Project</div>
+    </div>
+</body>
+</html>

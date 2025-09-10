@@ -1,0 +1,32 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E4078;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2B5AA0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Netcore Text -->
+  <text x="280" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#FF6700">netco</text>
+  <text x="420" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">re</text>
+  
+  <!-- X Symbol -->
+  <text x="580" y="230" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="white">×</text>
+  
+  <!-- HDFC Logo -->
+  <rect x="680" y="170" width="80" height="80" fill="#DC1725"/>
+  <rect x="700" y="190" width="40" height="40" fill="white"/>
+  <rect x="715" y="205" width="10" height="10" fill="#DC1725"/>
+  
+  <!-- HDFC Text -->
+  <text x="780" y="230" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">HDFC</text>
+  
+  <!-- Omnichannel -->
+  <text x="600" y="380" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="white" text-anchor="middle">Omnichannel</text>
+  
+  <!-- Project -->
+  <text x="600" y="500" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="white" text-anchor="middle">Project</text>
+</svg>
