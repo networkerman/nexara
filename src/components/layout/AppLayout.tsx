@@ -44,7 +44,7 @@ export function AppLayout({
 }: AppLayoutProps) {
   return <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <div className="w-64 bg-primary text-primary-foreground">
+      <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
         {/* Logo */}
         <div className="p-6 border-b border-primary/20">
           <div className="flex items-center space-x-2">
