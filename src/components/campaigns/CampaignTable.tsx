@@ -93,7 +93,7 @@ export function CampaignTable({ publishedCampaignId, searchQuery = '', activeTab
 
   // Create campaigns list with newly published campaign at top (if exists)
   const campaigns = useMemo(() => {
-    let campaignList = [...baseCampaigns];
+    const campaignList = [...baseCampaigns];
     
     // Add newly published campaign to the top
     if (publishedCampaignId) {
