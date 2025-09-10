@@ -134,7 +134,8 @@ export function AppLayout({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
                   align="end" 
-                  className="w-64 bg-card border border-border shadow-lg z-50"
+                  className="w-64 bg-background border border-border shadow-lg z-[100] min-w-0"
+                  sideOffset={5}
                 >
                   <DropdownMenuItem className="flex items-center space-x-2 p-3 cursor-default hover:bg-muted/50">
                     <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
