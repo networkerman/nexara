@@ -1,7 +1,14 @@
 import React from 'react';
-import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe } from 'lucide-react';
+import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe, ChevronDown, Plus } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 const navigation = [{
   name: 'Dashboards',
   href: '/dashboards',
@@ -109,13 +116,55 @@ export function AppLayout({
               <h1 className="text-xl font-semibold text-foreground">Engage</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
-                </div>
-                <span className="text-sm text-foreground">HDFC</span>
-                <span className="text-xs text-success font-medium">Live</span>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="flex items-center space-x-2 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                        <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
+                      </div>
+                      <span className="text-sm text-foreground">HDFC</span>
+                      <span className="text-xs text-success font-medium">Live</span>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent 
+                  align="end" 
+                  className="w-64 bg-card border border-border shadow-lg z-50"
+                >
+                  <DropdownMenuItem className="flex items-center space-x-2 p-3 cursor-default hover:bg-muted/50">
+                    <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm font-medium text-foreground">HDFC Bank</span>
+                        <span className="text-xs text-success font-medium">Live</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Current active account</p>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="flex items-center space-x-2 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => {
+                      // TODO: Open onboarding flow to add new number
+                      console.log('Opening onboarding flow to add new number');
+                    }}
+                  >
+                    <div className="w-6 h-6 bg-muted rounded-full flex items-center justify-center">
+                      <Plus className="w-3 h-3 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-foreground">Add Number</span>
+                      <p className="text-xs text-muted-foreground">Connect a new account</p>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
