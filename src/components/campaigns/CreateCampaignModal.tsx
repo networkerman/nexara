@@ -1245,26 +1245,26 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 title={stepMeta.errors?.join(', ') || ''}
               >
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-sm transition-all duration-200 ${
-                  isCompleted
+                  stepMeta.status === 'valid'
                     ? 'bg-green-500 text-white shadow-lg'
-                    : isInvalid
+                    : stepMeta.status === 'invalid' && stepMeta.touched
                     ? 'bg-red-500 text-white'
-                    : isCurrent
+                    : stepMeta.status === 'editing' && isCurrent
                     ? 'bg-blue-500 text-white shadow-md'
-                    : stepMeta.touched
-                    ? 'border-2 border-yellow-500 text-yellow-500 bg-yellow-50'
-                    : canNavigate
-                    ? 'border-2 border-muted-foreground text-muted-foreground'
-                    : 'border-2 border-muted text-muted'
+                    : stepMeta.status === 'editing'
+                    ? 'border-2 border-blue-500 text-blue-500 bg-blue-50'
+                    : 'border-2 border-gray-300 text-gray-400'
                 }`}>
-                  {isCompleted ? (
+                  {stepMeta.status === 'valid' ? (
                     <Check className="w-4 h-4" />
-                  ) : isInvalid ? (
-                    <X className="w-3 h-3" />
-                  ) : isCurrent ? (
-                    <IconComponent className="w-4 h-4" />
+                  ) : stepMeta.status === 'invalid' && stepMeta.touched ? (
+                    <div className="w-2 h-2 bg-white rounded-full"></div>
+                  ) : stepMeta.status === 'editing' && isCurrent ? (
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  ) : stepMeta.status === 'editing' ? (
+                    <div className="w-2 h-2 border border-blue-500 rounded-full"></div>
                   ) : (
-                    <span>{index + 1}</span>
+                    <div className="w-2 h-2 border border-gray-400 rounded-full"></div>
                   )}
                 </div>
                 <span className={`text-sm font-medium transition-colors duration-200 ${
@@ -1620,7 +1620,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <img 
-                    src="/lovable-uploads/770b7510-d3df-445b-b9b0-7971f7f8105b.png" 
+                    src="/netcore-logo.svg" 
                     alt="Netcore Logo" 
                     className="w-5 h-5 rounded-sm"
                   />

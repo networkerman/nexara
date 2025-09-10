@@ -1,21 +1,27 @@
 {
-  "name": "Netcore Customer Engagement Platform",
-  "short_name": "Netcore HDFC",
-  "description": "Customer engagement platform for HDFC Bank",
+  "name": "Netcore × HDFC Omnichannel Project",
+  "short_name": "Netcore",
+  "description": "Advanced customer engagement and campaign management platform",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#FF6700",
   "background_color": "#ffffff",
   "icons": [
     {
       "src": "/favicon.ico",
-      "sizes": "512x512",
-      "type": "image/png"
+      "sizes": "32x32",
+      "type": "image/x-icon"
     },
     {
-      "src": "/apple-touch-icon.png", 
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/netcore-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/netcore-logo-180.svg",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "apple-touch-icon"
     }
   ]
 }

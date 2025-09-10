@@ -47,15 +47,17 @@ export function AppLayout({
       <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
         {/* Logo */}
         <div className="p-6 border-b border-primary/20">
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
             <img 
-              src="/lovable-uploads/770b7510-d3df-445b-b9b0-7971f7f8105b.png" 
+              src="/netcore-logo.svg" 
               alt="Netcore Logo" 
               className="w-8 h-8 rounded-md"
             />
-            <span className="text-lg font-semibold">Netcore</span>
+            <div>
+              <span className="text-lg font-semibold text-white">netcore</span>
+              <p className="text-xs text-primary-foreground/70 -mt-1">CUSTOMER ENGAGEMENT</p>
+            </div>
           </div>
-          <p className="text-xs text-primary-foreground/70 mt-1">CUSTOMER ENGAGEMENT</p>
         </div>
 
         {/* Navigation */}
