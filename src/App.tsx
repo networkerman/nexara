@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Campaigns from "./pages/Campaigns";
+import SupabaseTest from "./pages/SupabaseTest";
 import PremiumGate from "./pages/PremiumGate";
 import NotFound from "./pages/NotFound";
 
@@ -22,6 +23,7 @@ const App = () => (
           
           {/* Active/Implemented Routes */}
           <Route path="/engage/campaigns" element={<Campaigns />} />
+          <Route path="/supabase-test" element={<SupabaseTest />} />
           
           {/* Premium-gated / Unfinished Routes */}
           <Route path="/dashboards" element={<PremiumGate feature="Dashboards" />} />
