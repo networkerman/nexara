@@ -1,0 +1,95 @@
+# Cursor AI - Ignore heavy directories and files for better performance
+
+# Dependencies (largest contributor to size)
+node_modules/
+jspm_packages/
+
+# Build outputs and artifacts
+dist/
+build/
+.next/
+.nuxt/
+.cache/
+.parcel-cache/
+.rpt2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+*.tsbuildinfo
+
+# Git directory (not needed for code context)
+.git/
+
+# Logs and temporary files
+logs/
+*.log
+tmp/
+temp/
+
+# Test coverage and reports
+coverage/
+.nyc_output
+test-results/
+playwright-report/
+cypress/videos/
+cypress/screenshots/
+storybook-static/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package manager files (keep package.json but ignore locks for AI context)
+package-lock.json
+yarn.lock
+bun.lockb
+pnpm-lock.yaml
+
+# Environment and config files with sensitive data
+.env
+.env.local
+.env.*.local
+
+# Large media files
+*.mov
+*.mp4
+*.avi
+*.mkv
+*.webm
+*.flv
+*.wmv
+
+# AI/ML models and large binaries
+*.model
+*.pkl
+*.h5
+*.pb
+*.onnx
+*.tflite
+
+# Backup and archive files
+*.bak
+*.backup
+*.old
+*.orig
+*.tar
+*.zip
+*.rar
+*.7z
+
+# Documentation that doesn't need AI context (keep README.md)
+CHANGELOG.md
+LICENSE
+*.pdf
+*.doc
+*.docx
