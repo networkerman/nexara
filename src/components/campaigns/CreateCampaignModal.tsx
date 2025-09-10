@@ -50,19 +50,21 @@ interface CreateCampaignModalProps {
 
 type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
 
+type SamplingMethod = 'RANDOM_SAMPLE' | 'HEPF';
+
 interface CampaignFormData {
   campaignName: string;
   tags: string[];
   businessNumber: string;
   linkTracking: boolean;
-  conversionGoal: boolean;
+  conversionGoalEnabled: boolean;
   eventName: string;
   conversionWindow: number;
-  revenueParameter: string;
-  deduplication: boolean;
+  revenueParameter: number | null;
+  deduplicationEnabled: boolean;
   targetAudience: 'all' | 'segments';
   selectedSegments: string[];
-  excludeContacts: boolean;
+  excludeSegments: string[];
   selectedTemplate: string;
   scheduleType: 'now' | 'later' | 'optimize';
   startTime: string;
@@ -79,13 +81,15 @@ interface CampaignFormData {
   // Audience Limit fields
   sendLimit: boolean;
   maxRecipients: number;
-  samplingMethod: 'random' | 'priority';
+  samplingMethod: SamplingMethod;
   // Retry Logic fields
   retryEnabled: boolean;
   retryDuration: number;
   stopOnConversion: boolean;
   stopOnManualPause: boolean;
   stopOnTemplateChange: boolean;
+  // Legacy migration flags
+  _legacySamplingMigrated?: boolean;
 }
 
 interface WhatsAppTemplate {
@@ -186,10 +190,14 @@ const adobeSegments: AdobeSegment[] = [
 // Segments Dropdown Component
 const SegmentsDropdown = ({ 
   selectedSegments, 
-  onSelectionChange 
+  onSelectionChange,
+  maxSelections = 5,
+  label = "segments"
 }: { 
   selectedSegments: string[];
   onSelectionChange: (segments: string[]) => void;
+  maxSelections?: number;
+  label?: string;
 }) => {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -216,15 +224,22 @@ const SegmentsDropdown = ({
   }, [selectedSegments]);
 
   const handleToggleSegment = useCallback((segmentId: string) => {
-    const newSelection = selectedSegments.includes(segmentId)
-      ? selectedSegments.filter(id => id !== segmentId)
-      : [...selectedSegments, segmentId];
-    onSelectionChange(newSelection);
-  }, [selectedSegments, onSelectionChange]);
+    if (selectedSegments.includes(segmentId)) {
+      // Remove segment
+      const newSelection = selectedSegments.filter(id => id !== segmentId);
+      onSelectionChange(newSelection);
+    } else if (selectedSegments.length < maxSelections) {
+      // Add segment if under limit
+      const newSelection = [...selectedSegments, segmentId];
+      onSelectionChange(newSelection);
+    }
+    // If at limit, do nothing (checkbox will be disabled)
+  }, [selectedSegments, onSelectionChange, maxSelections]);
 
   const handleSelectAll = useCallback(() => {
-    onSelectionChange(filteredSegments.map(s => s.id));
-  }, [filteredSegments, onSelectionChange]);
+    const segmentsToSelect = filteredSegments.slice(0, maxSelections).map(s => s.id);
+    onSelectionChange(segmentsToSelect);
+  }, [filteredSegments, onSelectionChange, maxSelections]);
 
   const handleClearAll = useCallback(() => {
     onSelectionChange([]);
@@ -311,6 +326,7 @@ const SegmentsDropdown = ({
                       checked={selectedSegments.includes(segment.id)}
                       onChange={() => handleToggleSegment(segment.id)}
                       onClick={(e) => e.stopPropagation()}
+                      disabled={!selectedSegments.includes(segment.id) && selectedSegments.length >= maxSelections}
                     />
                     <span className="text-sm">{segment.name}</span>
                   </div>
@@ -323,29 +339,36 @@ const SegmentsDropdown = ({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-3 border-t bg-muted/20">
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <span>List selected: 0</span>
-              <span>Segment selected: {selectedSegments.length}</span>
+          <div className="p-3 border-t bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                <span>List selected: 0</span>
+                <span>Segment selected: {selectedSegments.length}/{maxSelections}</span>
+              </div>
+              <div className="flex space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSelectAll}
+                  disabled={filteredSegments.length === 0 || selectedSegments.length >= maxSelections}
+                >
+                  Select all
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearAll}
+                  disabled={selectedSegments.length === 0}
+                >
+                  Clear all
+                </Button>
+              </div>
             </div>
-            <div className="flex space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSelectAll}
-                disabled={filteredSegments.length === 0}
-              >
-                Select all
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClearAll}
-                disabled={selectedSegments.length === 0}
-              >
-                Clear all
-              </Button>
-            </div>
+            {selectedSegments.length >= maxSelections && (
+              <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                Limit reached ({maxSelections}). Please consolidate multiple segments into a single segment before adding more.
+              </div>
+            )}
           </div>
         </div>
       </PopoverContent>
@@ -478,18 +501,24 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
                 ))}
               </div>
             </div>
-            <div>
-              <span className="font-medium text-foreground">Conversion activity:</span>
-              <div>{formData.eventName}</div>
-            </div>
-            <div>
-              <span className="font-medium text-foreground">Conversion window:</span>
-              <div>{formData.conversionWindow} Days</div>
-            </div>
-            <div>
-              <span className="font-medium text-foreground">Revenue parameter:</span>
-              <div>{formData.revenueParameter}</div>
-            </div>
+            {formData.conversionGoalEnabled && (
+              <>
+                <div>
+                  <span className="font-medium text-foreground">Conversion activity:</span>
+                  <div>{formData.eventName}</div>
+                </div>
+                <div>
+                  <span className="font-medium text-foreground">Conversion window:</span>
+                  <div>{formData.conversionWindow} Days</div>
+                </div>
+                {formData.revenueParameter !== null && (
+                  <div>
+                    <span className="font-medium text-foreground">Revenue parameter:</span>
+                    <div>{formData.revenueParameter}</div>
+                  </div>
+                )}
+              </>
+            )}
             <div>
               <span className="font-medium text-foreground">Business number:</span>
               <div>Netcore Solutions Support (+91 2249757637)</div>
@@ -500,7 +529,7 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
             </div>
             <div>
               <span className="font-medium text-foreground">Deduplication:</span>
-              <div>{formData.deduplication ? 'On' : 'Off'}</div>
+              <div>{formData.deduplicationEnabled ? 'On' : 'Off'}</div>
             </div>
             </div>
           )}
@@ -535,8 +564,19 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
             )}
             <div>
               <span className="font-medium text-foreground">Excluded audience:</span>
-              <div>Exclude list/segment</div>
-              <div>{formData.excludeContacts ? 'On' : 'Off'}</div>
+              {formData.excludeSegments.length > 0 ? (
+                <div>
+                  {adobeSegments.filter(s => formData.excludeSegments.includes(s.id)).map(segment => (
+                    <div key={segment.id} className="flex items-center space-x-1 mt-1">
+                      <Badge variant="outline" className="text-xs">
+                        {segment.name}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div>None</div>
+              )}
             </div>
             {formData.sendLimit && (
               <>
@@ -546,7 +586,7 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
                 </div>
                 <div>
                   <span className="font-medium text-foreground">Sampling method:</span>
-                  <div>{formData.samplingMethod === 'random' ? 'Random sample' : 'Top-N by priority'}</div>
+                  <div>{formData.samplingMethod === 'RANDOM_SAMPLE' ? 'Random Sample' : 'HEPF (High Engagement Preferred First)'}</div>
                 </div>
                 <div>
                   <span className="font-medium text-foreground">Final count:</span>
@@ -583,7 +623,7 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
             </div>
             <div>
               <span className="font-medium text-foreground">Deduplication:</span>
-              <div>{formData.deduplication ? 'On' : 'Off'}</div>
+              <div>{formData.deduplicationEnabled ? 'On' : 'Off'}</div>
             </div>
             </div>
           )}
@@ -666,21 +706,54 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
   );
 };
 
+// Data normalization function for legacy compatibility
+const normalizeCampaignData = (data: any): CampaignFormData => {
+  const normalized: CampaignFormData = {
+    ...data,
+    // Normalize conversion goal
+    conversionGoalEnabled: data.conversionGoal ?? data.conversionGoalEnabled ?? true,
+    revenueParameter: data.conversionGoalEnabled === false ? null : (typeof data.revenueParameter === 'string' ? parseFloat(data.revenueParameter) || null : data.revenueParameter),
+    // Normalize deduplication
+    deduplicationEnabled: data.deduplication ?? data.deduplicationEnabled ?? true,
+    // Normalize sampling method
+    samplingMethod: (() => {
+      const method = data.samplingMethod;
+      if (method === 'RANDOM_SAMPLE' || method === 'HEPF') return method;
+      if (method === 'random') return 'RANDOM_SAMPLE';
+      if (method === 'priority') return 'HEPF';
+      return 'RANDOM_SAMPLE'; // Default fallback
+    })(),
+    // Ensure exclude segments exists
+    excludeSegments: data.excludeSegments || [],
+    // Legacy migration flag
+    _legacySamplingMigrated: data.samplingMethod && !['RANDOM_SAMPLE', 'HEPF'].includes(data.samplingMethod)
+  };
+
+  // Clear revenue parameter if conversion goal is disabled
+  if (!normalized.conversionGoalEnabled) {
+    normalized.revenueParameter = null;
+  }
+
+  return normalized;
+};
+
 export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps) {
   const [currentStep, setCurrentStep] = useState<Step>('start');
-  const [formData, setFormData] = useState<CampaignFormData>({
+  const [legacyMigrationNote, setLegacyMigrationNote] = useState<string | null>(null);
+  
+  const [formData, setFormData] = useState<CampaignFormData>(normalizeCampaignData({
     campaignName: 'Adobe',
     tags: ['Adobe'],
     businessNumber: 'netcore',
     linkTracking: true,
-    conversionGoal: true,
+    conversionGoalEnabled: true,
     eventName: 'Account Opened (Savings)',
     conversionWindow: 1,
-    revenueParameter: 'price',
-    deduplication: true,
+    revenueParameter: 100,
+    deduplicationEnabled: true,
     targetAudience: 'segments',
     selectedSegments: [],
-    excludeContacts: false,
+    excludeSegments: [],
     selectedTemplate: 'static_carousel_recs_url',
     scheduleType: 'now',
     startTime: 'Sep 09, 2025 03:45 pm',
@@ -697,17 +770,37 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     // Audience Limit fields
     sendLimit: false,
     maxRecipients: 1000,
-    samplingMethod: 'random',
+    samplingMethod: 'RANDOM_SAMPLE',
     // Retry Logic fields
     retryEnabled: false,
     retryDuration: 7,
     stopOnConversion: true,
     stopOnManualPause: true,
     stopOnTemplateChange: true
-  });
+  }));
 
   const updateFormData = useCallback((updates: Partial<CampaignFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      const newData = { ...prev, ...updates };
+      
+      // Handle conversion goal changes
+      if ('conversionGoalEnabled' in updates && !updates.conversionGoalEnabled) {
+        newData.revenueParameter = null;
+      }
+      
+      // Validate segment limits
+      if ('selectedSegments' in updates && updates.selectedSegments && updates.selectedSegments.length > 5) {
+        console.warn('Selected segments limit exceeded (5)');
+        return prev; // Don't update if limit exceeded
+      }
+      
+      if ('excludeSegments' in updates && updates.excludeSegments && updates.excludeSegments.length > 5) {
+        console.warn('Excluded segments limit exceeded (5)');
+        return prev; // Don't update if limit exceeded
+      }
+      
+      return newData;
+    });
   }, []);
 
   const handleStartOptionClick = (optionId: string) => {
@@ -752,19 +845,19 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
 
   const handleClose = () => {
     setCurrentStep('start');
-    setFormData({
+    setFormData(normalizeCampaignData({
       campaignName: 'Adobe',
       tags: ['Adobe'],
       businessNumber: 'netcore',
       linkTracking: true,
-      conversionGoal: true,
+      conversionGoalEnabled: true,
       eventName: 'Account Opened (Savings)',
       conversionWindow: 1,
-      revenueParameter: 'price',
-      deduplication: true,
+      revenueParameter: 100,
+      deduplicationEnabled: true,
       targetAudience: 'segments',
       selectedSegments: [],
-      excludeContacts: false,
+      excludeSegments: [],
       selectedTemplate: 'static_carousel_recs_url',
       scheduleType: 'now',
       startTime: 'Sep 09, 2025 03:45 pm',
@@ -781,14 +874,15 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       // Audience Limit fields
       sendLimit: false,
       maxRecipients: 1000,
-      samplingMethod: 'random',
+      samplingMethod: 'RANDOM_SAMPLE',
       // Retry Logic fields
       retryEnabled: false,
       retryDuration: 7,
       stopOnConversion: true,
       stopOnManualPause: true,
       stopOnTemplateChange: true
-    });
+    }));
+    setLegacyMigrationNote(null);
     onClose();
   };
 
@@ -2087,12 +2181,12 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                   <p className="text-sm text-muted-foreground">Select the event you would like to count as a conversion</p>
                 </div>
                 <Switch 
-                  checked={formData.conversionGoal}
-                  onCheckedChange={(checked) => updateFormData({ conversionGoal: checked })}
+                  checked={formData.conversionGoalEnabled}
+                  onCheckedChange={(checked) => updateFormData({ conversionGoalEnabled: checked })}
                 />
               </div>
               
-              {formData.conversionGoal && (
+              {formData.conversionGoalEnabled && (
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="eventName">Event name</Label>
@@ -2146,19 +2240,14 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                     
                     <div className="flex-1">
                       <Label htmlFor="revenueParameter">Revenue parameter</Label>
-                      <Select 
-                        value={formData.revenueParameter} 
-                        onValueChange={(value) => updateFormData({ revenueParameter: value })}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="price">price</SelectItem>
-                          <SelectItem value="amount">amount</SelectItem>
-                          <SelectItem value="total">total</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        id="revenueParameter"
+                        type="number"
+                        value={formData.revenueParameter || ''}
+                        onChange={(e) => updateFormData({ revenueParameter: e.target.value ? Number(e.target.value) : null })}
+                        placeholder="Enter revenue value"
+                        className="mt-1"
+                      />
                     </div>
                   </div>
                 </div>
@@ -2173,8 +2262,8 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                   <p className="text-sm text-muted-foreground">Avoid duplicate communication to contacts</p>
                 </div>
                 <Switch 
-                  checked={formData.deduplication}
-                  onCheckedChange={(checked) => updateFormData({ deduplication: checked })}
+                  checked={formData.deduplicationEnabled}
+                  onCheckedChange={(checked) => updateFormData({ deduplicationEnabled: checked })}
                 />
               </div>
             </div>
@@ -2308,15 +2397,62 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
             <div>
               <h3 className="text-lg font-semibold mb-4">Exclude contacts</h3>
               
-              <div className="flex items-center justify-between p-4 border border-border rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm">Exclude list/segment</span>
-                  <Info className="w-4 h-4 text-muted-foreground" />
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm">Exclude list/segment</span>
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                  <Switch 
+                    checked={formData.excludeSegments.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (!checked) {
+                        updateFormData({ excludeSegments: [] });
+                      }
+                    }}
+                  />
                 </div>
-                <Switch 
-                  checked={formData.excludeContacts}
-                  onCheckedChange={(checked) => updateFormData({ excludeContacts: checked })}
-                />
+                
+                {formData.excludeSegments.length > 0 && (
+                  <div>
+                    <Label className="text-sm font-medium">Excluded segments</Label>
+                    <div className="mt-2">
+                      <SegmentsDropdown
+                        selectedSegments={formData.excludeSegments}
+                        onSelectionChange={(segments) => updateFormData({ excludeSegments: segments })}
+                        maxSelections={5}
+                        label="excluded segments"
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <div className="text-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateFormData({ excludeSegments: [''] })}
+                    disabled={formData.excludeSegments.length >= 5}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add exclude segment
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Deduplication Status (Read-only) */}
+            <div>
+              <div className="p-4 border border-border rounded-lg bg-muted/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium">Deduplication: {formData.deduplicationEnabled ? 'Enabled' : 'Disabled'}</span>
+                    <span className="text-xs text-muted-foreground">(managed in Setup)</span>
+                  </div>
+                  <Badge variant={formData.deduplicationEnabled ? "default" : "secondary"} className="text-xs">
+                    {formData.deduplicationEnabled ? 'ON' : 'OFF'}
+                  </Badge>
+                </div>
               </div>
             </div>
 
@@ -2377,35 +2513,37 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                   {/* Sampling Method */}
                   <div>
                     <Label className="text-sm font-medium">Sampling method</Label>
+                    {formData._legacySamplingMigrated && (
+                      <div className="text-xs text-amber-600 bg-amber-50 p-2 rounded border border-amber-200 mt-2">
+                        Sampling method updated to Random Sample due to deprecated value.
+                      </div>
+                    )}
                     <div className="mt-2 space-y-3">
                       <div className="flex items-center space-x-3">
                         <input
                           type="radio"
                           id="randomSample"
                           name="samplingMethod"
-                          checked={formData.samplingMethod === 'random'}
-                          onChange={() => updateFormData({ samplingMethod: 'random' })}
+                          checked={formData.samplingMethod === 'RANDOM_SAMPLE'}
+                          onChange={() => updateFormData({ samplingMethod: 'RANDOM_SAMPLE' })}
                           className="w-4 h-4"
                         />
                         <Label htmlFor="randomSample" className="text-sm">
-                          Random sample (stable seed based on campaign ID)
+                          Random Sample
                         </Label>
                       </div>
                       
                       <div className="flex items-center space-x-3">
                         <input
                           type="radio"
-                          id="prioritySample"
+                          id="hepfSample"
                           name="samplingMethod"
-                          checked={formData.samplingMethod === 'priority'}
-                          onChange={() => updateFormData({ samplingMethod: 'priority' })}
+                          checked={formData.samplingMethod === 'HEPF'}
+                          onChange={() => updateFormData({ samplingMethod: 'HEPF' })}
                           className="w-4 h-4"
                         />
-                        <Label htmlFor="prioritySample" className="text-sm">
-                          Top-N by priority score
-                          <span className="text-muted-foreground ml-1">
-                            (placeholder if score not available)
-                          </span>
+                        <Label htmlFor="hepfSample" className="text-sm">
+                          HEPF (High Engagement Preferred First)
                         </Label>
                       </div>
                     </div>
