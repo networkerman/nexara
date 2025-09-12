@@ -98,7 +98,6 @@ interface FinalPreviewData {
   deduplicationEnabled: boolean;
   samplingMethod: SamplingMethod;
   templateName: string;
-  previewCtas: { label: string; url?: string }[];
   schedule: ScheduleConfig;
   conversionGoalEnabled: boolean;
   conversionGoal?: string;
@@ -142,11 +141,6 @@ interface CampaignFormData {
   selectedSegments: string[];
   excludeSegments: string[];
   selectedTemplate: string;
-  // CTA URLs for WhatsApp template
-  ctaUrls: {
-    visitWebsite?: string;
-    viewProduct?: string;
-  };
   scheduleType: 'now' | 'later' | 'optimize';
   startTime: string;
   endTime: string;
@@ -882,10 +876,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       selectedSegments: [],
       excludeSegments: [],
       selectedTemplate: 'static_carousel_recs_url',
-      ctaUrls: {
-        visitWebsite: '',
-        viewProduct: ''
-      },
       scheduleType: 'now',
       startTime: 'Sep 09, 2025 03:45 pm',
       endTime: 'Sep 10, 2025 02:45 pm',
@@ -1144,69 +1134,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
         {mode === 'SPECIFIC_TIME' && <Row label="Specific time" value={fmt(specificTimeAt, timezone)} />}
         <Row label="Timezone" value={schedule.timezone} />
       </div>
-    );
-  };
-
-  // CTA Button Component with accessibility
-  const CTAButton = ({ 
-    url, 
-    label, 
-    ariaLabel, 
-    className = "" 
-  }: { 
-    url?: string; 
-    label: string; 
-    ariaLabel: string; 
-    className?: string; 
-  }) => {
-    const isDisabled = !url || url.trim() === '';
-    
-    const handleClick = (e: React.MouseEvent) => {
-      e.preventDefault();
-      if (!isDisabled && url) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      }
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-      if ((e.key === 'Enter' || e.key === ' ') && !isDisabled && url) {
-        e.preventDefault();
-        window.open(url, '_blank', 'noopener,noreferrer');
-      }
-    };
-
-    if (isDisabled) {
-      return (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                className={`text-xs p-0 h-auto text-gray-400 cursor-not-allowed ${className}`}
-                disabled
-                aria-label={ariaLabel}
-                aria-describedby="cta-tooltip"
-              >
-                🔗 {label}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent id="cta-tooltip">
-              <p>Add a URL to enable this action</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-
-    return (
-      <button
-        onClick={handleClick}
-        onKeyDown={handleKeyDown}
-        className={`text-xs p-0 h-auto text-blue-600 hover:text-blue-800 active:text-blue-900 cursor-pointer transition-colors ${className}`}
-        aria-label={ariaLabel}
-        tabIndex={0}
-      >
-        🔗 {label}
-      </button>
     );
   };
 
@@ -1549,46 +1476,6 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                   </div>
                 </div>
                 
-                {/* CTA URL Configuration */}
-                {formData.selectedTemplate && (
-                  <div className="mt-6">
-                    <h4 className="text-md font-semibold mb-4">Configure Call-to-Action URLs</h4>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="visitWebsiteUrl">Visit Website URL</Label>
-                        <Input
-                          id="visitWebsiteUrl"
-                          type="url"
-                          value={formData.ctaUrls.visitWebsite || ''}
-                          onChange={(e) => updateFormData({ 
-                            ctaUrls: { 
-                              ...formData.ctaUrls, 
-                              visitWebsite: e.target.value 
-                            } 
-                          })}
-                          placeholder="https://example.com"
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="viewProductUrl">View Product URL</Label>
-                        <Input
-                          id="viewProductUrl"
-                          type="url"
-                          value={formData.ctaUrls.viewProduct || ''}
-                          onChange={(e) => updateFormData({ 
-                            ctaUrls: { 
-                              ...formData.ctaUrls, 
-                              viewProduct: e.target.value 
-                            } 
-                          })}
-                          placeholder="https://example.com/product"
-                          className="mt-1"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1640,34 +1527,10 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                       <div className="flex-1 bg-green-100 rounded-lg p-2">
                         <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
                         <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                        <div className="flex flex-col space-y-1 mt-2">
-                          <CTAButton
-                            url={formData.ctaUrls.visitWebsite}
-                            label="Visit Website"
-                            ariaLabel="Visit Website - opens in new tab"
-                          />
-                          <CTAButton
-                            url={formData.ctaUrls.viewProduct}
-                            label="View Product"
-                            ariaLabel="View Product - opens in new tab"
-                          />
-                        </div>
                       </div>
                       <div className="flex-1 bg-green-100 rounded-lg p-2">
                         <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
                         <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                        <div className="flex flex-col space-y-1 mt-2">
-                          <CTAButton
-                            url={formData.ctaUrls.visitWebsite}
-                            label="Visit Website"
-                            ariaLabel="Visit Website - opens in new tab"
-                          />
-                          <CTAButton
-                            url={formData.ctaUrls.viewProduct}
-                            label="View Product"
-                            ariaLabel="View Product - opens in new tab"
-                          />
-                        </div>
                       </div>
                     </div>
                     
@@ -2449,34 +2312,10 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                               <div className="flex-1 bg-green-100 rounded-lg p-2">
                                 <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
                                 <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                                <div className="flex flex-col space-y-1 mt-2">
-                                  <CTAButton
-                                    url={formData.ctaUrls.visitWebsite}
-                                    label="Visit Website"
-                                    ariaLabel="Visit Website - opens in new tab"
-                                  />
-                                  <CTAButton
-                                    url={formData.ctaUrls.viewProduct}
-                                    label="View Product"
-                                    ariaLabel="View Product - opens in new tab"
-                                  />
-                                </div>
                               </div>
                               <div className="flex-1 bg-green-100 rounded-lg p-2">
                                 <div className="w-full h-16 bg-orange-200 rounded mb-2"></div>
                                 <p className="text-xs font-medium">Flat 30% OFF on our best-selling sneakers.</p>
-                                <div className="flex flex-col space-y-1 mt-2">
-                                  <CTAButton
-                                    url={formData.ctaUrls.visitWebsite}
-                                    label="Visit Website"
-                                    ariaLabel="Visit Website - opens in new tab"
-                                  />
-                                  <CTAButton
-                                    url={formData.ctaUrls.viewProduct}
-                                    label="View Product"
-                                    ariaLabel="View Product - opens in new tab"
-                                  />
-                                </div>
                               </div>
                             </div>
                             
