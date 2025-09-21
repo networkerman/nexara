@@ -30,13 +30,10 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             
-            {/* Protected Routes */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Index />
-              </ProtectedRoute>
-            } />
+            {/* Root route - handles authentication checking */}
+            <Route path="/" element={<Index />} />
             
+            {/* Protected Routes */}
             <Route path="/onboarding" element={
               <ProtectedRoute>
                 <Onboarding />
