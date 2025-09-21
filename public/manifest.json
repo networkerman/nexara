@@ -8,19 +8,19 @@
   "background_color": "#ffffff",
   "icons": [
     {
-      "src": "/favicon.ico",
+      "src": "/nexara-favicon.png",
       "sizes": "32x32",
-      "type": "image/x-icon"
+      "type": "image/png"
     },
     {
-      "src": "/favicon.svg",
+      "src": "/Nexara_logo.png",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "/nexara-logo-180.svg",
+      "src": "/Nexara_logo.png",
       "sizes": "180x180",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "apple-touch-icon"
     }
   ]
