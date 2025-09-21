@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://dkrwwortllgdhazvtwds.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrcnd3b3J0bGxnZGhhenZ0d2RzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1MDc2NzIsImV4cCI6MjA3MzA4MzY3Mn0.GTbkli6T63Syk-L8QRv3mXAJY9PALAq1-jrP2e11VJk';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://htqhqkmwpqrgvqbrhzwd.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh0cWhxa213cHFyZ3ZxYnJoendkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0NTQ3MTgsImV4cCI6MjA3NDAzMDcxOH0.SSIJd2Le1xf82Vn5HJ5kwmGv5XOnaW-qdC-x3a5WXMA';
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
