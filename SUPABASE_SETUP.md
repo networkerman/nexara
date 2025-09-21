@@ -1,6 +1,6 @@
 # Supabase Integration Setup
 
-This guide will help you set up Supabase integration for the HDFC Netcore campaign management system.
+This guide will help you set up Supabase integration for the Nexara campaign management system.
 
 ## 🚀 Quick Start
 

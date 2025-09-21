@@ -1,0 +1,7 @@
+<svg width="120" height="40" viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="120" height="40" fill="#1a1a1a" rx="8"/>
+  
+  <!-- Nexara text -->
+  <text x="60" y="25" font-family="Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="white">Nexara</text>
+</svg>

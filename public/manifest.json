@@ -1,10 +1,10 @@
 {
-  "name": "Netcore × HDFC Omnichannel Project",
-  "short_name": "Netcore",
+  "name": "Nexara Omnichannel Platform",
+  "short_name": "Nexara",
   "description": "Advanced customer engagement and campaign management platform",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#FF6700",
+  "theme_color": "#1a1a1a",
   "background_color": "#ffffff",
   "icons": [
     {
@@ -13,12 +13,12 @@
       "type": "image/x-icon"
     },
     {
-      "src": "/netcore-logo.svg",
+      "src": "/nexara-logo.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     },
     {
-      "src": "/netcore-logo-180.svg",
+      "src": "/nexara-logo-180.svg",
       "sizes": "180x180",
       "type": "image/svg+xml",
       "purpose": "apple-touch-icon"

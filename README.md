@@ -1,10 +1,10 @@
-# HDFC Netcore Customer Engagement Platform
+# Nexara Customer Engagement Platform
 
 A comprehensive customer engagement platform built with React, TypeScript, and modern web technologies.
 
 ## 🚀 Live Deployment
 
-**Production URL**: https://netcorehdfc.netlify.app  
+**Production URL**: https://nexara.netlify.app  
 **Lovable Project**: https://lovable.dev/projects/402b3d7e-4c88-4c28-b1aa-ae33f228fa2c
 
 ## How can I edit this code?
@@ -130,6 +130,6 @@ For premium feature access or support:
 
 ## 🔗 Links
 
-- **Production**: https://netcorehdfc.netlify.app
+- **Production**: https://nexara.netlify.app
 - **Lovable Project**: https://lovable.dev/projects/402b3d7e-4c88-4c28-b1aa-ae33f228fa2c
-- **Repository**: https://github.com/Product-Netcore/Hdfc-Netcore
+- **Repository**: https://github.com/Product-Nexara/Nexara

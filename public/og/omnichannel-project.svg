@@ -9,20 +9,9 @@
   
   <rect width="1200" height="630" fill="url(#bgGradient)"/>
   
-  <!-- Netcore Text -->
-  <text x="280" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#FF6700">netco</text>
-  <text x="420" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">re</text>
-  
-  <!-- X Symbol -->
-  <text x="580" y="230" font-family="Arial, sans-serif" font-size="80" font-weight="bold" fill="white">×</text>
-  
-  <!-- HDFC Logo -->
-  <rect x="680" y="170" width="80" height="80" fill="#DC1725"/>
-  <rect x="700" y="190" width="40" height="40" fill="white"/>
-  <rect x="715" y="205" width="10" height="10" fill="#DC1725"/>
-  
-  <!-- HDFC Text -->
-  <text x="780" y="230" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">HDFC</text>
+  <!-- Nexara Text -->
+  <text x="400" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="#FF6700">nexa</text>
+  <text x="540" y="220" font-family="Arial, sans-serif" font-size="64" font-weight="bold" fill="white">ra</text>
   
   <!-- Omnichannel -->
   <text x="600" y="380" font-family="Arial, sans-serif" font-size="96" font-weight="bold" fill="white" text-anchor="middle">Omnichannel</text>

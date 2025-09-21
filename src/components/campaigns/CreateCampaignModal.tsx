@@ -186,8 +186,8 @@ interface AdobeSegment {
 
 const businessNumbers = [
   {
-    id: 'netcore',
-    name: 'Netcore Solutions Support (+91 2249757637)',
+    id: 'nexara',
+    name: 'Nexara Solutions Support (+91 2249757637)',
     quality: 'HIGH',
     messagingLimit: '10000 Messaging limit per 24hrs',
     lastUpdated: 'Sep 09, 2025 12:03 PM'
@@ -598,7 +598,7 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
             )}
             <div>
               <span className="font-medium text-foreground">Business number:</span>
-              <div>Netcore Solutions Support (+91 2249757637)</div>
+              <div>Nexara Solutions Support (+91 2249757637)</div>
             </div>
             <div>
               <span className="font-medium text-foreground">Link tracking:</span>
@@ -814,7 +814,7 @@ const normalizeCampaignData = (data: any): CampaignFormData => {
   return normalized;
 };
 
-const WIZARD_STORAGE_KEY = 'hdfc-campaign-wizard-state';
+const WIZARD_STORAGE_KEY = 'nexara-campaign-wizard-state';
 const WIZARD_STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps) {
@@ -865,7 +865,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     const defaultData = {
       campaignName: 'Adobe',
       tags: ['Adobe'],
-      businessNumber: 'netcore',
+      businessNumber: 'nexara',
       linkTracking: true,
       conversionGoalEnabled: true,
       eventName: 'Account Opened (Savings)',
@@ -1325,7 +1325,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     setFormData(normalizeCampaignData({
       campaignName: 'Adobe',
       tags: ['Adobe'],
-      businessNumber: 'netcore',
+      businessNumber: 'nexara',
       linkTracking: true,
       conversionGoalEnabled: true,
       eventName: 'Account Opened (Savings)',
@@ -1507,12 +1507,12 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <img 
-                    src="/netcore-logo.svg" 
-                    alt="Netcore Logo" 
+                    src="/nexara-logo.svg" 
+                    alt="Nexara Logo" 
                     className="w-5 h-5 rounded-sm"
                   />
                 </div>
-                <span className="font-medium">Netcore Cloud</span>
+                <span className="font-medium">Nexara Cloud</span>
               </div>
               
               {/* Message Content */}
@@ -1949,7 +1949,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     "Schedule - Campaign Execution Started",
     "Send, Delivered, Opened/Read, Clicked, Failed",
     "Metrics will auto sync to Adobe in sometime",
-    "No customer data stored in Netcore"
+    "No customer data stored in Nexara"
   ];
 
   const personalizationOptions = [
@@ -2079,7 +2079,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               <Info className="h-4 w-4 text-info" />
               <AlertDescription className="text-foreground">
                 <strong>Retry plan scheduled</strong> (24h cadence, up to {formData.retryDuration} days). 
-                Execution via Netcore; metrics sync back to Adobe. No customer data stored on Netcore.
+                Execution via Nexara; metrics sync back to Adobe. No customer data stored on Nexara.
               </AlertDescription>
             </Alert>
           )}
@@ -2294,11 +2294,11 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                             <img 
                               src="/lovable-uploads/770b7510-d3df-445b-b9b0-7971f7f8105b.png" 
-                              alt="Netcore Logo" 
+                              alt="Nexara Logo" 
                               className="w-5 h-5 rounded-sm"
                             />
                           </div>
-                          <span className="font-medium">Netcore Cloud</span>
+                          <span className="font-medium">Nexara Cloud</span>
                         </div>
                         
                         {/* Message Content */}

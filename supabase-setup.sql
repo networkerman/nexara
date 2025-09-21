@@ -1,4 +1,4 @@
--- Supabase Setup Script for HDFC Netcore Campaign Management
+-- Supabase Setup Script for Nexara Campaign Management
 -- Run this in your Supabase SQL Editor
 
 -- Create campaigns table

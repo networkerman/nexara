@@ -8,7 +8,7 @@
 ## ✅ Optimizations Applied
 
 ### 1. **Cleaned Unused Files**
-- ❌ Removed `public/netcore-hdfc-og-new.png` (204KB)
+- ❌ Removed `public/nexara-og-new.png` (204KB)
 - ✅ Kept essential assets only
 
 ### 2. **Enhanced .gitignore**
