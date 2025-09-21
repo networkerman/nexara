@@ -28,8 +28,11 @@ const LoginPage: React.FC = () => {
       if (email === 'admin@admin.com' && password === 'admin') {
         // For hardcoded admin, we'll simulate a successful login
         // In a real app, you'd want to create an actual admin user in Supabase
+        console.log('Admin login detected, setting session...');
         localStorage.setItem('adminSession', 'true');
-        navigate('/onboarding');
+        
+        // Force a page reload to ensure AuthContext picks up the new session
+        window.location.href = '/onboarding';
         return;
       }
 
@@ -41,6 +44,7 @@ const LoginPage: React.FC = () => {
         navigate('/onboarding');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);

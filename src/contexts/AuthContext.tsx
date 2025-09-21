@@ -33,6 +33,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     // Check for admin session first
     const adminSession = localStorage.getItem('adminSession');
+    console.log('AuthContext: Checking admin session:', adminSession);
+    
     if (adminSession === 'true') {
       // Create a mock user for admin session
       const mockUser = {
@@ -44,6 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         created_at: new Date().toISOString(),
       } as User;
       
+      console.log('AuthContext: Setting admin user:', mockUser);
       setUser(mockUser);
       setSession({
         access_token: 'mock-token',
@@ -57,8 +60,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
+    console.log('AuthContext: No admin session, checking Supabase...');
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('AuthContext: Supabase session:', session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -68,6 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('AuthContext: Auth state change:', _event, session);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
