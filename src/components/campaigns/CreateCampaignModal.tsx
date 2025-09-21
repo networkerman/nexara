@@ -938,7 +938,22 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       
       return newData;
     });
-  }, []);
+
+    // Mark the current step as touched when form data changes
+    const currentStepKey = currentStep as StepKey;
+    if (['setup', 'audience', 'content', 'schedule'].includes(currentStepKey)) {
+      setWizardProgress(prev => ({
+        ...prev,
+        steps: {
+          ...prev.steps,
+          [currentStepKey]: {
+            ...prev.steps[currentStepKey],
+            touched: true
+          }
+        }
+      }));
+    }
+  }, [currentStep]);
 
   // Step validation functions with error details
   const validateSetupStep = useCallback((): { isValid: boolean; errors: string[] } => {
@@ -1002,22 +1017,30 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
       steps: {
         setup: {
           ...prev.steps.setup,
-          status: setupValidation.isValid ? 'valid' : 'invalid',
+          // Only mark as valid if user has touched the step AND validation passes
+          status: prev.steps.setup.touched && setupValidation.isValid ? 'valid' : 
+                  prev.steps.setup.touched && !setupValidation.isValid ? 'invalid' : 'idle',
           errors: setupValidation.errors
         },
         audience: {
           ...prev.steps.audience,
-          status: audienceValidation.isValid ? 'valid' : 'invalid',
+          // Only mark as valid if user has touched the step AND validation passes
+          status: prev.steps.audience.touched && audienceValidation.isValid ? 'valid' : 
+                  prev.steps.audience.touched && !audienceValidation.isValid ? 'invalid' : 'idle',
           errors: audienceValidation.errors
         },
         content: {
           ...prev.steps.content,
-          status: contentValidation.isValid ? 'valid' : 'invalid',
+          // Only mark as valid if user has touched the step AND validation passes
+          status: prev.steps.content.touched && contentValidation.isValid ? 'valid' : 
+                  prev.steps.content.touched && !contentValidation.isValid ? 'invalid' : 'idle',
           errors: contentValidation.errors
         },
         schedule: {
           ...prev.steps.schedule,
-          status: scheduleValidation.isValid ? 'valid' : 'invalid',
+          // Only mark as valid if user has touched the step AND validation passes
+          status: prev.steps.schedule.touched && scheduleValidation.isValid ? 'valid' : 
+                  prev.steps.schedule.touched && !scheduleValidation.isValid ? 'invalid' : 'idle',
           errors: scheduleValidation.errors
         }
       }
