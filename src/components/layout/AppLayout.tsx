@@ -56,7 +56,7 @@ export function AppLayout({
         <div className="p-6 border-b border-primary/20">
           <div className="flex items-center space-x-3">
             <img 
-              src="/nexara-logo.svg" 
+              src="/favicon.svg" 
               alt="Nexara Logo" 
               className="w-8 h-8 rounded-md"
             />

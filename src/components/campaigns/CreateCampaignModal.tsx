@@ -1530,7 +1530,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <img 
-                    src="/nexara-logo.svg" 
+                    src="/favicon.svg" 
                     alt="Nexara Logo" 
                     className="w-5 h-5 rounded-sm"
                   />
@@ -2316,7 +2316,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                         <div className="bg-green-600 text-white p-4 flex items-center space-x-3">
                           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                             <img 
-                              src="/lovable-uploads/770b7510-d3df-445b-b9b0-7971f7f8105b.png" 
+                              src="/nexara-logo.svg" 
                               alt="Nexara Logo" 
                               className="w-5 h-5 rounded-sm"
                             />
