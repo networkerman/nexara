@@ -1,7 +1,8 @@
 import React from 'react';
-import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe, ChevronDown, Plus } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe, ChevronDown, Plus, LogOut } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,6 +50,13 @@ interface AppLayoutProps {
 export function AppLayout({
   children
 }: AppLayoutProps) {
+  const navigate = useNavigate();
+  const { signOut, user } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
   return <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
@@ -192,6 +200,27 @@ export function AppLayout({
                 <span className="text-sm text-foreground">Nexara</span>
                 <span className="text-xs text-success font-medium">Live</span>
               </div>
+              
+              {/* User menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary-foreground">
+                        {user?.email?.charAt(0).toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                    <span className="text-sm text-foreground">{user?.email || 'User'}</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
