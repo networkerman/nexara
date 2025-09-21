@@ -25,7 +25,7 @@ const LoginPage: React.FC = () => {
 
     try {
       // Check for hardcoded admin credentials first
-      if (email === 'admin@admin.com' && password === 'admin') {
+      if ((email === 'admin@admin.com' || email === 'admin@gmail.com') && password === 'admin') {
         // For hardcoded admin, we'll simulate a successful login
         // In a real app, you'd want to create an actual admin user in Supabase
         console.log('Admin login detected, setting session...');
@@ -45,7 +45,11 @@ const LoginPage: React.FC = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('An unexpected error occurred');
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        setError('Network error: Unable to connect to the server. Please check your internet connection.');
+      } else {
+        setError('An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -136,7 +140,7 @@ const LoginPage: React.FC = () => {
 
             <div className="mt-6 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
-              <p className="text-sm text-blue-700">Email: admin@admin.com</p>
+              <p className="text-sm text-blue-700">Email: admin@admin.com or admin@gmail.com</p>
               <p className="text-sm text-blue-700">Password: admin</p>
             </div>
           </CardContent>
