@@ -1,0 +1,39 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8fafc;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Main logo circle -->
+  <circle cx="300" cy="315" r="80" fill="#ffffff" stroke="#e2e8f0" stroke-width="2"/>
+  
+  <!-- Swirling segments -->
+  <!-- Teal segment -->
+  <path d="M300 235 A80 80 0 0 1 380 315 L300 315 Z" fill="#20B2AA"/>
+  
+  <!-- Reddish-orange segment -->
+  <path d="M380 315 A80 80 0 0 1 300 395 L300 315 Z" fill="#FF6B35"/>
+  
+  <!-- Purple segment -->
+  <path d="M300 395 A80 80 0 0 1 220 315 L300 315 Z" fill="#8A2BE2"/>
+  
+  <!-- Lime green segment -->
+  <path d="M220 315 A80 80 0 0 1 300 235 L300 315 Z" fill="#32CD32"/>
+  
+  <!-- Center N -->
+  <text x="300" y="330" font-family="Arial, sans-serif" font-size="60" font-weight="bold" text-anchor="middle" fill="#ffffff">N</text>
+  
+  <!-- Nexara text -->
+  <text x="600" y="280" font-family="Arial, sans-serif" font-size="72" font-weight="bold" text-anchor="middle" fill="#2C3E50">NEXARA</text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="340" font-family="Arial, sans-serif" font-size="32" text-anchor="middle" fill="#64748b">Omnichannel Platform</text>
+  
+  <!-- Description -->
+  <text x="600" y="400" font-family="Arial, sans-serif" font-size="24" text-anchor="middle" fill="#64748b">Advanced customer engagement and campaign management</text>
+</svg>
