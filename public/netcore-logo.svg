@@ -1,8 +1,0 @@
-<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Orange background -->
-  <rect width="100" height="100" rx="12" fill="#FF6700"/>
-  
-  <!-- Netcore text -->
-  <text x="50" y="45" font-family="Arial, sans-serif" font-size="18" font-weight="700" text-anchor="middle" fill="white">netcore</text>
-  <text x="50" y="65" font-family="Arial, sans-serif" font-size="8" font-weight="400" text-anchor="middle" fill="white" opacity="0.8">CLOUD</text>
-</svg>

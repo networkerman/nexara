@@ -56,12 +56,12 @@ export function AppLayout({
         <div className="p-6 border-b border-primary/20">
           <div className="flex items-center space-x-3">
             <img 
-              src="/netcore-logo.svg" 
-              alt="Netcore Logo" 
+              src="/nexara-logo.svg" 
+              alt="Nexara Logo" 
               className="w-8 h-8 rounded-md"
             />
             <div>
-              <span className="text-lg font-semibold text-white">netcore</span>
+              <span className="text-lg font-semibold text-white">nexara</span>
               <p className="text-xs text-primary-foreground/70 -mt-1">CUSTOMER ENGAGEMENT</p>
             </div>
           </div>
@@ -189,7 +189,7 @@ export function AppLayout({
                 <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
                   <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
                 </div>
-                <span className="text-sm text-foreground">HDFC</span>
+                <span className="text-sm text-foreground">Nexara</span>
                 <span className="text-xs text-success font-medium">Live</span>
               </div>
             </div>

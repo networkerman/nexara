@@ -139,7 +139,7 @@ export function CampaignsPage() {
           <Alert className="border-success bg-success/10">
             <Info className="h-4 w-4 text-success" />
             <AlertDescription className="text-success-foreground">
-              <strong>Published.</strong> Execution handed off to Adobe; metrics will sync back to Adobe. No customer data stored on Netcore.
+              <strong>Published.</strong> Execution handed off to Adobe; metrics will sync back to Adobe. No customer data stored on Nexara.
             </AlertDescription>
           </Alert>
         </div>
