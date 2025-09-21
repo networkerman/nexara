@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { userProfileService } from '@/services/userProfileService';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -24,17 +25,25 @@ const Index = () => {
 
     console.log('Index: User authenticated, checking onboarding data');
     // User is authenticated, check if they have completed onboarding
-    const onboardingData = localStorage.getItem('onboardingData');
-    
-    if (!onboardingData) {
-      console.log('Index: No onboarding data, redirecting to onboarding');
-      // User hasn't completed onboarding, redirect to onboarding
-      navigate('/onboarding');
-    } else {
-      console.log('Index: Onboarding complete, redirecting to campaigns');
-      // User has completed onboarding, redirect to campaigns
-      navigate('/engage/campaigns');
-    }
+    const checkOnboardingStatus = async () => {
+      try {
+        const hasCompletedOnboarding = await userProfileService.hasCompletedOnboarding(user.id);
+        
+        if (!hasCompletedOnboarding) {
+          console.log('Index: No onboarding data, redirecting to onboarding');
+          navigate('/onboarding');
+        } else {
+          console.log('Index: Onboarding complete, redirecting to campaigns');
+          navigate('/engage/campaigns');
+        }
+      } catch (error) {
+        console.error('Index: Error checking onboarding status:', error);
+        // On error, redirect to onboarding to be safe
+        navigate('/onboarding');
+      }
+    };
+
+    checkOnboardingStatus();
   }, [navigate, user, loading]);
 
   return (

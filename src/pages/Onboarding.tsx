@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { userProfileService } from '@/services/userProfileService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, ArrowRight, User, Building, Globe, Users, Briefcase } from 'lucide-react';
+import { ArrowLeft, ArrowRight, User, Building, Globe, Users, Briefcase, Loader2 } from 'lucide-react';
 
 interface OnboardingData {
   fullName: string;
@@ -27,8 +29,11 @@ const OnboardingPage: React.FC = () => {
     organizationSize: '',
     userRole: '',
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const steps = [
     {
@@ -64,13 +69,37 @@ const OnboardingPage: React.FC = () => {
     setData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Save onboarding data (in a real app, you'd save this to your database)
-      localStorage.setItem('onboardingData', JSON.stringify(data));
-      navigate('/welcome');
+      // Save onboarding data to Supabase
+      if (!user) {
+        setError('User not authenticated');
+        return;
+      }
+
+      setLoading(true);
+      setError('');
+
+      try {
+        await userProfileService.createProfile({
+          full_name: data.fullName,
+          company_name: data.companyName,
+          company_domain: data.companyDomain,
+          number_of_employees: data.numberOfEmployees,
+          organization_size: data.organizationSize,
+          user_role: data.userRole,
+        }, user.id);
+
+        console.log('Onboarding data saved to Supabase successfully');
+        navigate('/welcome');
+      } catch (err) {
+        console.error('Error saving onboarding data:', err);
+        setError('Failed to save your information. Please try again.');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -229,13 +258,19 @@ const OnboardingPage: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
+            
             {renderStepContent()}
             
             <div className="flex justify-between mt-6">
               <Button
                 variant="outline"
                 onClick={handlePrevious}
-                disabled={currentStep === 0}
+                disabled={currentStep === 0 || loading}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Previous
@@ -243,10 +278,11 @@ const OnboardingPage: React.FC = () => {
               
               <Button
                 onClick={handleNext}
-                disabled={!isStepComplete()}
+                disabled={!isStepComplete() || loading}
               >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
-                {currentStep < steps.length - 1 && <ArrowRight className="h-4 w-4 ml-2" />}
+                {currentStep < steps.length - 1 && !loading && <ArrowRight className="h-4 w-4 ml-2" />}
               </Button>
             </div>
           </CardContent>
