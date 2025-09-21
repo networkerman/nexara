@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Create a mock user for admin session
       const mockUser = {
         id: 'admin-user',
-        email: 'admin@admin.com',
+        email: 'admin@gmail.com',
         user_metadata: {},
         app_metadata: {},
         aud: 'authenticated',
@@ -61,9 +61,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     console.log('AuthContext: No admin session, checking Supabase...');
+    
+    // Test Supabase connection first
+    supabase.from('campaigns').select('count').limit(1).then(({ error }) => {
+      if (error) {
+        console.error('AuthContext: Supabase connection test failed:', error);
+      } else {
+        console.log('AuthContext: Supabase connection test successful');
+      }
+    });
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       console.log('AuthContext: Supabase session:', session);
+      if (error) {
+        console.error('AuthContext: Error getting session:', error);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
