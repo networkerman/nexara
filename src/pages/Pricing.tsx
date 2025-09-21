@@ -3,11 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, ArrowRight, Mail, Phone } from 'lucide-react';
+import { Check, X, ArrowRight, Mail, Phone, Loader2 } from 'lucide-react';
+import { RazorpayService, RazorpayFrontend } from '@/services/razorpayService';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 const PricingPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const pricingPlans = [
     {
@@ -76,24 +81,107 @@ const PricingPage: React.FC = () => {
     }
   ];
 
-  const handlePlanSelect = (planId: string) => {
+  const handlePlanSelect = async (planId: string) => {
     setSelectedPlan(planId);
     
     if (planId === 'free') {
       // Redirect to campaigns page for free users
       navigate('/engage/campaigns');
     } else if (planId === 'pro') {
-      // In a real app, you'd integrate with payment processing
-      alert('Pro plan selected! Payment integration would be implemented here.');
+      await handleProPlanPayment();
     } else if (planId === 'enterprise') {
       // Show contact form or redirect to contact
-      alert('Enterprise plan selected! Contact sales form would be implemented here.');
+      navigate('/contact');
+    }
+  };
+
+  const handleProPlanPayment = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to proceed with payment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      // Create Razorpay order
+      const order = await RazorpayService.createOrder({
+        amount: 200000, // ₹2000 in paise
+        currency: 'INR',
+        receipt: `pro_plan_${user.id}_${Date.now()}`,
+        notes: {
+          plan: 'pro',
+          user_id: user.id,
+          user_email: user.email || '',
+        },
+      });
+
+      // Open Razorpay payment modal
+      await RazorpayFrontend.openPaymentModal({
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Nexara',
+        description: 'Pro Plan - Monthly Subscription',
+        prefill: {
+          name: user.user_metadata?.full_name || '',
+          email: user.email || '',
+        },
+        theme: {
+          color: '#3399cc',
+        },
+        onSuccess: async (paymentId: string, orderId: string, signature: string) => {
+          try {
+            // Verify payment signature
+            const isValid = RazorpayService.verifyPaymentSignature(orderId, paymentId, signature);
+            
+            if (isValid) {
+              toast({
+                title: "Payment Successful!",
+                description: "Welcome to Nexara Pro! You now have access to all Pro features.",
+              });
+              
+              // Redirect to campaigns page
+              navigate('/engage/campaigns');
+            } else {
+              throw new Error('Payment verification failed');
+            }
+          } catch (error) {
+            console.error('Payment verification error:', error);
+            toast({
+              title: "Payment Verification Failed",
+              description: "Please contact support if you were charged.",
+              variant: "destructive",
+            });
+          }
+        },
+        onError: (error: any) => {
+          console.error('Payment error:', error);
+          toast({
+            title: "Payment Failed",
+            description: error.message || "Payment was cancelled or failed. Please try again.",
+            variant: "destructive",
+          });
+        },
+      });
+    } catch (error) {
+      console.error('Payment setup error:', error);
+      toast({
+        title: "Payment Setup Failed",
+        description: "Unable to initialize payment. Please try again or contact support.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
 
   const handleContactSales = () => {
-    // In a real app, you'd open a contact form or redirect to contact page
-    alert('Contact sales form would be implemented here.');
+    navigate('/contact');
   };
 
   return (
@@ -165,9 +253,19 @@ const PricingPage: React.FC = () => {
                   className={`w-full ${plan.popular ? 'bg-blue-600 hover:bg-blue-700' : ''}`}
                   variant={plan.buttonVariant}
                   onClick={() => handlePlanSelect(plan.id)}
+                  disabled={isProcessingPayment && plan.id === 'pro'}
                 >
-                  {plan.buttonText}
-                  <ArrowRight className="h-4 w-4 ml-2" />
+                  {isProcessingPayment && plan.id === 'pro' ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {plan.buttonText}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>
