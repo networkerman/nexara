@@ -14,6 +14,11 @@ import Pricing from "./pages/Pricing";
 import Campaigns from "./pages/Campaigns";
 import SupabaseTest from "./pages/SupabaseTest";
 import PremiumGate from "./pages/PremiumGate";
+import CancellationRefunds from "./pages/CancellationRefunds";
+import Terms from "./pages/Terms";
+import Shipping from "./pages/Shipping";
+import Privacy from "./pages/Privacy";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +34,13 @@ const App = () => (
             {/* Public Authentication Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            
+            {/* Public Static Pages */}
+            <Route path="/cancellation-refunds" element={<CancellationRefunds />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/shipping" element={<Shipping />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/contact" element={<Contact />} />
             
             {/* Root route - handles authentication checking */}
             <Route path="/" element={<Index />} />
