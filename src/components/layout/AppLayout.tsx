@@ -3,6 +3,7 @@ import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, 
 import { NavLink, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import Footer from './Footer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -57,9 +58,10 @@ export function AppLayout({
     await signOut();
     navigate('/login');
   };
-  return <div className="flex h-screen bg-background">
+  return <div className="flex flex-col min-h-screen bg-background">
       {/* Sidebar */}
-      <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
+      <div className="flex-1 flex">
+        <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
         {/* Logo */}
         <div className="p-6 border-b border-primary/20">
           <div className="flex items-center space-x-3">
@@ -182,6 +184,7 @@ export function AppLayout({
             </NavLink>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Main content */}
@@ -229,6 +232,11 @@ export function AppLayout({
         <main className="flex-1 overflow-hidden">
           {children}
         </main>
+        </div>
       </div>
-    </div>;
+      
+      {/* Footer */}
+      <Footer />
+    </div>
+  );
 }
