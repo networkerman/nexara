@@ -1,43 +1,73 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { userProfileService, UserProfile } from '@/services/userProfileService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, ArrowRight, Sparkles } from 'lucide-react';
 
-interface OnboardingData {
-  fullName: string;
-  companyName: string;
-  companyDomain: string;
-  numberOfEmployees: string;
-  organizationSize: string;
-  userRole: string;
-}
-
 const WelcomePage: React.FC = () => {
-  const [onboardingData, setOnboardingData] = useState<OnboardingData | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    // Retrieve onboarding data from localStorage
-    const savedData = localStorage.getItem('onboardingData');
-    if (savedData) {
-      setOnboardingData(JSON.parse(savedData));
-    } else {
-      // If no onboarding data, redirect to onboarding
-      navigate('/onboarding');
-    }
-  }, [navigate]);
+    const fetchUserProfile = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const profile = await userProfileService.getProfile(user.id);
+        if (profile) {
+          setUserProfile(profile);
+        } else {
+          // If no profile found, redirect to onboarding
+          navigate('/onboarding');
+        }
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+        setError('Failed to load your profile');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [navigate, user]);
 
   const handleContinueToPricing = () => {
     navigate('/pricing');
   };
 
   const getFirstName = () => {
-    if (!onboardingData?.fullName) return 'there';
-    return onboardingData.fullName.split(' ')[0];
+    if (!userProfile?.full_name) return 'there';
+    return userProfile.full_name.split(' ')[0];
   };
 
-  if (!onboardingData) {
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!userProfile) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -77,27 +107,27 @@ const WelcomePage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-gray-600">Name:</span>
-                    <span className="ml-2 text-gray-900">{onboardingData.fullName}</span>
+                    <span className="ml-2 text-gray-900">{userProfile.full_name}</span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Company:</span>
-                    <span className="ml-2 text-gray-900">{onboardingData.companyName}</span>
+                    <span className="ml-2 text-gray-900">{userProfile.company_name}</span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Domain:</span>
-                    <span className="ml-2 text-gray-900">{onboardingData.companyDomain}</span>
+                    <span className="ml-2 text-gray-900">{userProfile.company_domain}</span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Role:</span>
-                    <span className="ml-2 text-gray-900 capitalize">{onboardingData.userRole.replace('-', ' ')}</span>
+                    <span className="ml-2 text-gray-900 capitalize">{userProfile.user_role.replace('-', ' ')}</span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Company Size:</span>
-                    <span className="ml-2 text-gray-900">{onboardingData.numberOfEmployees} employees</span>
+                    <span className="ml-2 text-gray-900">{userProfile.number_of_employees} employees</span>
                   </div>
                   <div>
                     <span className="font-medium text-gray-600">Organization Type:</span>
-                    <span className="ml-2 text-gray-900 capitalize">{onboardingData.organizationSize.replace('-', ' ')}</span>
+                    <span className="ml-2 text-gray-900 capitalize">{userProfile.organization_size.replace('-', ' ')}</span>
                   </div>
                 </div>
               </div>
