@@ -36,10 +36,17 @@ const Index = () => {
           console.log('Index: Onboarding complete, redirecting to campaigns');
           navigate('/engage/campaigns');
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Index: Error checking onboarding status:', error);
-        // On error, redirect to onboarding to be safe
-        navigate('/onboarding');
+        
+        // Check if it's a table not found error
+        if (error?.code === '42P01' || error?.message?.includes('relation "user_profiles" does not exist')) {
+          console.log('Index: user_profiles table not found, redirecting to onboarding');
+          navigate('/onboarding');
+        } else {
+          console.log('Index: Other error, redirecting to onboarding');
+          navigate('/onboarding');
+        }
       }
     };
 

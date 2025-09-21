@@ -94,9 +94,18 @@ const OnboardingPage: React.FC = () => {
 
         console.log('Onboarding data saved to Supabase successfully');
         navigate('/welcome');
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error saving onboarding data:', err);
-        setError('Failed to save your information. Please try again.');
+        
+        // Check if it's a table not found error
+        if (err?.code === '42P01' || err?.message?.includes('relation "user_profiles" does not exist')) {
+          setError('Database setup required. Please contact support or try again later.');
+        } else if (err?.code === '23505') {
+          setError('Profile already exists. Redirecting to dashboard...');
+          setTimeout(() => navigate('/engage/campaigns'), 2000);
+        } else {
+          setError(`Failed to save your information: ${err?.message || 'Unknown error'}. Please try again.`);
+        }
       } finally {
         setLoading(false);
       }
