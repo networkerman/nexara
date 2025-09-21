@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DownloadSplitButton } from '@/components/ui/download-split-button';
 import { 
   Search, 
   Filter, 
-  Download, 
   Hash, 
   Percent, 
   Settings,
@@ -188,9 +188,7 @@ export function CampaignsPage() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-            </Button>
+            <DownloadSplitButton />
             <Button variant="outline" size="sm">
               <Hash className="w-4 h-4 mr-2" />
             </Button>
