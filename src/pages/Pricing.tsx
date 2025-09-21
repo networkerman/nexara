@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Check, X, ArrowRight, Mail, Phone, Loader2 } from 'lucide-react';
 import { RazorpayService, RazorpayFrontend } from '@/services/razorpayService';
+import { SubscriptionService } from '@/services/subscriptionService';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
@@ -41,7 +42,7 @@ const PricingPage: React.FC = () => {
       name: 'Pro',
       price: '₹2,000',
       period: 'per month',
-      description: 'Best for growing businesses',
+      description: 'Best for growing businesses - Monthly subscription',
       features: [
         '10 campaigns',
         '10,000 audience max per campaign',
@@ -50,10 +51,12 @@ const PricingPage: React.FC = () => {
         'Priority support',
         'Custom branding',
         'A/B testing',
-        'Advanced automation'
+        'Advanced automation',
+        'Monthly recurring billing',
+        'Cancel anytime'
       ],
       limitations: [],
-      buttonText: 'Start Pro Trial',
+      buttonText: 'Start Pro Subscription',
       buttonVariant: 'default' as const,
       popular: true
     },
@@ -108,25 +111,21 @@ const PricingPage: React.FC = () => {
     setIsProcessingPayment(true);
 
     try {
-      // Create Razorpay order
-      const order = await RazorpayService.createOrder({
+      // Create Pro subscription
+      const subscriptionId = await SubscriptionService.createProSubscription(
+        user.id,
+        user.email || ''
+      );
+
+      console.log('Created subscription:', subscriptionId);
+
+      // Open Razorpay subscription payment modal
+      await RazorpayFrontend.openSubscriptionModal({
+        subscriptionId: subscriptionId,
         amount: 200000, // ₹2000 in paise
         currency: 'INR',
-        receipt: `pro_plan_${user.id}_${Date.now()}`,
-        notes: {
-          plan: 'pro',
-          user_id: user.id,
-          user_email: user.email || '',
-        },
-      });
-
-      // Open Razorpay payment modal
-      await RazorpayFrontend.openPaymentModal({
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
         name: 'Nexara',
-        description: 'Pro Plan - Monthly Subscription',
+        description: 'Pro Plan - Monthly Subscription (₹2,000/month)',
         prefill: {
           name: user.user_metadata?.full_name || '',
           email: user.email || '',
@@ -134,45 +133,45 @@ const PricingPage: React.FC = () => {
         theme: {
           color: '#3399cc',
         },
-        onSuccess: async (paymentId: string, orderId: string, signature: string) => {
+        onSuccess: async (paymentId: string, subscriptionId: string, signature: string) => {
           try {
-            // Verify payment signature
-            const isValid = RazorpayService.verifyPaymentSignature(orderId, paymentId, signature);
+            // Get subscription details to verify
+            const subscription = await SubscriptionService.getSubscriptionDetails(subscriptionId);
             
-            if (isValid) {
+            if (subscription && subscription.status === 'active') {
               toast({
-                title: "Payment Successful!",
-                description: "Welcome to Nexara Pro! You now have access to all Pro features.",
+                title: "Subscription Activated!",
+                description: "Welcome to Nexara Pro! Your monthly subscription is now active.",
               });
               
               // Redirect to campaigns page
               navigate('/engage/campaigns');
             } else {
-              throw new Error('Payment verification failed');
+              throw new Error('Subscription not activated');
             }
           } catch (error) {
-            console.error('Payment verification error:', error);
+            console.error('Subscription verification error:', error);
             toast({
-              title: "Payment Verification Failed",
+              title: "Subscription Verification Failed",
               description: "Please contact support if you were charged.",
               variant: "destructive",
             });
           }
         },
         onError: (error: any) => {
-          console.error('Payment error:', error);
+          console.error('Subscription payment error:', error);
           toast({
-            title: "Payment Failed",
+            title: "Subscription Payment Failed",
             description: error.message || "Payment was cancelled or failed. Please try again.",
             variant: "destructive",
           });
         },
       });
     } catch (error) {
-      console.error('Payment setup error:', error);
+      console.error('Subscription setup error:', error);
       toast({
-        title: "Payment Setup Failed",
-        description: "Unable to initialize payment. Please try again or contact support.",
+        title: "Subscription Setup Failed",
+        description: "Unable to initialize subscription. Please try again or contact support.",
         variant: "destructive",
       });
     } finally {
