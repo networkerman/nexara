@@ -2,7 +2,7 @@ import { RazorpayService, SubscriptionPlan, SubscriptionOptions } from './razorp
 
 // Pro Plan Configuration
 export const PRO_PLAN_CONFIG = {
-  name: 'Nexara Pro Plan',
+  name: 'OneXtel Pro Plan',
   amount: 200000, // ₹2000 in paise
   currency: 'INR',
   description: 'Pro Plan - Monthly Subscription with advanced features',
@@ -38,7 +38,7 @@ export class SubscriptionService {
         interval: PRO_PLAN_CONFIG.interval,
         notes: {
           plan_type: 'pro',
-          created_by: 'nexara_app'
+          created_by: 'onextel_app'
         }
       };
 

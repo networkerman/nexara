@@ -1,8 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe, ChevronDown, Plus, LogOut } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe, ChevronDown, Plus } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
 import Footer from './Footer';
 import {
   DropdownMenu,
@@ -51,28 +50,19 @@ interface AppLayoutProps {
 export function AppLayout({
   children
 }: AppLayoutProps) {
-  const navigate = useNavigate();
-  const { signOut, user } = useAuth();
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/login');
-  };
   return <div className="flex flex-col min-h-screen bg-background">
       {/* Sidebar */}
       <div className="flex-1 flex">
         <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
         {/* Logo */}
-        <div className="p-6 border-b border-primary/20">
+        <div className="p-6 border-b border-white/10">
           <div className="flex items-center space-x-3">
-            <img 
-              src="/Nexara logo without text.png" 
-              alt="Nexara Logo" 
-              className="w-8 h-8 rounded-md"
-            />
+            <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-bold text-lg" style={{ fontFamily: 'var(--font-heading)' }}>X</span>
+            </div>
             <div>
-              <span className="text-lg font-semibold text-white">nexara</span>
-              <p className="text-xs text-primary-foreground/70 -mt-1">CUSTOMER ENGAGEMENT</p>
+              <span className="text-lg font-semibold text-white tracking-wide" style={{ fontFamily: 'var(--font-heading)' }}>OneXtel</span>
+              <p className="text-xs text-white/50 -mt-1 tracking-widest">INTELLIGENT CPaaS</p>
             </div>
           </div>
         </div>
@@ -82,7 +72,7 @@ export function AppLayout({
           {navigation.map(item => <div key={item.name}>
               <NavLink to={item.href} className={({
             isActive
-          }) => cn("flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors", isActive || item.name === 'Engage' ? "bg-primary-foreground/10 text-primary-foreground" : "text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5")}>
+          }) => cn("flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors", isActive ? "bg-accent/20 text-white" : item.name === 'Engage' ? "bg-white/5 text-white/90" : "text-white/60 hover:text-white hover:bg-white/5")}>
                 <item.icon className="w-4 h-4 mr-3" />
                 {item.name}
               </NavLink>
@@ -91,7 +81,7 @@ export function AppLayout({
               {item.name === 'Engage' && item.children && <div className="ml-7 mt-1 space-y-1">
                   {item.children.map(child => <NavLink key={child.name} to={child.href} className={({
               isActive
-            }) => cn("flex items-center px-3 py-1.5 text-sm rounded-md transition-colors", isActive ? "bg-primary-foreground/15 text-primary-foreground font-medium" : "text-primary-foreground/60 hover:text-primary-foreground hover:bg-primary-foreground/5")}>
+            }) => cn("flex items-center px-3 py-1.5 text-sm rounded-md transition-colors", isActive ? "bg-accent/20 text-white font-medium" : "text-white/50 hover:text-white hover:bg-white/5")}>
                       <child.icon className="w-3 h-3 mr-2" />
                       {child.name}
                     </NavLink>)}
@@ -185,7 +175,6 @@ export function AppLayout({
           </div>
         </div>
         </div>
-      </div>
 
       {/* Main content */}
       <div className="flex-1 flex flex-col min-h-0">
@@ -193,37 +182,24 @@ export function AppLayout({
         <header className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-foreground">Engage</h1>
+              <h1 className="text-xl font-semibold text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>Campaigns</h1>
             </div>
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
                 <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
                   <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
                 </div>
-                <span className="text-sm text-foreground">Nexara</span>
-                <span className="text-xs text-success font-medium">Live</span>
+                <span className="text-sm text-foreground font-medium">OneXtel</span>
+                <span className="text-xs text-success font-medium px-2 py-0.5 bg-success/10 rounded-full">Live</span>
               </div>
               
-              {/* User menu */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="flex items-center space-x-2">
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-xs font-medium text-primary-foreground">
-                        {user?.email?.charAt(0).toUpperCase() || 'U'}
-                      </span>
-                    </div>
-                    <span className="text-sm text-foreground">{user?.email || 'User'}</span>
-                    <ChevronDown className="w-3 h-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {/* User avatar */}
+              <div className="flex items-center space-x-2">
+                <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-xs font-medium text-primary-foreground">O</span>
+                </div>
+                <span className="text-sm text-foreground font-medium">OneXtel</span>
+              </div>
             </div>
           </div>
         </header>
@@ -238,5 +214,5 @@ export function AppLayout({
       {/* Footer */}
       <Footer />
     </div>
-  );
+  ;
 }

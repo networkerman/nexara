@@ -124,7 +124,7 @@ const PricingPage: React.FC = () => {
         subscriptionId: subscriptionId,
         amount: 200000, // ₹2000 in paise
         currency: 'INR',
-        name: 'Nexara',
+        name: 'OneXtel',
         description: 'Pro Plan - Monthly Subscription (₹2,000/month)',
         prefill: {
           name: user.user_metadata?.full_name || '',
@@ -141,7 +141,7 @@ const PricingPage: React.FC = () => {
             if (subscription && subscription.status === 'active') {
               toast({
                 title: "Subscription Activated!",
-                description: "Welcome to Nexara Pro! Your monthly subscription is now active.",
+                description: "Welcome to OneXtel Pro! Your monthly subscription is now active.",
               });
               
               // Redirect to campaigns page
@@ -189,7 +189,7 @@ const PricingPage: React.FC = () => {
         <div className="text-center mb-12">
           <img 
             src="/Nexara_logo.png" 
-            alt="Nexara" 
+            alt="OneXtel" 
             className="mx-auto h-12 w-auto mb-6"
           />
           <h1 className="text-4xl font-bold text-gray-900 mb-4">

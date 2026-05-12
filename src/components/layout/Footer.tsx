@@ -4,21 +4,19 @@ import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-white">
+    <footer className="text-white" style={{ backgroundColor: '#1E2A5E' }}>
       <div className="container mx-auto px-6 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <img 
-                src="/Nexara_logo.png" 
-                alt="Nexara" 
-                className="h-8 w-8"
-              />
-              <span className="text-xl font-bold">Nexara</span>
+              <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-bold text-lg" style={{ fontFamily: 'var(--font-heading)' }}>X</span>
+              </div>
+              <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>OneXtel</span>
             </div>
-            <p className="text-gray-400 text-sm">
-              Customer Engagement Platform for modern businesses. Build, manage, and optimize your marketing campaigns.
+            <p className="text-white/50 text-sm">
+              AI-powered CPaaS platform. Orchestrate SMS, WhatsApp, RCS, Voice, and Email conversations at scale.
             </p>
           </div>
 
@@ -113,19 +111,19 @@ const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/login" 
+                <Link
+                  to="/engage/campaigns"
                   className="text-gray-400 hover:text-white transition-colors text-sm"
                 >
-                  Login
+                  Campaigns
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/signup" 
+                <Link
+                  to="/dashboards"
                   className="text-gray-400 hover:text-white transition-colors text-sm"
                 >
-                  Sign Up
+                  Dashboards
                 </Link>
               </li>
             </ul>
@@ -136,7 +134,7 @@ const Footer: React.FC = () => {
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2024 Nexara. All rights reserved.
+              © 2026 OneXtel. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link 

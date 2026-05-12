@@ -19,7 +19,7 @@ export function useSuccessBanner() {
       setBannerState({
         show: true,
         campaignId,
-        message: 'Published. Execution handed off to Adobe; metrics will sync back to Adobe. No customer data stored on Nexara.'
+        message: 'Published. Execution handed off to Adobe; metrics will sync back to Adobe. No customer data stored on OneXtel.'
       });
       
       // Auto-scroll to newly published campaign after data loads
