@@ -1,4 +1,4 @@
-// Supabase Database Types for Nexara
+// Supabase Database Types for OneXtel
 // Generated types for the clients and campaigns tables
 
 export interface Database {

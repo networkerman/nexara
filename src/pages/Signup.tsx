@@ -105,7 +105,7 @@ const SignupPage: React.FC = () => {
         <div className="text-center">
           <img 
             src="/Nexara_logo.png" 
-            alt="Nexara" 
+            alt="OneXtel" 
             className="mx-auto h-12 w-auto"
           />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
@@ -124,7 +124,7 @@ const SignupPage: React.FC = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Get started with Nexara</CardTitle>
+            <CardTitle>Get started with OneXtel</CardTitle>
             <CardDescription>
               Create your account to start building amazing campaigns
             </CardDescription>

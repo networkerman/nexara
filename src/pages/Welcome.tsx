@@ -15,17 +15,11 @@ const WelcomePage: React.FC = () => {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-
       try {
         const profile = await userProfileService.getProfile(user.id);
         if (profile) {
           setUserProfile(profile);
         } else {
-          // If no profile found, redirect to onboarding
           navigate('/onboarding');
         }
       } catch (err) {
@@ -81,7 +75,7 @@ const WelcomePage: React.FC = () => {
         <div className="text-center">
           <img 
             src="/Nexara_logo.png" 
-            alt="Nexara" 
+            alt="OneXtel" 
             className="mx-auto h-12 w-auto"
           />
         </div>
@@ -94,7 +88,7 @@ const WelcomePage: React.FC = () => {
               </div>
             </div>
             <CardTitle className="text-2xl text-green-800">
-              Welcome to Nexara, {getFirstName()}!
+              Welcome to OneXtel, {getFirstName()}!
             </CardTitle>
             <CardDescription className="text-green-700">
               Your onboarding is complete. Let's get you started with the perfect plan.
@@ -138,7 +132,7 @@ const WelcomePage: React.FC = () => {
                   <div>
                     <h4 className="font-semibold text-blue-900">What's Next?</h4>
                     <p className="text-blue-700 text-sm mt-1">
-                      Choose a pricing plan that fits your needs and start building amazing campaigns with Nexara.
+                      Choose a pricing plan that fits your needs and start building amazing campaigns with OneXtel.
                     </p>
                   </div>
                 </div>

@@ -1,14 +1,14 @@
 {
-  "name": "Nexara Omnichannel Platform",
-  "short_name": "Nexara",
-  "description": "Advanced customer engagement and campaign management platform",
+  "name": "OneXtel — Intelligent CPaaS Platform",
+  "short_name": "OneXtel",
+  "description": "AI-powered CPaaS platform for SMS, WhatsApp, RCS, Voice, and Email",
   "start_url": "/",
   "display": "standalone",
-  "theme_color": "#1a1a1a",
+  "theme_color": "#1E2A5E",
   "background_color": "#ffffff",
   "icons": [
     {
-      "src": "/nexara-favicon.png",
+      "src": "/Nexara logo without text.png",
       "sizes": "32x32",
       "type": "image/png"
     },

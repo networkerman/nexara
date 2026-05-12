@@ -73,12 +73,7 @@ const OnboardingPage: React.FC = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Save onboarding data to Supabase
-      if (!user) {
-        setError('User not authenticated');
-        return;
-      }
-
+      // Save onboarding data
       setLoading(true);
       setError('');
 
@@ -237,11 +232,11 @@ const OnboardingPage: React.FC = () => {
         <div className="text-center">
           <img 
             src="/Nexara_logo.png" 
-            alt="Nexara" 
+            alt="OneXtel" 
             className="mx-auto h-12 w-auto"
           />
           <h2 className="mt-6 text-3xl font-bold text-gray-900">
-            Welcome to Nexara!
+            Welcome to OneXtel!
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             Let's get to know you better

@@ -186,8 +186,8 @@ interface AdobeSegment {
 
 const businessNumbers = [
   {
-    id: 'nexara',
-    name: 'Nexara Solutions Support (+91 2249757637)',
+    id: 'onextel',
+    name: 'OneXtel Solutions Support (+91 2249757637)',
     quality: 'HIGH',
     messagingLimit: '10000 Messaging limit per 24hrs',
     lastUpdated: 'Sep 09, 2025 12:03 PM'
@@ -598,7 +598,7 @@ const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; c
             )}
             <div>
               <span className="font-medium text-foreground">Business number:</span>
-              <div>Nexara Solutions Support (+91 2249757637)</div>
+              <div>OneXtel Solutions Support (+91 2249757637)</div>
             </div>
             <div>
               <span className="font-medium text-foreground">Link tracking:</span>
@@ -814,7 +814,7 @@ const normalizeCampaignData = (data: any): CampaignFormData => {
   return normalized;
 };
 
-const WIZARD_STORAGE_KEY = 'nexara-campaign-wizard-state';
+const WIZARD_STORAGE_KEY = 'onextel-campaign-wizard-state';
 const WIZARD_STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps) {
@@ -865,7 +865,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     const defaultData = {
       campaignName: 'Adobe',
       tags: ['Adobe'],
-      businessNumber: 'nexara',
+      businessNumber: 'onextel',
       linkTracking: true,
       conversionGoalEnabled: true,
       eventName: 'Account Opened (Savings)',
@@ -1348,7 +1348,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     setFormData(normalizeCampaignData({
       campaignName: 'Adobe',
       tags: ['Adobe'],
-      businessNumber: 'nexara',
+      businessNumber: 'onextel',
       linkTracking: true,
       conversionGoalEnabled: true,
       eventName: 'Account Opened (Savings)',
@@ -1531,11 +1531,11 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <img 
                     src="/Nexara_logo.png" 
-                    alt="Nexara Logo" 
+                    alt="OneXtel Logo" 
                     className="w-5 h-5 rounded-sm"
                   />
                 </div>
-                <span className="font-medium">Nexara Cloud</span>
+                <span className="font-medium">OneXtel Cloud</span>
               </div>
               
               {/* Message Content */}
@@ -1972,7 +1972,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
     "Schedule - Campaign Execution Started",
     "Send, Delivered, Opened/Read, Clicked, Failed",
     "Metrics will auto sync to Adobe in sometime",
-    "No customer data stored in Nexara"
+    "No customer data stored in OneXtel"
   ];
 
   const personalizationOptions = [
@@ -2102,7 +2102,7 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
               <Info className="h-4 w-4 text-info" />
               <AlertDescription className="text-foreground">
                 <strong>Retry plan scheduled</strong> (24h cadence, up to {formData.retryDuration} days). 
-                Execution via Nexara; metrics sync back to Adobe. No customer data stored on Nexara.
+                Execution via OneXtel; metrics sync back to Adobe. No customer data stored on OneXtel.
               </AlertDescription>
             </Alert>
           )}
@@ -2317,11 +2317,11 @@ export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps)
                           <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                             <img 
                               src="/nexara-logo.svg" 
-                              alt="Nexara Logo" 
+                              alt="OneXtel Logo" 
                               className="w-5 h-5 rounded-sm"
                             />
                           </div>
-                          <span className="font-medium">Nexara Cloud</span>
+                          <span className="font-medium">OneXtel Cloud</span>
                         </div>
                         
                         {/* Message Content */}
