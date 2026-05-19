@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This report consolidates findings from four independent data sources: a full product teardown of the Aura platform, analysis of 7,139 customer support tickets, 376 production incident tickets raised in the last 7 weeks, and a competitive landscape review of the $21–23B global CPaaS market.
+This report consolidates findings from five independent data sources: a full product teardown of the Aura platform, analysis of 7,139 customer support tickets, 376 production incident tickets raised in the last 7 weeks (JIRA PROD project), the JIRA AURA project backlog covering active development across SMS, WhatsApp/RCS, I2I, ILDO, Government, and UAE platforms, and a competitive landscape review of the $21–23B global CPaaS market.
 
 **Three findings define the situation:**
 
