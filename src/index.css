@@ -1,12 +1,60 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;600&display=swap');
+/* ── Google Fonts ─────────────────────────────────────────────────────────────
+   Montserrat: weights 400–900 (900 needed for display-xl)
+   Open Sans: 400 + 600 (document/proposal body)
+   ─────────────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;600&display=swap');
+
+/* ── Pluto — Licensed brand typeface ─────────────────────────────────────────
+   Purchase: https://www.myfonts.com/collections/pluto-font-positype
+   Drop .woff2 + .woff files into /public/fonts/pluto/ (see README there).
+   Until files are present, Montserrat renders as fallback — no UI breakage.
+   ─────────────────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Pluto';
+  src: url('/fonts/pluto/PlutoLight.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoLight.woff')  format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto';
+  src: url('/fonts/pluto/PlutoRegular.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoRegular.woff')  format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto';
+  src: url('/fonts/pluto/PlutoMedium.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoMedium.woff')  format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto';
+  src: url('/fonts/pluto/PlutoBold.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoBold.woff')  format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto';
+  src: url('/fonts/pluto/PlutoBlack.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoBlack.woff')  format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Onextel Design System — applied to OneXtel
-   Pluto (headings) is a licensed font — self-host via @font-face before shipping.
-   Montserrat and Open Sans are loaded from Google Fonts above. */
+/* ── Onextel Design System — OneXtel ──────────────────────────────────────── */
 
 @layer base {
   :root {
