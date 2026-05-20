@@ -8,17 +8,17 @@
   "background_color": "#ffffff",
   "icons": [
     {
-      "src": "/Nexara logo without text.png",
+      "src": "/OneXtel logo without text.png",
       "sizes": "32x32",
       "type": "image/png"
     },
     {
-      "src": "/Nexara_logo.png",
+      "src": "/OneXtel_logo.png",
       "sizes": "any",
       "type": "image/png"
     },
     {
-      "src": "/Nexara_logo.png",
+      "src": "/OneXtel_logo.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "apple-touch-icon"

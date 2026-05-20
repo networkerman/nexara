@@ -1,14 +1,14 @@
-# oneXtel — Project Context for Claude
+# OneXtel — Project Context for Claude
 **Branch: `onextel` | PM: Udayan Das Chowdhury | May 2026**
 
 ---
 
 ## What This Project Is
 
-This is the `onextel` branch of the Nexara codebase. The product being built is **oneXtel** — a new engagement platform that is a superset of Onextel's existing Aura product.
+This is the `onextel` branch of the Nexara codebase. The product being built is **OneXtel** — a new engagement platform that is a superset of Onextel's existing Aura product.
 
 - **Aura** = current production platform (onexaura.com). Telecoms operator console — SMS/WhatsApp/RCS broadcast tool. Java + React V2.
-- **oneXtel** = new product layer built on top of Nexara (React + Vite + Supabase + Tailwind). Solves the problems Aura never solved.
+- **OneXtel** = new product layer built on top of Nexara (React + Vite + Supabase + Tailwind). Solves the problems Aura never solved.
 - **Nexara** = the codebase/engine name. Not visible to end users.
 - The `main` branch is the Nexara baseline. The `onextel` branch is the product.
 
@@ -47,7 +47,7 @@ Full detail in `PROBLEMS.md`. Summary of the 8 problems in priority order:
 
 ## Current Product Structure (Aura Today)
 
-What exists in Aura (onexaura.com) that oneXtel must be a superset of:
+What exists in Aura (onexaura.com) that OneXtel must be a superset of:
 
 **Sidebar:** Dashboard · Campaign · User Management · Credits · Channels · Reports · Telco Reports · DLT · API · Phonebook · Config
 

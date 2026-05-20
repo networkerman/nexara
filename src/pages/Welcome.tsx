@@ -74,7 +74,7 @@ const WelcomePage: React.FC = () => {
       <div className="max-w-2xl w-full space-y-8">
         <div className="text-center">
           <img 
-            src="/Nexara_logo.png" 
+            src="/OneXtel_logo.png" 
             alt="OneXtel" 
             className="mx-auto h-12 w-auto"
           />

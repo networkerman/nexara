@@ -1,4 +1,4 @@
-# oneXtel — Product State & Direction Report
+# OneXtel — Product State & Direction Report
 **Prepared for: Leon & Tarik**
 **From: Udayan Das Chowdhury, Director of Products**
 **Date: May 2026 | Confidential**
@@ -15,7 +15,7 @@ This report consolidates findings from five independent data sources: a full pro
 
 2. **The product is losing enterprise deals it should be winning.** RBAC, Maker-Checker, and Audit Logs are absent from every platform. These are not feature requests — they are procurement requirements for every BFSI and Government customer. Deals are being lost because of their absence, not because of pricing or channel coverage.
 
-3. **The path forward is clear.** oneXtel is not a redesign of Aura. It is the product layer that Aura never built — surfacing Aura's infrastructure through an engagement platform that customers actually want to use daily.
+3. **The path forward is clear.** OneXtel is not a redesign of Aura. It is the product layer that Aura never built — surfacing Aura's infrastructure through an engagement platform that customers actually want to use daily.
 
 ---
 
@@ -165,13 +165,13 @@ The global CPaaS market is valued at $21–23B in 2026, growing at 19–33% CAGR
 
 ---
 
-## Part 5 — What oneXtel Must Be
+## Part 5 — What OneXtel Must Be
 
-oneXtel is the engagement platform that Aura's infrastructure makes possible but never delivered. **Aura handles messages. oneXtel handles outcomes.**
+OneXtel is the engagement platform that Aura's infrastructure makes possible but never delivered. **Aura handles messages. OneXtel handles outcomes.**
 
 ### The Superset
 
-| Capability | Aura Today | oneXtel Adds |
+| Capability | Aura Today | OneXtel Adds |
 |---|---|---|
 | Channels | SMS, WhatsApp, RCS | + Email, + Voice |
 | Campaigns | Bulk broadcast, scheduling | + Journey automation, + A/B testing, + frequency capping UI |
@@ -194,7 +194,7 @@ oneXtel is the engagement platform that Aura's infrastructure makes possible but
 | 2 | **Reporting self-serve** — builder, scheduled delivery, AM view | Converts 1,000+ recurring support tickets into product usage |
 | 3 | **Enterprise governance** — stabilise RBAC, Maker-Checker, add Audit Log | Directly unlocks BFSI and Govt deals currently blocked |
 | 4 | **Failure visibility** — alerts, error reasons, template sync status | Reduces PROD ticket volume immediately |
-| 5 | **Journey Automation** — trigger-based, multi-channel, conditional | Moves oneXtel from broadcast tool to engagement platform |
+| 5 | **Journey Automation** — trigger-based, multi-channel, conditional | Moves OneXtel from broadcast tool to engagement platform |
 | 6 | **Audience Management** — contact properties, segments, event history | Prerequisite for Journey and campaign personalisation |
 | 7 | **Unified Content + Templates** — across SMS/WA/RCS/Email/Voice | Prerequisite for Journey and multi-channel campaigns |
 | 8 | **Channel onboarding + Email + Voice** — self-serve wizards, new channels | Completes the omnichannel story |
@@ -211,7 +211,7 @@ The initial analysis was directionally correct. The data has since quantified an
 - Voice demand is real: 431 support tickets — not just a website claim
 
 **New — not in the initial analysis:**
-1. **"OMNI" is the internal name for the V2 UI** — visible across PROD ticket prefixes (OMNI|Reports|..., OMNI|New SMS|...). Has branding implications for oneXtel positioning.
+1. **"OMNI" is the internal name for the V2 UI** — visible across PROD ticket prefixes (OMNI|Reports|..., OMNI|New SMS|...). Has branding implications for OneXtel positioning.
 2. **Maker-Checker is already in flight, not absent** — PROD-311 and PROD-305 show it is being built but generating critical bugs immediately. The task is stabilisation, not greenfield build.
 3. **PROD backlog open rate is 43%** across 376 tickets in 7 weeks — versus 13% shown in the support system. PROD is where the hard, unresolved issues live.
 4. **Ocean DC / Ocean DR discrepancy** is a live production issue causing customer-visible count differences. Not in the initial teardown.
@@ -226,9 +226,9 @@ Onextel's infrastructure is an asset. Aura's customer-facing product is a liabil
 
 The support and production data make the cost of the current state concrete: over a thousand customers raising weekly tickets because the product cannot show them their own data; enterprise deals blocked by absent governance features; engineering teams running manual database fixes as a weekly ritual; campaigns failing silently with no customer notification.
 
-oneXtel addresses this with a clear, sequenced plan. The first three priorities — data trust, reporting self-serve, and enterprise governance — do not require new infrastructure. The infrastructure to deliver accurate counts, flexible reports, and role-based access already exists in Aura's backend. What is missing is the product surface that exposes it in a way customers can actually use.
+OneXtel addresses this with a clear, sequenced plan. The first three priorities — data trust, reporting self-serve, and enterprise governance — do not require new infrastructure. The infrastructure to deliver accurate counts, flexible reports, and role-based access already exists in Aura's backend. What is missing is the product surface that exposes it in a way customers can actually use.
 
-The market window is real. Onextel's DLT compliance, carrier relationships, and government customer base are advantages no global player can replicate quickly. The question is whether oneXtel gets built before Infobip, Sinch, or a well-funded Indian challenger closes the gap on the product layer.
+The market window is real. Onextel's DLT compliance, carrier relationships, and government customer base are advantages no global player can replicate quickly. The question is whether OneXtel gets built before Infobip, Sinch, or a well-funded Indian challenger closes the gap on the product layer.
 
 ---
 

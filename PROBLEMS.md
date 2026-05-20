@@ -1,7 +1,7 @@
-# oneXtel — Problems We Are Solving
+# OneXtel — Problems We Are Solving
 **Branch: `onextel` | Stage: Identification | Last updated: May 2026**
 
-> This document is the foundation for every product decision in oneXtel.
+> This document is the foundation for every product decision in OneXtel.
 > It exists to answer one question: **what pain, exactly, are we building against?**
 > Sources: Product Teardown Phase 1, Support Ticket Analysis (7,139 tickets), PROD JIRA (376 tickets, Apr–May 2026), AURA dashboard screenshot, JIRA AURA project samples.
 
@@ -9,7 +9,7 @@
 
 ## The One-Line Problem Statement
 
-Onextel's current platform (Aura) is a **telecoms operator console** — built for ops teams checking delivery logs, not for marketers building customer relationships. It handles SMS, WhatsApp, and RCS well at the infrastructure level, but it does not give customers the tools to understand, act on, or improve their communications. **oneXtel is the product layer that Aura never built.**
+Onextel's current platform (Aura) is a **telecoms operator console** — built for ops teams checking delivery logs, not for marketers building customer relationships. It handles SMS, WhatsApp, and RCS well at the infrastructure level, but it does not give customers the tools to understand, act on, or improve their communications. **OneXtel is the product layer that Aura never built.**
 
 ---
 
@@ -28,7 +28,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - 97 PROD tickets in 7 weeks categorised as Reports/MIS — the #1 PROD category
 - 58 PROD tickets categorised as Delivery/Status
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Accurate, real-time delivery funnel: Submitted → Dispatched → Delivered → Read → Clicked → Converted
 - Self-serve "stuck transaction" repair UI — no more PROD tickets for manual DB fixes
 - Single source of truth across DC/DR — no more count discrepancies visible to customers
@@ -46,7 +46,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - No email alerts on campaign failures — customers find out from their own users (AURA-11542).
 - The platform goes down with no customer-facing status (PROD-206 Onexaura portal down, PROD-398 HTTP 502).
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Every failure surfaces a human-readable reason with a suggested fix
 - Campaign health alerts: email + in-app notification on failure, delivery drop, or budget threshold
 - Template sync status visible at all times — customers know if their WhatsApp/RCS templates are approved
@@ -68,7 +68,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - Top customers: SBI (1,295 support tickets), DMI Finance (129), Credgenics (73) — all BFSI, all require governance
 - PROD-305: Critical bug in User Management / Roles and Access Control
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - RBAC: six roles minimum (Super Admin, Admin, Campaign Manager, Analyst, Viewer, API User), configurable per module
 - Maker-Checker: configurable approval gate on campaign launch, template creation, contact import, large sends
 - Audit log: every action logged, searchable, exportable — immutable
@@ -86,7 +86,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - AM (Account Manager) Report Dashboard absent — AMs have no visibility into their accounts without manually pulling data (P0 gap from Teardown).
 - All reports are in IST. UAE customers and global senders cannot use them (AURA-9233).
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Self-serve report builder: pick channels, date range, dimensions, metrics — download on demand
 - Scheduled delivery: configure reports to arrive via email or SFTP on a schedule
 - Account Manager view: dedicated dashboard showing every account's health at a glance
@@ -103,7 +103,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - The Teardown confirms: "Email Channel — Medium urgency — Email is marketed as a channel — no email platform roadmap found."
 - Without Email and Voice, "omnichannel" is a marketing claim, not a product truth.
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Email as a first-class channel: from domain setup, DKIM/SPF, template editor, delivery reporting
 - Voice as a first-class channel: caller ID, IVR script attachment, recording config, delivery reporting
 - All channels surfaced in a single campaign, journey, and analytics interface
@@ -120,11 +120,11 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - There is no multi-step sequence, no conditional branching, no wait step.
 - Competitors — Infobip (Moments), CleverTap, MoEngage — all have this. Aura's plugin integrations with CleverTap and MoEngage are a workaround for this exact gap.
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Visual journey builder: drag-drop canvas with Trigger → Message → Condition → Wait → Goal nodes
 - Trigger types: event-based (purchase, form submit, URL visit), segment entry, API, schedule
 - Multi-channel within one journey: WhatsApp → wait 2 hours → if not read → SMS fallback
-- This is the feature that moves oneXtel from "broadcast tool" to "engagement platform"
+- This is the feature that moves OneXtel from "broadcast tool" to "engagement platform"
 
 ---
 
@@ -138,7 +138,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - WhatsApp Embedded Signup flow has a live Data Localization API failure (PROD-341, Critical, open).
 - No language selector on the UI — non-English operators cannot use the platform (AURA-11610).
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Self-serve channel connection: guided setup wizard for each channel (WhatsApp, RCS, SMS, Email, Voice)
 - In-UI API key generator with scoped permissions
 - Timezone selection on account setup — default to user's locale, not IST
@@ -155,7 +155,7 @@ Onextel's current platform (Aura) is a **telecoms operator console** — built f
 - You cannot build a journey that triggers when "a contact's tag changes to 'churned'."
 - Without audience management, journey automation and personalisation are impossible.
 
-### What we solve for in oneXtel
+### What we solve for in OneXtel
 - Contacts with properties: name, phone, email, tags, custom fields, channel opt-in status per channel
 - Segment builder: rule-based (field + operator + value), with AND/OR logic and live count preview
 - Event history per contact: every message sent, delivered, read, clicked — queryable
@@ -181,12 +181,12 @@ These are ordered by: **trust restoration → deal unblocking → growth surface
 
 ---
 
-## What oneXtel Is Not Solving (Scope Boundaries)
+## What OneXtel Is Not Solving (Scope Boundaries)
 
-- **I2I / ILDO carrier routing** — this is infrastructure, not product UI. PROD tickets here are backend engineering work, not a oneXtel feature.
-- **Ocean DC/DR synchronisation** — infrastructure problem. oneXtel surfaces the symptom (count discrepancy) but doesn't fix the underlying replication.
-- **DLT compliance engine** — Aura handles DLT well. oneXtel wraps it, doesn't replace it.
-- **Telco-grade SMPP** — existing backend. oneXtel does not touch the routing layer.
+- **I2I / ILDO carrier routing** — this is infrastructure, not product UI. PROD tickets here are backend engineering work, not a OneXtel feature.
+- **Ocean DC/DR synchronisation** — infrastructure problem. OneXtel surfaces the symptom (count discrepancy) but doesn't fix the underlying replication.
+- **DLT compliance engine** — Aura handles DLT well. OneXtel wraps it, doesn't replace it.
+- **Telco-grade SMPP** — existing backend. OneXtel does not touch the routing layer.
 
 ---
 
