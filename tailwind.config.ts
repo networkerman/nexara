@@ -88,7 +88,7 @@ export default {
 
       fontFamily: {
         sans: ["Montserrat", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Helvetica Neue", "Arial", "sans-serif"],
-        heading: ["Pluto", "Montserrat", "-apple-system", "sans-serif"],
+        heading: ["Pluto Sans", "Montserrat", "-apple-system", "sans-serif"],
         document: ["Open Sans", "Georgia", "serif"],
       },
 
