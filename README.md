@@ -125,7 +125,7 @@ src/
 ## 📞 Contact & Support
 
 For premium feature access or support:
-- **Email**: networker.udayan@gmail.com
+- **Email**: udayan.chowdhury@onextel.com
 - **Subject**: Premium Access Request - [Feature Name]
 
 ## 🔗 Links

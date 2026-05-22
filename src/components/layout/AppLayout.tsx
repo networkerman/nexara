@@ -1,218 +1,235 @@
 import React from 'react';
-import { LayoutDashboard, Megaphone, Users, FileText, BarChart3, MessageSquare, Route, Monitor, Smartphone, Globe, ChevronDown, Plus } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import Footer from './Footer';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-const navigation = [{
-  name: 'Dashboards',
-  href: '/dashboards',
-  icon: LayoutDashboard
-}, {
-  name: 'Engage',
-  href: '/engage',
-  icon: Megaphone,
-  children: [{
-    name: 'Campaigns',
-    href: '/engage/campaigns',
-    icon: MessageSquare
-  }, {
-    name: 'Journey',
-    href: '/engage/journey',
-    icon: Route
-  }, {
-    name: 'On-site messages',
-    href: '/engage/onsite',
-    icon: Monitor
-  }]
-}, {
-  name: 'Audiences',
-  href: '/audiences',
-  icon: Users
-}, {
-  name: 'Content',
-  href: '/content',
-  icon: FileText
-}, {
-  name: 'Analytics',
-  href: '/analytics',
-  icon: BarChart3
-}];
+  Home,
+  Megaphone,
+  Route,
+  Users,
+  FileText,
+  BarChart3,
+  Radio,
+  Shield,
+  Settings,
+  ChevronRight,
+  Bell,
+  ChevronsUpDown,
+} from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+
+/* ─── Navigation definition ──────────────────────────────────────────────── */
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  locked?: boolean;
+}
+
+const primaryNav: NavItem[] = [
+  { name: 'Home',       href: '/',           icon: Home      },
+  { name: 'Campaigns',  href: '/campaigns',  icon: Megaphone },
+  { name: 'Journeys',   href: '/journeys',   icon: Route,    locked: true },
+  { name: 'Audiences',  href: '/audiences',  icon: Users     },
+  { name: 'Content',    href: '/content',    icon: FileText  },
+  { name: 'Reports',    href: '/reports',    icon: BarChart3 },
+  { name: 'Channels',   href: '/channels',   icon: Radio     },
+  { name: 'Governance', href: '/governance', icon: Shield    },
+];
+
+const bottomNav: NavItem[] = [
+  { name: 'Settings', href: '/settings', icon: Settings },
+];
+
+const routeTitles: Record<string, string> = {
+  '/':           'Home',
+  '/campaigns':  'Campaigns',
+  '/journeys':   'Journeys',
+  '/audiences':  'Audiences',
+  '/content':    'Content',
+  '/reports':    'Reports',
+  '/channels':   'Channels',
+  '/governance': 'Governance',
+  '/settings':   'Settings',
+};
+
+/* ─── Sidebar nav item ────────────────────────────────────────────────────── */
+
+function SidebarItem({ item }: { item: NavItem }) {
+  if (item.locked) {
+    return (
+      <div
+        className="flex items-center justify-between px-3 py-2.5 rounded-brand-md cursor-not-allowed select-none"
+        title="Coming soon"
+      >
+        <div className="flex items-center gap-3">
+          <item.icon className="w-[18px] h-[18px] text-white/25 flex-shrink-0" />
+          <span className="text-[13px] font-medium text-white/25 leading-none">
+            {item.name}
+          </span>
+        </div>
+        <span className="text-[10px] font-semibold tracking-wide uppercase text-white/30 bg-white/[0.06] px-1.5 py-0.5 rounded-brand-xs">
+          Soon
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <NavLink
+      to={item.href}
+      end={item.href === '/'}
+      className={({ isActive }) =>
+        cn(
+          'group flex items-center gap-3 px-3 py-2.5 rounded-brand-md transition-colors duration-150 relative',
+          isActive
+            ? 'bg-white/[0.09] text-white'
+            : 'text-white/55 hover:text-white/90 hover:bg-white/[0.05]'
+        )
+      }
+    >
+      {({ isActive }) => (
+        <>
+          {/* Active indicator bar */}
+          {isActive && (
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#FF3535] rounded-r-full" />
+          )}
+          <item.icon
+            className={cn(
+              'w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150',
+              isActive ? 'text-[#FF3535]' : 'text-current'
+            )}
+          />
+          <span className="text-[13px] font-medium leading-none">{item.name}</span>
+        </>
+      )}
+    </NavLink>
+  );
+}
+
+/* ─── AppLayout ───────────────────────────────────────────────────────────── */
+
 interface AppLayoutProps {
   children: React.ReactNode;
 }
-export function AppLayout({
-  children
-}: AppLayoutProps) {
-  return <div className="flex flex-col min-h-screen bg-background">
-      {/* Sidebar */}
+
+export function AppLayout({ children }: AppLayoutProps) {
+  const location = useLocation();
+
+  // Resolve page title from pathname (handles sub-routes too)
+  const pageTitle = React.useMemo(() => {
+    const exact = routeTitles[location.pathname];
+    if (exact) return exact;
+    const segment = '/' + location.pathname.split('/')[1];
+    return routeTitles[segment] ?? 'OneXtel';
+  }, [location.pathname]);
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-background">
       <div className="flex-1 flex">
-        <div className="basis-[16rem] flex-shrink-0 bg-primary text-primary-foreground">
-        {/* Logo */}
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-bold text-lg" style={{ fontFamily: 'var(--font-heading)' }}>X</span>
-            </div>
-            <div>
-              <span className="text-lg font-semibold text-white tracking-wide" style={{ fontFamily: 'var(--font-heading)' }}>OneXtel</span>
-              <p className="text-xs text-white/50 -mt-1 tracking-widest">INTELLIGENT CPaaS</p>
-            </div>
-          </div>
-        </div>
 
-        {/* Navigation */}
-        <nav className="p-4 space-y-1">
-          {navigation.map(item => <div key={item.name}>
-              <NavLink to={item.href} className={({
-            isActive
-          }) => cn("flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors", isActive ? "bg-accent/20 text-white" : item.name === 'Engage' ? "bg-white/5 text-white/90" : "text-white/60 hover:text-white hover:bg-white/5")}>
-                <item.icon className="w-4 h-4 mr-3" />
-                {item.name}
-              </NavLink>
-              
-              {/* Submenu for Engage */}
-              {item.name === 'Engage' && item.children && <div className="ml-7 mt-1 space-y-1">
-                  {item.children.map(child => <NavLink key={child.name} to={child.href} className={({
-              isActive
-            }) => cn("flex items-center px-3 py-1.5 text-sm rounded-md transition-colors", isActive ? "bg-accent/20 text-white font-medium" : "text-white/50 hover:text-white hover:bg-white/5")}>
-                      <child.icon className="w-3 h-3 mr-2" />
-                      {child.name}
-                    </NavLink>)}
-                </div>}
-            </div>)}
-        </nav>
+        {/* ── Sidebar ──────────────────────────────────────────────────── */}
+        <aside className="w-[232px] flex-shrink-0 flex flex-col bg-[#2E2E2E] h-full overflow-y-auto">
 
-        {/* Business Number Section */}
-        <div className="px-4 mt-8">
-          <h3 className="px-3 text-xs font-semibold text-primary-foreground/50 uppercase tracking-wider">
-            Business Number
-          </h3>
-          <div className="mt-2 space-y-1">
-            {/* Current Business Number */}
-            <div className="flex items-center justify-between px-3 py-2 text-sm text-primary-foreground/70 rounded-md">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-success rounded-full"></div>
-                <span>+91 98765 43210</span>
-              </div>
-              <span className="text-xs text-success font-medium">Active</span>
-            </div>
-            
-            {/* Add Number Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  className="w-full flex items-center justify-between px-3 py-2 text-sm text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 rounded-md transition-colors"
-                >
-                  <div className="flex items-center space-x-2">
-                    <Plus className="w-3 h-3" />
-                    <span>Add Number</span>
-                  </div>
-                  <ChevronDown className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                side="right" 
-                align="start"
-                className="w-64 bg-background border border-border shadow-lg z-[100]"
-                sideOffset={8}
+          {/* Logo */}
+          <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.08]">
+            <div className="w-8 h-8 bg-[#FF3535] rounded-brand-md flex items-center justify-center flex-shrink-0">
+              <span
+                className="text-white font-black text-[15px] leading-none"
+                style={{ fontFamily: 'var(--font-heading)' }}
               >
-                <DropdownMenuItem 
-                  className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => {
-                    // TODO: Open onboarding flow to add new number
-                    console.log('Opening onboarding flow to add new number');
-                  }}
-                >
-                  <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                    <Plus className="w-4 h-4 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-foreground">Add Business Number</span>
-                    <p className="text-xs text-muted-foreground">Connect a new WhatsApp Business number</p>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="flex items-center space-x-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => {
-                    console.log('Opening number management');
-                  }}
-                >
-                  <div className="w-8 h-8 bg-muted rounded-full flex items-center justify-center">
-                    <Smartphone className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-foreground">Manage Numbers</span>
-                    <p className="text-xs text-muted-foreground">View and configure existing numbers</p>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Personalization Section */}
-        <div className="px-4 mt-8">
-          <h3 className="px-3 text-xs font-semibold text-primary-foreground/50 uppercase tracking-wider">
-            Personalization
-          </h3>
-          <div className="mt-2 space-y-1">
-            <NavLink to="/personalization/web" className="flex items-center px-3 py-2 text-sm text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 rounded-md transition-colors">
-              <Globe className="w-4 h-4 mr-3" />
-              Web
-            </NavLink>
-            <NavLink to="/personalization/app" className="flex items-center px-3 py-2 text-sm text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 rounded-md transition-colors">
-              <Smartphone className="w-4 h-4 mr-3" />
-              App
-            </NavLink>
-          </div>
-        </div>
-        </div>
-
-      {/* Main content */}
-      <div className="flex-1 flex flex-col min-h-0">
-        {/* Header */}
-        <header className="bg-card border-b border-border px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-semibold text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>Campaigns</h1>
+                X
+              </span>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                  <div className="w-2 h-2 bg-success-foreground rounded-full"></div>
-                </div>
-                <span className="text-sm text-foreground font-medium">OneXtel</span>
-                <span className="text-xs text-success font-medium px-2 py-0.5 bg-success/10 rounded-full">Live</span>
+            <div className="flex flex-col">
+              <span
+                className="text-white font-bold text-[15px] leading-tight tracking-[0.2px]"
+                style={{ fontFamily: 'var(--font-heading)' }}
+              >
+                OneXtel
+              </span>
+              <span className="text-white/35 text-[9px] font-semibold tracking-[1.2px] uppercase mt-0.5">
+                Intelligent CPaaS
+              </span>
+            </div>
+          </div>
+
+          {/* Primary navigation */}
+          <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+            {primaryNav.map((item) => (
+              <SidebarItem key={item.name} item={item} />
+            ))}
+          </nav>
+
+          {/* Divider */}
+          <div className="mx-4 border-t border-white/[0.08]" />
+
+          {/* Bottom navigation (Settings) */}
+          <div className="px-3 py-3 flex flex-col gap-0.5">
+            {bottomNav.map((item) => (
+              <SidebarItem key={item.name} item={item} />
+            ))}
+          </div>
+
+          {/* Account switcher */}
+          <div className="mx-3 mb-4 mt-1">
+            <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-brand-md bg-white/[0.05] hover:bg-white/[0.08] transition-colors duration-150 group">
+              <div className="w-6 h-6 rounded-full bg-[#FF3535] flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-[11px] font-bold leading-none">O</span>
               </div>
-              
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-white/80 text-[12px] font-medium leading-tight truncate">
+                  Onextel
+                </p>
+                <p className="text-white/35 text-[10px] leading-tight truncate">
+                  Enterprise
+                </p>
+              </div>
+              <ChevronsUpDown className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+            </button>
+          </div>
+        </aside>
+
+        {/* ── Main content ─────────────────────────────────────────────── */}
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+
+          {/* Top bar */}
+          <header className="bg-card border-b border-border px-6 py-3.5 flex items-center justify-between flex-shrink-0">
+            <h1
+              className="text-[17px] font-semibold text-foreground leading-none"
+              style={{ fontFamily: 'var(--font-heading)' }}
+            >
+              {pageTitle}
+            </h1>
+
+            <div className="flex items-center gap-4">
+              {/* Status pill */}
+              <div className="flex items-center gap-1.5 text-xs font-medium text-success bg-success/10 px-2.5 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                Live
+              </div>
+
+              {/* Notifications */}
+              <button className="relative w-8 h-8 flex items-center justify-center rounded-brand-md hover:bg-muted transition-colors">
+                <Bell className="w-4 h-4 text-muted-foreground" />
+              </button>
+
               {/* User avatar */}
-              <div className="flex items-center space-x-2">
-                <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-xs font-medium text-primary-foreground">O</span>
+              <button className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center">
+                  <span className="text-[11px] font-bold text-primary-foreground leading-none">U</span>
                 </div>
-                <span className="text-sm text-foreground font-medium">OneXtel</span>
-              </div>
+                <ChevronRight className="w-3 h-3 text-muted-foreground rotate-90" />
+              </button>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-hidden">
-          {children}
-        </main>
+          {/* Page content */}
+          <main className="flex-1 overflow-auto">
+            {children}
+          </main>
         </div>
+
       </div>
-      
-      {/* Footer */}
-      <Footer />
     </div>
-  ;
+  );
 }

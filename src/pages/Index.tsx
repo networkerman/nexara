@@ -1,14 +1,6 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import Home from './Home';
 
-const Index = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    navigate('/engage/campaigns', { replace: true });
-  }, [navigate]);
-
-  return null;
-};
+// Root route renders the Home dashboard
+const Index = () => <Home />;
 
 export default Index;
