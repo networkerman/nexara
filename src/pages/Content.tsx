@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { CreateTemplate } from '@/components/content/CreateTemplate';
 import {
   Mail,
   MessageSquare,
@@ -640,6 +641,27 @@ function Phase2Placeholder({ channel }: { channel: string }) {
 
 const Content = () => {
   const [activeChannel, setActiveChannel] = useState<Channel>('SMS');
+  const [view, setView] = useState<'list' | 'create'>('list');
+  const [createChannel, setCreateChannel] = useState<Exclude<Channel, 'DLT' | 'Media'>>('SMS');
+
+  const openCreate = () => {
+    setCreateChannel(activeChannel as Exclude<Channel, 'DLT' | 'Media'>);
+    setView('create');
+  };
+
+  // Full-screen create view — replaces layout entirely
+  if (view === 'create') {
+    return (
+      <AppLayout>
+        <div className="h-full">
+          <CreateTemplate
+            channel={createChannel}
+            onBack={() => setView('list')}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
 
   const renderContent = () => {
     if (activeChannel === 'DLT')   return <DLTView />;
@@ -747,7 +769,10 @@ const Content = () => {
               </p>
             </div>
             {activeChannel !== 'Media' && activeChannel !== 'DLT' && activeChannel !== 'Voice' && activeChannel !== 'Email' && (
-              <button className="flex items-center gap-2 px-3 py-2 bg-primary text-white text-[12px] font-semibold rounded-brand-md hover:bg-primary/90 transition-colors">
+              <button
+                onClick={openCreate}
+                className="flex items-center gap-2 px-3 py-2 bg-primary text-white text-[12px] font-semibold rounded-brand-md hover:bg-primary/90 transition-colors"
+              >
                 <Plus className="w-3.5 h-3.5" />
                 New Template
               </button>
