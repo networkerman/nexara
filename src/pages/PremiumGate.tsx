@@ -11,7 +11,7 @@ export default function PremiumGate({ feature: propFeature }: PremiumGateProps) 
   const feature = propFeature || paramFeature || 'This feature';
   
   const subject = encodeURIComponent(`Premium Access Request - ${feature}`);
-  const mailto = `mailto:networker.udayan@gmail.com?subject=${subject}`;
+  const mailto = `mailto:udayan.chowdhury@onextel.com?subject=${subject}`;
 
   // Add noindex meta tag for SEO
   useEffect(() => {
@@ -37,7 +37,7 @@ export default function PremiumGate({ feature: propFeature }: PremiumGateProps) 
             className="underline text-primary hover:text-primary/80" 
             href={mailto}
           >
-            networker.udayan@gmail.com
+            udayan.chowdhury@onextel.com
           </a>
         </p>
         <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
