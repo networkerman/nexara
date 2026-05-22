@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import Footer from './Footer';
 
 /* ─── Navigation definition ──────────────────────────────────────────────── */
 
@@ -125,11 +124,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   }, [location.pathname]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <div className="flex-1 flex">
 
         {/* ── Sidebar ──────────────────────────────────────────────────── */}
-        <aside className="w-[232px] flex-shrink-0 flex flex-col bg-[#2E2E2E] min-h-screen">
+        <aside className="w-[232px] flex-shrink-0 flex flex-col bg-[#2E2E2E] h-full overflow-y-auto">
 
           {/* Logo */}
           <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.08]">
@@ -231,8 +230,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
 
       </div>
-
-      <Footer />
     </div>
   );
 }
