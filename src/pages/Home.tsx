@@ -213,15 +213,15 @@ const Home = () => {
               </div>
               <div>
                 <p className="text-[13px] font-semibold text-foreground">
-                  {awaitedTotal.toLocaleString('en-IN')} messages stuck in "Awaited"
+                  Some WhatsApp templates have been paused
                 </p>
                 <p className="text-body-sm text-muted-foreground">
-                  These transactions haven't received a delivery status from the operator. Manual repair needed.
+                  Meta has reclassified these templates from Utility to Marketing. Manual review and re-submission needed.
                 </p>
               </div>
             </div>
             <button className="flex items-center gap-1.5 text-[12px] font-semibold text-warning hover:text-warning/80 transition-colors flex-shrink-0 ml-6">
-              Fix with Transaction Health
+              Review Templates
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </div>
