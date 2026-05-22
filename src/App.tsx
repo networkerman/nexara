@@ -17,6 +17,7 @@ import NotFound from "./pages/NotFound";
 // OneXtel 9-section navigation
 import Campaigns from "./pages/Campaigns";
 import Journeys from "./pages/Journeys";
+import Content from "./pages/Content";
 import Reports from "./pages/Reports";
 import Channels from "./pages/Channels";
 import Governance from "./pages/Governance";
@@ -47,7 +48,7 @@ const App = () => (
             <Route path="/campaigns/*" element={<Campaigns />} />
             <Route path="/journeys/*"  element={<Journeys />} />
             <Route path="/audiences/*" element={<PremiumGate feature="Audiences" />} />
-            <Route path="/content/*"   element={<PremiumGate feature="Content" />} />
+            <Route path="/content/*"   element={<Content />} />
             <Route path="/reports/*"   element={<Reports />} />
             <Route path="/channels/*"  element={<Channels />} />
             <Route path="/governance/*" element={<Governance />} />
