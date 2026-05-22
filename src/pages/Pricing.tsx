@@ -188,7 +188,7 @@ const PricingPage: React.FC = () => {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <img 
-            src="/Nexara_logo.png" 
+            src="/OneXtel_logo.png" 
             alt="OneXtel" 
             className="mx-auto h-12 w-auto mb-6"
           />

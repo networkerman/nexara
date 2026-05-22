@@ -1,102 +1,172 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@500;600;700;800;900&display=swap');
+/* ── Google Fonts ─────────────────────────────────────────────────────────────
+   Montserrat: weights 400–900 (900 needed for display-xl)
+   Open Sans: 400 + 600 (document/proposal body)
+   ─────────────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Open+Sans:wght@400;600&display=swap');
+
+/* ── Pluto — Licensed brand typeface ─────────────────────────────────────────
+   Purchase: https://www.myfonts.com/collections/pluto-font-positype
+   Drop .woff2 + .woff files into /public/fonts/pluto/ (see README there).
+   Until files are present, Montserrat renders as fallback — no UI breakage.
+   ─────────────────────────────────────────────────────────────────────────── */
+@font-face {
+  font-family: 'Pluto Sans';
+  src: url('/fonts/pluto/PlutoLight.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoLight.woff')  format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto Sans';
+  src: url('/fonts/pluto/PlutoRegular.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoRegular.woff')  format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto Sans';
+  src: url('/fonts/pluto/PlutoMedium.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoMedium.woff')  format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto Sans';
+  src: url('/fonts/pluto/PlutoBold.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoBold.woff')  format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Pluto Sans';
+  src: url('/fonts/pluto/PlutoBlack.woff2') format('woff2'),
+       url('/fonts/pluto/PlutoBlack.woff')  format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* OneXtel Design System — all colors in HSL */
+/* ── Onextel Design System — OneXtel ──────────────────────────────────────── */
 
 @layer base {
   :root {
+    /* Canvas */
     --background: 0 0% 100%;
-    --foreground: 228 20% 20%;
+    --foreground: 0 0% 18%;           /* charcoal #2E2E2E */
 
+    /* Cards */
     --card: 0 0% 100%;
-    --card-foreground: 228 20% 20%;
+    --card-foreground: 0 0% 18%;
 
+    /* Popovers */
     --popover: 0 0% 100%;
-    --popover-foreground: 228 20% 20%;
+    --popover-foreground: 0 0% 18%;
 
-    --primary: 228 52% 24%;
+    /* Primary — Onextel red #FF3535 */
+    --primary: 0 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 214 32% 91%;
-    --secondary-foreground: 228 20% 20%;
+    /* Secondary — soft-grey #F0F0F0 */
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 18%;
 
-    --muted: 214 30% 95%;
-    --muted-foreground: 228 10% 45%;
+    /* Muted */
+    --muted: 0 0% 94%;
+    --muted-foreground: 220 9% 65%;   /* placeholder #9CA3AF */
 
-    --accent: 4 58% 48%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent — sky #DDE7F1 */
+    --accent: 210 34% 91%;
+    --accent-foreground: 0 0% 18%;
 
-    --destructive: 0 72% 51%;
+    /* Destructive — reuses brand red (intentional per Onextel design system) */
+    --destructive: 0 100% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 30% 88%;
-    --input: 214 30% 88%;
-    --ring: 228 52% 24%;
+    /* Borders & inputs — mid-grey #E2E8F0 */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 0 100% 60%;               /* red focus ring */
 
-    --success: 142 60% 36%;
+    /* Semantic */
+    --success: 142 71% 45%;           /* #22C55E */
     --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
+    --warning: 38 92% 50%;            /* #F59E0B */
     --warning-foreground: 0 0% 100%;
-
-    --info: 221 83% 53%;
+    --info: 217 91% 60%;              /* #3B82F6 */
     --info-foreground: 0 0% 100%;
 
+    /* Border radius — lg=8px, md=6px, sm=4px */
     --radius: 0.5rem;
 
-    --sidebar-background: 228 52% 24%;
+    /* Sidebar — dark nav (charcoal) */
+    --sidebar-background: 0 0% 18%;   /* #2E2E2E */
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 4 58% 48%;
+    --sidebar-primary: 0 100% 60%;    /* red active */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 228 40% 32%;
+    --sidebar-accent: 0 0% 22%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 228 40% 32%;
-    --sidebar-ring: 4 58% 48%;
+    --sidebar-border: 0 0% 22%;
+    --sidebar-ring: 0 100% 60%;
 
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-heading: 'Orbitron', 'Inter', system-ui, sans-serif;
+    /* Font stacks */
+    --font-sans: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica Neue, Arial, sans-serif;
+    --font-heading: 'Pluto Sans', 'Montserrat', -apple-system, sans-serif;
+    --font-document: 'Open Sans', Georgia, serif;
   }
 
   .dark {
-    --background: 228 30% 8%;
-    --foreground: 214 32% 91%;
+    /* Dark — navy/charcoal inversion (partially systematized; full dark mode TBD) */
+    --background: 0 0% 17%;           /* navy #2B2B2B */
+    --foreground: 0 0% 100%;
 
-    --card: 228 30% 12%;
-    --card-foreground: 214 32% 91%;
+    --card: 0 0% 18%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 228 30% 12%;
-    --popover-foreground: 214 32% 91%;
+    --popover: 0 0% 18%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 214 32% 91%;
-    --primary-foreground: 228 52% 24%;
+    --primary: 0 100% 60%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 228 25% 18%;
-    --secondary-foreground: 214 32% 91%;
+    --secondary: 0 0% 22%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 228 25% 18%;
-    --muted-foreground: 214 20% 65%;
+    --muted: 0 0% 22%;
+    --muted-foreground: 214 16% 69%;  /* #A0AEC0 */
 
-    --accent: 4 58% 48%;
+    --accent: 0 0% 25%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 55% 40%;
+    --destructive: 0 100% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 228 25% 22%;
-    --input: 228 25% 22%;
-    --ring: 4 58% 48%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 0 100% 60%;
 
-    --sidebar-background: 228 40% 12%;
-    --sidebar-foreground: 214 32% 91%;
-    --sidebar-primary: 4 58% 48%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+
+    --sidebar-background: 0 0% 13%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 0 100% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 228 30% 20%;
-    --sidebar-accent-foreground: 214 32% 91%;
-    --sidebar-border: 228 30% 20%;
-    --sidebar-ring: 4 58% 48%;
+    --sidebar-accent: 0 0% 17%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 0 0% 17%;
+    --sidebar-ring: 0 100% 60%;
   }
 }
 
@@ -112,6 +182,5 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    letter-spacing: 0.02em;
   }
 }

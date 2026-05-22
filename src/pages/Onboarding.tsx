@@ -231,7 +231,7 @@ const OnboardingPage: React.FC = () => {
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <img 
-            src="/Nexara_logo.png" 
+            src="/OneXtel_logo.png" 
             alt="OneXtel" 
             className="mx-auto h-12 w-auto"
           />

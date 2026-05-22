@@ -56,7 +56,7 @@ const ShippingPage: React.FC = () => {
               </p>
               <div className="flex items-center space-x-3">
                 <Mail className="h-5 w-5 text-blue-600" />
-                <span className="text-blue-700 font-medium">networker.udayan@gmail.com</span>
+                <span className="text-blue-700 font-medium">udayan.chowdhury@onextel.com</span>
               </div>
             </CardContent>
           </Card>
