@@ -296,7 +296,9 @@ export function AppLayout({ children }: AppLayoutProps) {
 
           {/* Page content */}
           <main className="flex-1 overflow-auto">
-            {children}
+            <div className="w-full max-w-[1440px] mx-auto">
+              {children}
+            </div>
           </main>
         </div>
 
