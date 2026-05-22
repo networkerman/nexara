@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Home,
   Megaphone,
@@ -54,20 +54,38 @@ const routeTitles: Record<string, string> = {
 
 /* ─── Sidebar nav item ────────────────────────────────────────────────────── */
 
-function SidebarItem({ item }: { item: NavItem }) {
+interface SidebarItemProps {
+  item: NavItem;
+  expanded: boolean;
+}
+
+function SidebarItem({ item, expanded }: SidebarItemProps) {
   if (item.locked) {
     return (
       <div
-        className="flex items-center justify-between px-3 py-2.5 rounded-brand-md cursor-not-allowed select-none"
-        title="Coming soon"
+        className={cn(
+          'flex items-center rounded-brand-md cursor-not-allowed select-none transition-all duration-200',
+          expanded ? 'justify-between px-3 py-2.5' : 'justify-center py-2.5 px-0',
+        )}
+        title={!expanded ? item.name : undefined}
       >
-        <div className="flex items-center gap-3">
+        <div className={cn('flex items-center', expanded ? 'gap-3' : '')}>
           <item.icon className="w-[18px] h-[18px] text-white/25 flex-shrink-0" />
-          <span className="text-[13px] font-medium text-white/25 leading-none">
+          <span
+            className={cn(
+              'text-[13px] font-medium text-white/25 leading-none whitespace-nowrap transition-all duration-200 overflow-hidden',
+              expanded ? 'opacity-100 max-w-[160px] ml-0' : 'opacity-0 max-w-0',
+            )}
+          >
             {item.name}
           </span>
         </div>
-        <span className="text-[10px] font-semibold tracking-wide uppercase text-white/30 bg-white/[0.06] px-1.5 py-0.5 rounded-brand-xs">
+        <span
+          className={cn(
+            'text-[10px] font-semibold tracking-wide uppercase text-white/30 bg-white/[0.06] px-1.5 py-0.5 rounded-brand-xs whitespace-nowrap transition-all duration-200 overflow-hidden',
+            expanded ? 'opacity-100 max-w-[40px]' : 'opacity-0 max-w-0 px-0',
+          )}
+        >
           Soon
         </span>
       </div>
@@ -78,28 +96,37 @@ function SidebarItem({ item }: { item: NavItem }) {
     <NavLink
       to={item.href}
       end={item.href === '/'}
+      title={!expanded ? item.name : undefined}
       className={({ isActive }) =>
         cn(
-          'group flex items-center gap-3 px-3 py-2.5 rounded-brand-md transition-colors duration-150 relative',
+          'group flex items-center rounded-brand-md transition-colors duration-150 relative',
+          expanded ? 'gap-3 px-3 py-2.5' : 'justify-center py-2.5 px-0',
           isActive
             ? 'bg-white/[0.09] text-white'
-            : 'text-white/55 hover:text-white/90 hover:bg-white/[0.05]'
+            : 'text-white/55 hover:text-white/90 hover:bg-white/[0.05]',
         )
       }
     >
       {({ isActive }) => (
         <>
-          {/* Active indicator bar */}
+          {/* Active indicator bar — always visible */}
           {isActive && (
             <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-[#FF3535] rounded-r-full" />
           )}
           <item.icon
             className={cn(
               'w-[18px] h-[18px] flex-shrink-0 transition-colors duration-150',
-              isActive ? 'text-[#FF3535]' : 'text-current'
+              isActive ? 'text-[#FF3535]' : 'text-current',
             )}
           />
-          <span className="text-[13px] font-medium leading-none">{item.name}</span>
+          <span
+            className={cn(
+              'text-[13px] font-medium leading-none whitespace-nowrap transition-all duration-200 overflow-hidden',
+              expanded ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0',
+            )}
+          >
+            {item.name}
+          </span>
         </>
       )}
     </NavLink>
@@ -114,6 +141,11 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+
+  // Collapse whenever we're inside a section (not the root dashboard)
+  const isOnRoot = location.pathname === '/';
+  const isExpanded = isOnRoot || sidebarHovered;
 
   // Resolve page title from pathname (handles sub-routes too)
   const pageTitle = React.useMemo(() => {
@@ -128,10 +160,23 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="flex-1 flex">
 
         {/* ── Sidebar ──────────────────────────────────────────────────── */}
-        <aside className="w-[232px] flex-shrink-0 flex flex-col bg-[#2E2E2E] h-full overflow-y-auto">
+        <aside
+          className={cn(
+            'flex-shrink-0 flex flex-col bg-[#2E2E2E] h-full overflow-y-auto overflow-x-hidden',
+            'transition-[width] duration-200 ease-in-out',
+            isExpanded ? 'w-[232px]' : 'w-[52px]',
+          )}
+          onMouseEnter={() => setSidebarHovered(true)}
+          onMouseLeave={() => setSidebarHovered(false)}
+        >
 
           {/* Logo */}
-          <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.08]">
+          <div
+            className={cn(
+              'flex items-center border-b border-white/[0.08] transition-all duration-200',
+              isExpanded ? 'gap-3 px-5 py-5' : 'justify-center px-0 py-5',
+            )}
+          >
             <div className="w-8 h-8 bg-[#FF3535] rounded-brand-md flex items-center justify-center flex-shrink-0">
               <span
                 className="text-white font-black text-[15px] leading-none"
@@ -140,23 +185,33 @@ export function AppLayout({ children }: AppLayoutProps) {
                 X
               </span>
             </div>
-            <div className="flex flex-col">
+            <div
+              className={cn(
+                'flex flex-col overflow-hidden transition-all duration-200',
+                isExpanded ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0',
+              )}
+            >
               <span
-                className="text-white font-bold text-[15px] leading-tight tracking-[0.2px]"
+                className="text-white font-bold text-[15px] leading-tight tracking-[0.2px] whitespace-nowrap"
                 style={{ fontFamily: 'var(--font-heading)' }}
               >
                 OneXtel
               </span>
-              <span className="text-white/35 text-[9px] font-semibold tracking-[1.2px] uppercase mt-0.5">
+              <span className="text-white/35 text-[9px] font-semibold tracking-[1.2px] uppercase mt-0.5 whitespace-nowrap">
                 Intelligent CPaaS
               </span>
             </div>
           </div>
 
           {/* Primary navigation */}
-          <nav className="flex-1 px-3 py-4 flex flex-col gap-0.5 overflow-y-auto">
+          <nav
+            className={cn(
+              'flex-1 py-4 flex flex-col gap-0.5 overflow-y-auto',
+              isExpanded ? 'px-3' : 'px-1.5',
+            )}
+          >
             {primaryNav.map((item) => (
-              <SidebarItem key={item.name} item={item} />
+              <SidebarItem key={item.name} item={item} expanded={isExpanded} />
             ))}
           </nav>
 
@@ -164,27 +219,43 @@ export function AppLayout({ children }: AppLayoutProps) {
           <div className="mx-4 border-t border-white/[0.08]" />
 
           {/* Bottom navigation (Settings) */}
-          <div className="px-3 py-3 flex flex-col gap-0.5">
+          <div className={cn('py-3 flex flex-col gap-0.5', isExpanded ? 'px-3' : 'px-1.5')}>
             {bottomNav.map((item) => (
-              <SidebarItem key={item.name} item={item} />
+              <SidebarItem key={item.name} item={item} expanded={isExpanded} />
             ))}
           </div>
 
           {/* Account switcher */}
-          <div className="mx-3 mb-4 mt-1">
-            <button className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-brand-md bg-white/[0.05] hover:bg-white/[0.08] transition-colors duration-150 group">
+          <div className={cn('mb-4 mt-1', isExpanded ? 'mx-3' : 'mx-1.5')}>
+            <button
+              className={cn(
+                'w-full flex items-center rounded-brand-md bg-white/[0.05] hover:bg-white/[0.08] transition-colors duration-150',
+                isExpanded ? 'gap-2.5 px-3 py-2.5' : 'justify-center px-0 py-2.5',
+              )}
+              title={!isExpanded ? 'Onextel — Enterprise' : undefined}
+            >
               <div className="w-6 h-6 rounded-full bg-[#FF3535] flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-[11px] font-bold leading-none">O</span>
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-white/80 text-[12px] font-medium leading-tight truncate">
+              <div
+                className={cn(
+                  'flex-1 min-w-0 text-left overflow-hidden transition-all duration-200',
+                  isExpanded ? 'opacity-100 max-w-[120px]' : 'opacity-0 max-w-0',
+                )}
+              >
+                <p className="text-white/80 text-[12px] font-medium leading-tight truncate whitespace-nowrap">
                   Onextel
                 </p>
-                <p className="text-white/35 text-[10px] leading-tight truncate">
+                <p className="text-white/35 text-[10px] leading-tight truncate whitespace-nowrap">
                   Enterprise
                 </p>
               </div>
-              <ChevronsUpDown className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+              <ChevronsUpDown
+                className={cn(
+                  'w-3.5 h-3.5 text-white/30 flex-shrink-0 transition-all duration-200',
+                  isExpanded ? 'opacity-100' : 'opacity-0 w-0',
+                )}
+              />
             </button>
           </div>
         </aside>
