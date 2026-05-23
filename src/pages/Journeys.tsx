@@ -804,6 +804,50 @@ function JourneyCanvas({ journey, onBack }: { journey: Journey; onBack: () => vo
     event.dataTransfer.setData('application/reactflow/type', item.type);
     event.dataTransfer.setData('application/reactflow/label', item.label);
     event.dataTransfer.effectAllowed = 'move';
+
+    // Build a custom drag ghost that matches the node's colour scheme
+    const colorMap: Record<string, { bg: string; border: string; text: string }> = {
+      'bg-amber-100 text-amber-700':     { bg: '#fef3c7', border: '#f59e0b', text: '#92400e' },
+      'bg-green-100 text-green-700':     { bg: '#dcfce7', border: '#4ade80', text: '#166534' },
+      'bg-indigo-100 text-indigo-700':   { bg: '#e0e7ff', border: '#818cf8', text: '#3730a3' },
+      'bg-red-100 text-red-700':         { bg: '#fee2e2', border: '#f87171', text: '#991b1b' },
+      'bg-sky-100 text-sky-700':         { bg: '#e0f2fe', border: '#38bdf8', text: '#0c4a6e' },
+      'bg-teal-100 text-teal-700':       { bg: '#ccfbf1', border: '#2dd4bf', text: '#134e4a' },
+      'bg-purple-100 text-purple-700':   { bg: '#f3e8ff', border: '#c084fc', text: '#6b21a8' },
+      'bg-slate-100 text-slate-700':     { bg: '#f1f5f9', border: '#94a3b8', text: '#334155' },
+      'bg-fuchsia-100 text-fuchsia-700': { bg: '#fdf4ff', border: '#e879f9', text: '#701a75' },
+      'bg-blue-100 text-blue-700':       { bg: '#dbeafe', border: '#60a5fa', text: '#1e3a8a' },
+      'bg-gray-100 text-gray-600':       { bg: '#f3f4f6', border: '#9ca3af', text: '#374151' },
+    };
+
+    const c = colorMap[item.color] ?? { bg: '#f3f4f6', border: '#e2e8f0', text: '#374151' };
+
+    const ghost = document.createElement('div');
+    ghost.style.cssText = `
+      position: fixed; top: -1000px; left: -1000px;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 14px;
+      background: ${c.bg};
+      border: 2px solid ${c.border};
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 12px; font-weight: 700;
+      color: ${c.text};
+      white-space: nowrap;
+      pointer-events: none;
+      letter-spacing: 0.01em;
+    `;
+    ghost.textContent = item.label;
+    document.body.appendChild(ghost);
+
+    // Centre the ghost under the cursor horizontally, sit it at the top
+    event.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, 20);
+
+    // Remove from DOM on next frame — browser has already captured the image
+    requestAnimationFrame(() => {
+      if (document.body.contains(ghost)) document.body.removeChild(ghost);
+    });
   };
 
   return (
@@ -895,6 +939,7 @@ function JourneyCanvas({ journey, onBack }: { journey: Journey; onBack: () => vo
             minZoom={0.25}
             elevateNodesOnSelect
             deleteKeyCode={['Backspace', 'Delete']}
+            proOptions={{ hideAttribution: true }}
             defaultEdgeOptions={{ type: 'custom', markerEnd: arrowClosed, style: gray }}
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
