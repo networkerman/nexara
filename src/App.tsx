@@ -25,6 +25,7 @@ import Channels from "./pages/Channels";
 import Governance from "./pages/Governance";
 import SettingsPage from "./pages/SettingsPage";
 import Audiences from "./pages/Audiences";
+import AccountHealth from "./pages/AccountHealth";
 import PremiumGate from "./pages/PremiumGate"; // placeholder for pending modules
 
 const queryClient = new QueryClient();
@@ -56,8 +57,9 @@ const App = () => (
             <Route path="/content/*"   element={<Content />} />
             <Route path="/reports/*"   element={<Reports />} />
             <Route path="/channels/*"  element={<Channels />} />
-            <Route path="/governance/*" element={<Governance />} />
-            <Route path="/settings/*"  element={<SettingsPage />} />
+            <Route path="/governance/*"     element={<Governance />} />
+            <Route path="/account-health/*" element={<AccountHealth />} />
+            <Route path="/settings/*"       element={<SettingsPage />} />
 
             {/* Legacy redirects — keep old Aura-style paths working */}
             <Route path="/engage/campaigns" element={<Campaigns />} />

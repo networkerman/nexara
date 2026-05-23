@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Bell,
   ChevronsUpDown,
+  HeartPulse,
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,7 @@ const primaryNav: NavItem[] = [
   { name: 'Channels',   href: '/channels',   icon: Radio     },
   { name: 'Governance', href: '/governance', icon: Shield    },
   { name: 'Credits',    href: '/credits',    icon: Wallet    },
+  { name: 'Acct Health', href: '/account-health', icon: HeartPulse },
 ];
 
 const bottomNav: NavItem[] = [
@@ -54,8 +56,9 @@ const routeTitles: Record<string, string> = {
   '/reports':    'Reports',
   '/channels':   'Channels',
   '/governance': 'Governance',
-  '/credits':    'Credits & Wallet',
-  '/settings':   'Settings',
+  '/credits':         'Credits & Wallet',
+  '/account-health':  'Account Health',
+  '/settings':        'Settings',
 };
 
 /* ─── Sidebar nav item ────────────────────────────────────────────────────── */
