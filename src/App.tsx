@@ -22,6 +22,7 @@ import Reports from "./pages/Reports";
 import Channels from "./pages/Channels";
 import Governance from "./pages/Governance";
 import SettingsPage from "./pages/SettingsPage";
+import Audiences from "./pages/Audiences";
 import PremiumGate from "./pages/PremiumGate"; // placeholder for pending modules
 
 const queryClient = new QueryClient();
@@ -47,7 +48,7 @@ const App = () => (
             {/* ── OneXtel 9-section nav ─────────────────────────────── */}
             <Route path="/campaigns/*" element={<Campaigns />} />
             <Route path="/journeys/*"  element={<Journeys />} />
-            <Route path="/audiences/*" element={<PremiumGate feature="Audiences" />} />
+            <Route path="/audiences/*" element={<Audiences />} />
             <Route path="/content/*"   element={<Content />} />
             <Route path="/reports/*"   element={<Reports />} />
             <Route path="/channels/*"  element={<Channels />} />
