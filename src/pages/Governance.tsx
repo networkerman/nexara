@@ -30,6 +30,7 @@ import {
   BarChart3,
   Settings,
   Mail,
+  Building2,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { cn } from '@/lib/utils';
@@ -273,19 +274,19 @@ function RbacView() {
 
       {/* Roles tab */}
       {tab === 'roles' && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
           {roles.map(role => (
             <div key={role.id} className="bg-card border border-border rounded-brand-xl p-4 shadow-el-1 hover:shadow-el-2 transition-shadow">
-              <div className="flex items-center justify-between mb-2">
-                <span className={cn('text-[11px] font-bold px-2.5 py-1 rounded-full', role.color)}>
-                  {role.name}
-                </span>
+              {/* Color accent bar + system badge */}
+              <div className="flex items-center justify-between mb-3 gap-2">
+                <div className={cn('w-2 h-2 rounded-full flex-shrink-0', role.color.replace('bg-', 'bg-').split(' ')[0])} />
                 {role.isSystem ? (
-                  <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">System</span>
+                  <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full whitespace-nowrap">System</span>
                 ) : (
                   <button className="text-muted-foreground hover:text-foreground transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
                 )}
               </div>
+              <p className={cn('text-[14px] font-bold mb-1', role.color.split(' ')[1])}>{role.name}</p>
               <p className="text-[12px] text-muted-foreground leading-relaxed mb-3">{role.description}</p>
               <div className="flex items-center justify-between">
                 <span className="text-[12px] text-foreground font-medium">
