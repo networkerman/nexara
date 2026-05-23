@@ -7,6 +7,7 @@ import {
   FileText,
   BarChart3,
   LineChart,
+  Wallet,
   Radio,
   Shield,
   Settings,
@@ -36,6 +37,7 @@ const primaryNav: NavItem[] = [
   { name: 'Reports',    href: '/reports',    icon: BarChart3 },
   { name: 'Channels',   href: '/channels',   icon: Radio     },
   { name: 'Governance', href: '/governance', icon: Shield    },
+  { name: 'Credits',    href: '/credits',    icon: Wallet    },
 ];
 
 const bottomNav: NavItem[] = [
@@ -52,6 +54,7 @@ const routeTitles: Record<string, string> = {
   '/reports':    'Reports',
   '/channels':   'Channels',
   '/governance': 'Governance',
+  '/credits':    'Credits & Wallet',
   '/settings':   'Settings',
 };
 

@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 
 // OneXtel 9-section navigation
 import Analytics from "./pages/Analytics";
+import Credits from "./pages/Credits";
 import Campaigns from "./pages/Campaigns";
 import Journeys from "./pages/Journeys";
 import Content from "./pages/Content";
@@ -48,6 +49,7 @@ const App = () => (
 
             {/* ── OneXtel 9-section nav ─────────────────────────────── */}
             <Route path="/analytics/*" element={<Analytics />} />
+            <Route path="/credits/*"   element={<Credits />} />
             <Route path="/campaigns/*" element={<Campaigns />} />
             <Route path="/journeys/*"  element={<Journeys />} />
             <Route path="/audiences/*" element={<Audiences />} />
