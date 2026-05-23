@@ -31,7 +31,7 @@ interface NavItem {
 const primaryNav: NavItem[] = [
   { name: 'Home',       href: '/',           icon: Home      },
   { name: 'Campaigns',  href: '/campaigns',  icon: Megaphone },
-  { name: 'Journeys',   href: '/journeys',   icon: Route,    locked: true },
+  { name: 'Journeys',   href: '/journeys',   icon: Route     },
   { name: 'Audiences',  href: '/audiences',  icon: Users     },
   { name: 'Content',    href: '/content',    icon: FileText  },
   { name: 'Analytics',  href: '/analytics',  icon: LineChart },
