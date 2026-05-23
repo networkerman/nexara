@@ -11,11 +11,15 @@ import {
   Edge,
   Node,
   NodeProps,
+  EdgeProps,
   Handle,
   Position,
   MarkerType,
   BackgroundVariant,
   ReactFlowInstance,
+  getBezierPath,
+  BaseEdge,
+  EdgeLabelRenderer,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -213,13 +217,77 @@ const paletteGroups: { label: string; items: PaletteItem[] }[] = [
   },
 ];
 
+// ─── Custom Edge — wide hit area + hover/selection highlight ─────────────────
+
+function CustomEdge({
+  sourceX, sourceY, targetX, targetY,
+  sourcePosition, targetPosition,
+  style = {}, markerEnd, label, selected,
+}: EdgeProps) {
+  const [hovered, setHovered] = useState(false);
+  const [edgePath, labelX, labelY] = getBezierPath({
+    sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition,
+  });
+
+  const baseColor  = (style as { stroke?: string }).stroke ?? '#94a3b8';
+  const baseWidth  = (style as { strokeWidth?: number }).strokeWidth ?? 1.5;
+  const isLit      = hovered || selected;
+
+  return (
+    <>
+      {/* Visible edge — thickens + glows on hover/select */}
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={{
+          ...style,
+          strokeWidth: isLit ? baseWidth + 1.5 : baseWidth,
+          filter: isLit ? `drop-shadow(0 0 4px ${baseColor})` : 'none',
+          transition: 'stroke-width 0.12s ease, filter 0.12s ease',
+        }}
+      />
+      {/* Wide transparent overlay — 24px hit area regardless of zoom level */}
+      <path
+        d={edgePath}
+        fill="none"
+        strokeOpacity={0}
+        strokeWidth={24}
+        style={{ cursor: 'pointer' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      />
+      {label && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
+              pointerEvents: 'none',
+              color: selected ? '#6366f1' : baseColor,
+            }}
+            className="nodrag nopan bg-white border border-border rounded px-1.5 py-0.5 text-[10px] font-bold shadow-sm whitespace-nowrap"
+          >
+            {String(label)}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+}
+
+const edgeTypes = { custom: CustomEdge };
+
 // ─── Custom Nodes ─────────────────────────────────────────────────────────────
 
 const handleStyle = { width: 10, height: 10 };
 
-function TriggerNode({ data }: NodeProps) {
+function TriggerNode({ data, selected }: NodeProps) {
   return (
-    <div className="bg-white border-2 border-amber-400 rounded-xl shadow-el-2 w-52 overflow-hidden">
+    <div className={cn(
+      'bg-white border-2 border-amber-400 rounded-xl shadow-el-2 w-52 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg hover:border-amber-500',
+      selected && 'ring-2 ring-amber-400/50 ring-offset-1 shadow-lg',
+    )}>
       <div className="bg-amber-100 px-3 py-2 flex items-center gap-2">
         <Zap className="w-3.5 h-3.5 text-amber-600" />
         <span className="text-[11px] font-bold text-amber-700 uppercase tracking-wide">Trigger</span>
@@ -233,14 +301,20 @@ function TriggerNode({ data }: NodeProps) {
   );
 }
 
-function SendNode({ data }: NodeProps) {
+function SendNode({ data, selected }: NodeProps) {
   const ch = String(data.channel ?? 'WA');
   const headerCls = ch === 'WA' ? 'bg-green-100' : ch === 'SMS' ? 'bg-indigo-100' : ch === 'RCS' ? 'bg-red-100' : 'bg-sky-100';
   const textCls   = ch === 'WA' ? 'text-green-700' : ch === 'SMS' ? 'text-indigo-700' : ch === 'RCS' ? 'text-red-700' : 'text-sky-700';
-  const borderCls = ch === 'WA' ? 'border-green-300' : ch === 'SMS' ? 'border-indigo-300' : ch === 'RCS' ? 'border-red-300' : 'border-sky-300';
+  const borderCls = ch === 'WA' ? 'border-green-300 hover:border-green-400' : ch === 'SMS' ? 'border-indigo-300 hover:border-indigo-400' : ch === 'RCS' ? 'border-red-300 hover:border-red-400' : 'border-sky-300 hover:border-sky-400';
+  const ringCls   = ch === 'WA' ? 'ring-green-300/50' : ch === 'SMS' ? 'ring-indigo-300/50' : ch === 'RCS' ? 'ring-red-300/50' : 'ring-sky-300/50';
 
   return (
-    <div className={cn('bg-white border-2 rounded-xl shadow-el-2 w-52 overflow-hidden', borderCls)}>
+    <div className={cn(
+      'bg-white border-2 rounded-xl shadow-el-2 w-52 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg',
+      borderCls,
+      selected && `ring-2 ring-offset-1 shadow-lg ${ringCls}`,
+    )}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <div className={cn('px-3 py-2 flex items-center gap-2', headerCls)}>
         <MessageSquare className={cn('w-3.5 h-3.5', textCls)} />
@@ -255,9 +329,13 @@ function SendNode({ data }: NodeProps) {
   );
 }
 
-function WaitNode({ data }: NodeProps) {
+function WaitNode({ data, selected }: NodeProps) {
   return (
-    <div className="bg-white border-2 border-slate-300 rounded-xl shadow-el-2 w-52 overflow-hidden">
+    <div className={cn(
+      'bg-white border-2 border-slate-300 rounded-xl shadow-el-2 w-52 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg hover:border-slate-400',
+      selected && 'ring-2 ring-slate-300/60 ring-offset-1 shadow-lg',
+    )}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <div className="bg-slate-100 px-3 py-2 flex items-center gap-2">
         <Clock className="w-3.5 h-3.5 text-slate-600" />
@@ -271,9 +349,13 @@ function WaitNode({ data }: NodeProps) {
   );
 }
 
-function WaitEventNode({ data }: NodeProps) {
+function WaitEventNode({ data, selected }: NodeProps) {
   return (
-    <div className="bg-white border-2 border-teal-400 rounded-xl shadow-el-2 w-56 overflow-hidden">
+    <div className={cn(
+      'bg-white border-2 border-teal-400 rounded-xl shadow-el-2 w-56 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg hover:border-teal-500',
+      selected && 'ring-2 ring-teal-400/50 ring-offset-1 shadow-lg',
+    )}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <div className="bg-teal-100 px-3 py-2 flex items-center gap-2">
         <Timer className="w-3.5 h-3.5 text-teal-700" />
@@ -307,9 +389,13 @@ function WaitEventNode({ data }: NodeProps) {
   );
 }
 
-function ConditionNode({ data }: NodeProps) {
+function ConditionNode({ data, selected }: NodeProps) {
   return (
-    <div className="bg-white border-2 border-purple-300 rounded-xl shadow-el-2 w-52 overflow-hidden">
+    <div className={cn(
+      'bg-white border-2 border-purple-300 rounded-xl shadow-el-2 w-52 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg hover:border-purple-400',
+      selected && 'ring-2 ring-purple-300/50 ring-offset-1 shadow-lg',
+    )}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <div className="bg-purple-100 px-3 py-2 flex items-center gap-2">
         <GitBranch className="w-3.5 h-3.5 text-purple-700" />
@@ -340,9 +426,13 @@ function ConditionNode({ data }: NodeProps) {
   );
 }
 
-function ActionNode({ data }: NodeProps) {
+function ActionNode({ data, selected }: NodeProps) {
   return (
-    <div className="bg-white border-2 border-blue-300 rounded-xl shadow-el-2 w-52 overflow-hidden">
+    <div className={cn(
+      'bg-white border-2 border-blue-300 rounded-xl shadow-el-2 w-52 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg hover:border-blue-400',
+      selected && 'ring-2 ring-blue-300/50 ring-offset-1 shadow-lg',
+    )}>
       <Handle type="target" position={Position.Top} style={handleStyle} />
       <div className="bg-blue-100 px-3 py-2 flex items-center gap-2">
         <Tag className="w-3.5 h-3.5 text-blue-700" />
@@ -356,9 +446,13 @@ function ActionNode({ data }: NodeProps) {
   );
 }
 
-function EndNode({ data: _data }: NodeProps) {
+function EndNode({ data: _data, selected }: NodeProps) {
   return (
-    <div className="bg-gray-800 border-2 border-gray-700 rounded-xl shadow-el-2 w-44 overflow-hidden">
+    <div className={cn(
+      'bg-gray-800 border-2 border-gray-700 rounded-xl shadow-el-2 w-44 overflow-hidden transition-all duration-100',
+      'hover:shadow-lg hover:border-gray-500',
+      selected && 'ring-2 ring-gray-400/50 ring-offset-1 shadow-lg',
+    )}>
       <Handle type="target" position={Position.Top} style={{ ...handleStyle, background: '#9ca3af' }} />
       <div className="px-3 py-3 flex items-center justify-center gap-2">
         <CheckCircle2 className="w-4 h-4 text-gray-300" />
@@ -437,17 +531,17 @@ const gray   = { stroke: '#94a3b8', strokeWidth: 1.5 };
 const arrowClosed = { type: MarkerType.ArrowClosed };
 
 const initialEdges: Edge[] = [
-  { id: 'e1-2',  source: 'n1',  target: 'n2',  style: gray,  markerEnd: arrowClosed },
-  { id: 'e2-3',  source: 'n2',  target: 'n3',  style: gray,  markerEnd: arrowClosed },
+  { id: 'e1-2',  type: 'custom', source: 'n1',  target: 'n2',  style: gray,  markerEnd: arrowClosed },
+  { id: 'e2-3',  type: 'custom', source: 'n2',  target: 'n3',  style: gray,  markerEnd: arrowClosed },
   // WaitEvent — event (green) → tag, timeout (amber) → SMS
-  { id: 'e3-4',  source: 'n3',  target: 'n4',  sourceHandle: 'event',   style: green, label: 'Opened',  markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
-  { id: 'e4-5',  source: 'n4',  target: 'n5',  style: gray,  markerEnd: arrowClosed },
-  { id: 'e3-6',  source: 'n3',  target: 'n6',  sourceHandle: 'timeout', style: amber, label: '24h timeout', markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' } },
-  { id: 'e6-7',  source: 'n6',  target: 'n7',  style: gray,  markerEnd: arrowClosed },
+  { id: 'e3-4',  type: 'custom', source: 'n3',  target: 'n4',  sourceHandle: 'event',   style: green, label: 'Opened',      markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
+  { id: 'e4-5',  type: 'custom', source: 'n4',  target: 'n5',  style: gray,  markerEnd: arrowClosed },
+  { id: 'e3-6',  type: 'custom', source: 'n3',  target: 'n6',  sourceHandle: 'timeout', style: amber, label: '24h timeout', markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' } },
+  { id: 'e6-7',  type: 'custom', source: 'n6',  target: 'n7',  style: gray,  markerEnd: arrowClosed },
   // WaitEvent — event (green) → end, timeout (amber) → RCS
-  { id: 'e7-8',  source: 'n7',  target: 'n8',  sourceHandle: 'event',   style: green, label: 'Delivered', markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
-  { id: 'e7-9',  source: 'n7',  target: 'n9',  sourceHandle: 'timeout', style: amber, label: '24h timeout', markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' } },
-  { id: 'e9-10', source: 'n9',  target: 'n10', style: gray,  markerEnd: arrowClosed },
+  { id: 'e7-8',  type: 'custom', source: 'n7',  target: 'n8',  sourceHandle: 'event',   style: green, label: 'Delivered',   markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
+  { id: 'e7-9',  type: 'custom', source: 'n7',  target: 'n9',  sourceHandle: 'timeout', style: amber, label: '24h timeout', markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' } },
+  { id: 'e9-10', type: 'custom', source: 'n9',  target: 'n10', style: gray,  markerEnd: arrowClosed },
 ];
 
 // ─── Node Settings Panel ──────────────────────────────────────────────────────
@@ -795,9 +889,13 @@ function JourneyCanvas({ journey, onBack }: { journey: Journey; onBack: () => vo
             onDrop={onDrop}
             onDragOver={onDragOver}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             fitView
             fitViewOptions={{ padding: 0.2 }}
-            defaultEdgeOptions={{ markerEnd: arrowClosed, style: gray }}
+            minZoom={0.25}
+            elevateNodesOnSelect
+            deleteKeyCode={['Backspace', 'Delete']}
+            defaultEdgeOptions={{ type: 'custom', markerEnd: arrowClosed, style: gray }}
           >
             <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#e5e7eb" />
             <Controls position="bottom-right" />
