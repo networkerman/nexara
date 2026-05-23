@@ -97,6 +97,42 @@ const operatorRouting = [
   { operator: 'Others', primary: 'Infobip',        fallback: 'Route Mobile',  tps: 200,  status: 'ok' },
 ];
 
+/* ─── Mock data — Email ─────────────────────────────────────────────────── */
+
+const emailDomains = [
+  { id: 'DOM-001', domain: 'mail.onextel.in',   type: 'Transactional', dkim: true,  spf: true,  dmarc: true,  status: 'Verified' as const, dailyLimit: 500000, sentToday: 124830 },
+  { id: 'DOM-002', domain: 'promo.onextel.in',  type: 'Marketing',     dkim: true,  spf: true,  dmarc: false, status: 'Partial'  as const, dailyLimit: 200000, sentToday: 45210  },
+  { id: 'DOM-003', domain: 'alerts.onextel.in', type: 'Transactional', dkim: false, spf: true,  dmarc: false, status: 'Pending'  as const, dailyLimit: 100000, sentToday: 0      },
+];
+
+type EspStatus = 'Healthy' | 'Standby' | 'Error';
+type EspRole   = 'Primary' | 'Fallback' | 'Standby';
+
+const espProviders: { id: string; name: string; role: EspRole; dailyLimit: number; latency: string; status: EspStatus }[] = [
+  { id: 'ESP-001', name: 'SendGrid',  role: 'Primary',  dailyLimit: 500000,  latency: '120ms', status: 'Healthy' },
+  { id: 'ESP-002', name: 'AWS SES',   role: 'Fallback', dailyLimit: 1000000, latency: '98ms',  status: 'Healthy' },
+  { id: 'ESP-003', name: 'Mailgun',   role: 'Standby',  dailyLimit: 250000,  latency: '145ms', status: 'Standby' },
+];
+
+/* ─── Mock data — Voice ─────────────────────────────────────────────────── */
+
+type DidStatus   = 'Active' | 'Flagged' | 'Inactive';
+type DidType     = 'Local' | 'Toll-Free' | 'Mobile';
+type VoiceRole   = 'Primary' | 'Fallback' | 'Standby';
+type VoiceStatus = 'Healthy' | 'Degraded' | 'Standby';
+
+const didNumbers: { id: string; number: string; type: DidType; operator: string; purpose: string; status: DidStatus; callsToday: number }[] = [
+  { id: 'DID-001', number: '+91 22 4890 1000', type: 'Local',     operator: 'Airtel', purpose: 'OBD Campaigns',  status: 'Active',   callsToday: 4823 },
+  { id: 'DID-002', number: '1800-XXX-XXXX',    type: 'Toll-Free', operator: 'BSNL',   purpose: 'Inbound IVR',   status: 'Active',   callsToday: 1247 },
+  { id: 'DID-003', number: '+91 22 4890 1001', type: 'Local',     operator: 'Jio',    purpose: 'OBD Campaigns', status: 'Flagged',  callsToday: 0    },
+];
+
+const voiceProviders: { id: string; name: string; role: VoiceRole; tps: number; successRate: number; latency: string; status: VoiceStatus }[] = [
+  { id: 'VP-001', name: 'Exotel',        role: 'Primary',  tps: 50, successRate: 94.2, latency: '340ms', status: 'Healthy'  },
+  { id: 'VP-002', name: 'Ozonetel',      role: 'Fallback', tps: 30, successRate: 91.8, latency: '290ms', status: 'Healthy'  },
+  { id: 'VP-003', name: 'Kaleyra Voice', role: 'Standby',  tps: 20, successRate: 89.1, latency: '410ms', status: 'Standby' },
+];
+
 /* ─── Mock data — RCS ───────────────────────────────────────────────────── */
 
 const rcsAgents = [
@@ -755,6 +791,488 @@ function RcsView() {
   );
 }
 
+/* ─── Email view ─────────────────────────────────────────────────────────── */
+
+function EmailView() {
+  const [oneClickUnsub, setOneClickUnsub]     = useState(true);
+  const [bounceHandling, setBounceHandling]   = useState(true);
+  const [suppressionSync, setSuppressionSync] = useState(true);
+  const [dedicatedIp, setDedicatedIp]         = useState(false);
+
+  const domainStatusCfg = {
+    Verified: { chip: 'bg-success/10 text-success',   dot: 'bg-success'          },
+    Partial:  { chip: 'bg-warning/10 text-warning',   dot: 'bg-warning'          },
+    Pending:  { chip: 'bg-muted text-muted-foreground', dot: 'bg-muted-foreground' },
+  };
+
+  const espRoleCfg: Record<EspRole, string> = {
+    Primary:  'bg-primary/10 text-primary',
+    Fallback: 'bg-amber-100 text-amber-700',
+    Standby:  'bg-muted text-muted-foreground',
+  };
+
+  return (
+    <div className="space-y-5">
+
+      {/* DMARC warning */}
+      <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-brand-xl px-4 py-3">
+        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+        <p className="text-[13px] text-foreground flex-1">
+          <span className="font-semibold">promo.onextel.in has no DMARC record.</span>{' '}
+          Without DMARC, spoofed emails can damage your sender reputation. Add a p=reject policy.
+        </p>
+        <button className="text-[12px] font-semibold text-amber-700 whitespace-nowrap">Fix now →</button>
+      </div>
+
+      {/* Sending domains */}
+      <SectionCard
+        title="Sending domains"
+        subtitle="Authenticated domains for transactional and marketing email"
+        badge={<NewBadge />}
+        action={
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-[12px] font-semibold rounded-brand-md hover:bg-primary/90 transition-colors">
+            <Plus className="w-3.5 h-3.5" />
+            Add domain
+          </button>
+        }
+      >
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              {['Domain', 'Type', 'DKIM', 'SPF', 'DMARC', 'Daily limit', 'Sent today', 'Status', ''].map(h => (
+                <th key={h} className="pb-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide pr-4 last:pr-0">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {emailDomains.map(d => {
+              const cfg = domainStatusCfg[d.status];
+              const pct = d.dailyLimit > 0 ? Math.round((d.sentToday / d.dailyLimit) * 100) : 0;
+              return (
+                <tr key={d.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="py-3 pr-4">
+                    <code className="text-[12px] font-mono font-medium text-foreground">{d.domain}</code>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-xs', d.type === 'Transactional' ? 'bg-info/10 text-info' : 'bg-primary/10 text-primary')}>
+                      {d.type}
+                    </span>
+                  </td>
+                  {[d.dkim, d.spf, d.dmarc].map((ok, i) => (
+                    <td key={i} className="py-3 pr-4">
+                      {ok
+                        ? <CheckCircle2 className="w-4 h-4 text-success" />
+                        : <XCircle className="w-4 h-4 text-destructive" />
+                      }
+                    </td>
+                  ))}
+                  <td className="py-3 pr-4">
+                    <span className="text-[12px] text-foreground">{d.dailyLimit.toLocaleString()}</span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <div className="space-y-1 min-w-[80px]">
+                      <span className="text-[12px] text-foreground">{d.sentToday.toLocaleString()}</span>
+                      {d.sentToday > 0 && (
+                        <div className="w-full bg-muted rounded-full h-1">
+                          <div className={cn('h-1 rounded-full', pct > 80 ? 'bg-warning' : 'bg-success')} style={{ width: `${Math.min(pct, 100)}%` }} />
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className={cn('inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-full', cfg.chip)}>
+                      <span className={cn('w-1.5 h-1.5 rounded-full', cfg.dot)} />
+                      {d.status}
+                    </span>
+                  </td>
+                  <td className="py-3">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-brand-md hover:bg-muted transition-colors">
+                      <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </SectionCard>
+
+      {/* ESP routing */}
+      <SectionCard
+        title="ESP routing"
+        subtitle="Email service providers — primary, fallback, and standby configuration"
+        action={
+          <button className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-[12px] font-semibold rounded-brand-md hover:bg-muted transition-colors text-foreground">
+            <Plus className="w-3.5 h-3.5" />
+            Add ESP
+          </button>
+        }
+      >
+        <div className="grid grid-cols-3 gap-4">
+          {espProviders.map(esp => (
+            <div
+              key={esp.id}
+              className={cn('border rounded-brand-xl p-4 space-y-3', esp.status === 'Standby' ? 'border-muted bg-muted/20' : 'border-border')}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[14px] font-semibold text-foreground">{esp.name}</p>
+                  <span className={cn('inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-xs mt-1', espRoleCfg[esp.role])}>
+                    {esp.role}
+                  </span>
+                </div>
+                <span className={cn('inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-full',
+                  esp.status === 'Healthy' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground',
+                )}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full', esp.status === 'Healthy' ? 'bg-success' : 'bg-muted-foreground')} />
+                  {esp.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-muted/30 rounded-brand-md px-2.5 py-2">
+                  <p className="text-[10px] text-muted-foreground">Daily limit</p>
+                  <p className="text-[12px] font-semibold text-foreground mt-0.5">{esp.dailyLimit.toLocaleString()}</p>
+                </div>
+                <div className="bg-muted/30 rounded-brand-md px-2.5 py-2">
+                  <p className="text-[10px] text-muted-foreground">Latency</p>
+                  <p className="text-[12px] font-semibold text-foreground mt-0.5">{esp.latency}</p>
+                </div>
+              </div>
+              <button className="w-full text-[11px] font-semibold text-primary hover:text-primary/80 text-center py-1.5 border border-border rounded-brand-md hover:bg-muted/30 transition-colors">
+                Configure API keys →
+              </button>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* Compliance & deliverability */}
+      <SectionCard title="Compliance & deliverability" subtitle="Unsubscribe handling, bounce management, and suppression sync">
+        <div className="space-y-0 divide-y divide-border">
+          <div className="py-4 flex items-center justify-between">
+            <div className="flex-1 pr-8">
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] font-semibold text-foreground">One-click unsubscribe (RFC 8058)</p>
+                <NewBadge />
+              </div>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Adds List-Unsubscribe-Post header to all marketing emails. Required by Gmail &amp; Yahoo bulk senders since Feb 2024.
+              </p>
+            </div>
+            <Toggle checked={oneClickUnsub} onChange={setOneClickUnsub} />
+          </div>
+          <div className="py-4 flex items-center justify-between">
+            <div className="flex-1 pr-8">
+              <p className="text-[13px] font-semibold text-foreground">Automatic bounce handling</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Hard bounces suppressed immediately. Soft bounces suppressed after 3 consecutive failures.
+              </p>
+            </div>
+            <Toggle checked={bounceHandling} onChange={setBounceHandling} />
+          </div>
+          <div className="py-4 flex items-center justify-between">
+            <div className="flex-1 pr-8">
+              <div className="flex items-center gap-2">
+                <p className="text-[13px] font-semibold text-foreground">Cross-channel suppression sync</p>
+                <NewBadge />
+              </div>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Email unsubscribes propagate to the global suppression list — blocks the contact across all channels, not just email.
+              </p>
+            </div>
+            <Toggle checked={suppressionSync} onChange={setSuppressionSync} />
+          </div>
+          <div className="py-4 flex items-center justify-between">
+            <div className="flex-1 pr-8">
+              <p className="text-[13px] font-semibold text-foreground">Dedicated IP pool</p>
+              <p className="text-[12px] text-muted-foreground mt-0.5">
+                Isolate marketing and transactional traffic on separate IPs for independent reputation management.
+              </p>
+            </div>
+            <Toggle checked={dedicatedIp} onChange={setDedicatedIp} />
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Sender reputation */}
+      <SectionCard title="Sender reputation" subtitle="Live deliverability health across all sending domains">
+        <div className="grid grid-cols-4 gap-4">
+          {[
+            { label: 'Inbox placement',     value: '94.2%',  sub: '+1.3% vs last week',     color: 'text-success'  },
+            { label: 'Bounce rate',         value: '0.8%',   sub: 'Threshold: 2%',           color: 'text-success'  },
+            { label: 'Complaint rate',      value: '0.04%',  sub: 'Threshold: 0.1%',         color: 'text-success'  },
+            { label: 'Suppressed addresses', value: '12,847', sub: 'Across all domains',     color: 'text-foreground' },
+          ].map(stat => (
+            <div key={stat.label} className="bg-muted/30 rounded-brand-xl px-4 py-3">
+              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+              <p className={cn('text-[22px] font-bold mt-1 leading-none', stat.color)}>{stat.value}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{stat.sub}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
+
+/* ─── Voice view ─────────────────────────────────────────────────────────── */
+
+function VoiceView() {
+  const [dndFilter, setDndFilter]           = useState(true);
+  const [callRecording, setCallRecording]   = useState(false);
+  const [retryEnabled, setRetryEnabled]     = useState(true);
+  const [ttsEngine, setTtsEngine]           = useState('Google TTS');
+
+  const didStatusCfg: Record<DidStatus, { chip: string; dot: string }> = {
+    Active:   { chip: 'bg-success/10 text-success',        dot: 'bg-success'          },
+    Flagged:  { chip: 'bg-warning/10 text-warning',        dot: 'bg-warning'          },
+    Inactive: { chip: 'bg-muted text-muted-foreground',    dot: 'bg-muted-foreground' },
+  };
+
+  const voiceRoleCfg: Record<VoiceRole, string> = {
+    Primary:  'bg-primary/10 text-primary',
+    Fallback: 'bg-amber-100 text-amber-700',
+    Standby:  'bg-muted text-muted-foreground',
+  };
+
+  return (
+    <div className="space-y-5">
+
+      {/* Flagged DID warning */}
+      <div className="flex items-center gap-3 bg-warning/8 border border-warning/30 rounded-brand-xl px-4 py-3">
+        <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />
+        <p className="text-[13px] text-foreground flex-1">
+          <span className="font-semibold">+91 22 4890 1001 has been flagged</span> — high SPAM complaint rate detected on Jio network.
+          Suspend OBD campaigns on this number until reviewed.
+        </p>
+        <button className="text-[12px] font-semibold text-warning whitespace-nowrap">Review →</button>
+      </div>
+
+      {/* DID numbers */}
+      <SectionCard
+        title="DID numbers"
+        subtitle="Direct Inward Dial numbers used as caller ID for outbound campaigns"
+        badge={<NewBadge />}
+        action={
+          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-white text-[12px] font-semibold rounded-brand-md hover:bg-primary/90 transition-colors">
+            <Plus className="w-3.5 h-3.5" />
+            Add DID
+          </button>
+        }
+      >
+        <table className="w-full">
+          <thead>
+            <tr className="border-b border-border">
+              {['Number', 'Type', 'Operator', 'Purpose', 'Status', 'Calls today', ''].map(h => (
+                <th key={h} className="pb-2.5 text-left text-[11px] font-semibold text-muted-foreground uppercase tracking-wide pr-4 last:pr-0">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {didNumbers.map(did => {
+              const cfg = didStatusCfg[did.status];
+              return (
+                <tr key={did.id} className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                  <td className="py-3 pr-4">
+                    <span className="text-[13px] font-mono font-medium text-foreground">{did.number}</span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-xs',
+                      did.type === 'Toll-Free' ? 'bg-purple-100 text-purple-700' :
+                      did.type === 'Mobile'    ? 'bg-blue-100 text-blue-700'    :
+                      'bg-muted text-muted-foreground',
+                    )}>
+                      {did.type}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className="text-[12px] text-foreground">{did.operator}</span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className="text-[12px] text-foreground">{did.purpose}</span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className={cn('inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-full', cfg.chip)}>
+                      <span className={cn('w-1.5 h-1.5 rounded-full', cfg.dot)} />
+                      {did.status}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4">
+                    <span className="text-[12px] text-foreground">{did.callsToday.toLocaleString()}</span>
+                  </td>
+                  <td className="py-3">
+                    <button className="w-7 h-7 flex items-center justify-center rounded-brand-md hover:bg-muted transition-colors">
+                      <MoreHorizontal className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </SectionCard>
+
+      {/* Voice provider routing */}
+      <SectionCard
+        title="Provider routing"
+        subtitle="Primary, fallback, and standby voice operators for OBD campaigns"
+        action={
+          <button className="flex items-center gap-1.5 px-3 py-1.5 border border-border text-[12px] font-semibold rounded-brand-md hover:bg-muted transition-colors text-foreground">
+            <Plus className="w-3.5 h-3.5" />
+            Add provider
+          </button>
+        }
+      >
+        <div className="grid grid-cols-3 gap-4">
+          {voiceProviders.map(vp => (
+            <div
+              key={vp.id}
+              className={cn('border rounded-brand-xl p-4 space-y-3', vp.status === 'Standby' ? 'border-muted bg-muted/20' : 'border-border')}
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-[14px] font-semibold text-foreground">{vp.name}</p>
+                  <span className={cn('inline-block text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-xs mt-1', voiceRoleCfg[vp.role])}>
+                    {vp.role}
+                  </span>
+                </div>
+                <span className={cn('inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-brand-full',
+                  vp.status === 'Healthy'  ? 'bg-success/10 text-success' :
+                  vp.status === 'Degraded' ? 'bg-warning/10 text-warning' :
+                  'bg-muted text-muted-foreground',
+                )}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full',
+                    vp.status === 'Healthy'  ? 'bg-success' :
+                    vp.status === 'Degraded' ? 'bg-warning' :
+                    'bg-muted-foreground',
+                  )} />
+                  {vp.status}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { label: 'TPS',      value: String(vp.tps) },
+                  { label: 'Success',  value: `${vp.successRate}%` },
+                  { label: 'Latency',  value: vp.latency },
+                ].map(stat => (
+                  <div key={stat.label} className="bg-muted/30 rounded-brand-md px-2 py-1.5">
+                    <p className="text-[10px] text-muted-foreground">{stat.label}</p>
+                    <p className="text-[11px] font-semibold text-foreground mt-0.5">{stat.value}</p>
+                  </div>
+                ))}
+              </div>
+              <button className="w-full text-[11px] font-semibold text-primary hover:text-primary/80 text-center py-1.5 border border-border rounded-brand-md hover:bg-muted/30 transition-colors">
+                Configure credentials →
+              </button>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+
+      {/* OBD & IVR configuration */}
+      <SectionCard title="OBD & IVR configuration" subtitle="Outbound dialler rules, retry logic, TTS engine, and time-of-day windows">
+        <div className="grid grid-cols-2 gap-6">
+
+          {/* Left: dialler settings */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-[12px] font-semibold text-foreground block mb-1.5">Call window (TRAI mandate)</label>
+              <div className="flex items-center gap-2">
+                <select className="text-[12px] border border-border rounded-brand-md px-2.5 py-1.5 bg-background appearance-none focus:outline-none focus:ring-1 focus:ring-primary/40">
+                  {['09:00', '10:00', '11:00'].map(t => <option key={t}>{t}</option>)}
+                </select>
+                <span className="text-[12px] text-muted-foreground">to</span>
+                <select className="text-[12px] border border-border rounded-brand-md px-2.5 py-1.5 bg-background appearance-none focus:outline-none focus:ring-1 focus:ring-primary/40">
+                  {['20:00', '21:00', '21:30'].map(t => <option key={t}>{t}</option>)}
+                </select>
+                <span className="text-[12px] text-muted-foreground">IST</span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">TRAI prohibits commercial calls outside 09:00–21:00. Calls queued outside window auto-schedule for next slot.</p>
+            </div>
+
+            <div>
+              <label className="text-[12px] font-semibold text-foreground block mb-1.5">TTS engine</label>
+              <div className="flex gap-2">
+                {['Google TTS', 'Azure Neural', 'Custom'].map(engine => (
+                  <button
+                    key={engine}
+                    onClick={() => setTtsEngine(engine)}
+                    className={cn(
+                      'text-[11px] font-semibold px-3 py-1.5 rounded-brand-md border transition-colors',
+                      ttsEngine === engine
+                        ? 'bg-primary text-white border-primary'
+                        : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted',
+                    )}
+                  >
+                    {engine}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[12px] font-semibold text-foreground block mb-1.5">Max concurrent calls</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  defaultValue={100}
+                  className="w-24 text-[12px] border border-border rounded-brand-md px-2.5 py-1.5 bg-background focus:outline-none focus:ring-1 focus:ring-primary/40"
+                />
+                <span className="text-[12px] text-muted-foreground">calls at any time</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: toggles */}
+          <div className="space-y-0 divide-y divide-border border border-border rounded-brand-xl overflow-hidden">
+            <div className="px-4 py-3.5 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-semibold text-foreground">TRAI DND registry filter</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Block calls to numbers registered on Do-Not-Disturb. Refreshed daily.</p>
+              </div>
+              <Toggle checked={dndFilter} onChange={setDndFilter} />
+            </div>
+            <div className="px-4 py-3.5 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-[13px] font-semibold text-foreground">Retry on no-answer</p>
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Retry unanswered calls up to 2× — minimum 4 hr gap between attempts.</p>
+              </div>
+              <Toggle checked={retryEnabled} onChange={setRetryEnabled} />
+            </div>
+            <div className="px-4 py-3.5 flex items-center justify-between">
+              <div>
+                <p className="text-[13px] font-semibold text-foreground">Call recording</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Record OBD calls for QA. Stored 90 days. Requires customer consent disclosure.</p>
+              </div>
+              <Toggle checked={callRecording} onChange={setCallRecording} />
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      {/* Live stats */}
+      <SectionCard title="Today's voice activity" subtitle="Real-time OBD campaign performance across providers">
+        <div className="grid grid-cols-5 gap-4">
+          {[
+            { label: 'Calls dialled',     value: '6,070',  color: 'text-foreground' },
+            { label: 'Connected',         value: '4,218',  color: 'text-success'    },
+            { label: 'No answer',         value: '1,234',  color: 'text-warning'    },
+            { label: 'SPAM-flagged',      value: '43',     color: 'text-destructive' },
+            { label: 'Avg call duration', value: '1m 42s', color: 'text-foreground' },
+          ].map(stat => (
+            <div key={stat.label} className="bg-muted/30 rounded-brand-xl px-4 py-3">
+              <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+              <p className={cn('text-[22px] font-bold mt-1 leading-none', stat.color)}>{stat.value}</p>
+            </div>
+          ))}
+        </div>
+      </SectionCard>
+    </div>
+  );
+}
+
 /* ─── Phase 2 placeholder ────────────────────────────────────────────────── */
 
 function Phase2({ channel }: { channel: string }) {
@@ -785,8 +1303,8 @@ const channelNav: {
   { id: 'SMS',       label: 'SMS',       icon: MessageSquare, status: 'warn' },
   { id: 'WhatsApp',  label: 'WhatsApp',  icon: MessageCircle, status: 'warn' },
   { id: 'RCS',       label: 'RCS',       icon: Radio },
-  { id: 'Voice',     label: 'Voice',     icon: Phone,         phase2: true },
-  { id: 'Email',     label: 'Email',     icon: Mail,          phase2: true },
+  { id: 'Voice',     label: 'Voice',     icon: Phone  },
+  { id: 'Email',     label: 'Email',     icon: Mail   },
 ];
 
 /* ─── Main page ──────────────────────────────────────────────────────────── */
@@ -798,15 +1316,17 @@ const Channels = () => {
     if (activeChannel === 'WhatsApp') return <WhatsAppView />;
     if (activeChannel === 'SMS')      return <SmsView />;
     if (activeChannel === 'RCS')      return <RcsView />;
-    return <Phase2 channel={activeChannel} />;
+    if (activeChannel === 'Email')    return <EmailView />;
+    if (activeChannel === 'Voice')    return <VoiceView />;
+    return null;
   };
 
   const subTitle: Record<Channel, string> = {
     WhatsApp: 'WABA numbers, number pools, routing & compliance',
     SMS:      'Sender IDs, operator routing & DLT registration',
     RCS:      'Sender profiles, agent config & SMS fallback',
-    Voice:    'IVR, click-to-call & outbound dialler',
-    Email:    'SMTP/ESP integration & domain authentication',
+    Voice:    'DID numbers, OBD dialler & voice provider routing',
+    Email:    'Sending domains, ESP routing & deliverability',
   };
 
   return (
@@ -815,9 +1335,9 @@ const Channels = () => {
 
         {/* ── Left sub-nav ──────────────────────────────────────── */}
         <aside className="w-[200px] flex-shrink-0 border-r border-border bg-muted/20 flex flex-col py-4">
-          <p className="px-4 pb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Messaging</p>
+          <p className="px-4 pb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Channels</p>
 
-          {channelNav.filter(c => !c.phase2 && c.id !== 'Email' && c.id !== 'Voice').map(ch => {
+          {channelNav.filter(c => !c.phase2).map(ch => {
             const Icon = ch.icon;
             const isActive = activeChannel === ch.id;
             return (
@@ -842,25 +1362,6 @@ const Channels = () => {
             );
           })}
 
-          <div className="my-3 mx-4 border-t border-border" />
-          <p className="px-4 pb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">Coming Soon</p>
-
-          {channelNav.filter(c => c.phase2).map(ch => {
-            const Icon = ch.icon;
-            return (
-              <button
-                key={ch.id}
-                disabled
-                className="flex items-center justify-between px-4 py-2.5 text-[13px] font-medium mx-2 rounded-brand-md text-muted-foreground/50 cursor-not-allowed"
-              >
-                <div className="flex items-center gap-2.5">
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                  {ch.label}
-                </div>
-                <span className="text-[9px] font-semibold uppercase tracking-wide bg-muted px-1 py-0.5 rounded-brand-xs">P2</span>
-              </button>
-            );
-          })}
         </aside>
 
         {/* ── Main content area ──────────────────────────────────── */}
