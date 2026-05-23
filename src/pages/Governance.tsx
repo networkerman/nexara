@@ -29,7 +29,6 @@ import {
   Radio,
   BarChart3,
   Settings,
-  Building2,
   Mail,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -622,7 +621,6 @@ function AuditLogView() {
           All entries are tamper-proof. Exported for VAPT audits, TRAI compliance, and BFSI regulatory submissions.
           Retained for <strong>24 months</strong>. Accessible to Admin and Manager roles only.
         </p>
-        <span className="text-[11px] font-bold bg-blue-100 text-blue-700 border border-blue-300 px-2 py-1 rounded-full whitespace-nowrap">CRIS · NICSI</span>
       </div>
 
       {/* Filters */}
@@ -752,18 +750,6 @@ const Governance = () => {
             </div>
           </div>
 
-          {/* Enterprise customers callout */}
-          <div className="mx-4 mt-4 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-brand-xl">
-            <p className="text-[11px] font-bold text-amber-800 mb-1">Required for</p>
-            <div className="space-y-1">
-              {['SBI', 'DMI Finance', 'Credgenics', 'CRIS', 'NICSI'].map(c => (
-                <div key={c} className="flex items-center gap-1.5 text-[11px] text-amber-700">
-                  <Building2 className="w-3 h-3 flex-shrink-0" />
-                  {c}
-                </div>
-              ))}
-            </div>
-          </div>
         </aside>
 
         {/* Main content */}
