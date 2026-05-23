@@ -53,6 +53,8 @@ import {
   Webhook,
   LayoutGrid,
   SplitSquareHorizontal,
+  BellOff,
+  Timer,
 } from 'lucide-react';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -177,9 +179,10 @@ const paletteGroups: { label: string; items: PaletteItem[] }[] = [
   {
     label: 'Triggers',
     items: [
-      { type: 'trigger', label: 'Schedule',        icon: Clock,    color: 'bg-amber-100 text-amber-700' },
-      { type: 'trigger', label: 'Segment Entry',   icon: Users,    color: 'bg-amber-100 text-amber-700' },
-      { type: 'trigger', label: 'API / Webhook',   icon: Webhook,  color: 'bg-amber-100 text-amber-700' },
+      { type: 'trigger',  label: 'Schedule',             icon: Clock,    color: 'bg-amber-100 text-amber-700' },
+      { type: 'trigger',  label: 'Segment Entry',        icon: Users,    color: 'bg-amber-100 text-amber-700' },
+      { type: 'trigger',  label: 'API / Webhook',        icon: Webhook,  color: 'bg-amber-100 text-amber-700' },
+      { type: 'trigger',  label: 'Inaction / No Response', icon: BellOff, color: 'bg-amber-100 text-amber-700' },
     ],
   },
   {
@@ -194,9 +197,10 @@ const paletteGroups: { label: string; items: PaletteItem[] }[] = [
   {
     label: 'Logic',
     items: [
-      { type: 'condition', label: 'Condition',  icon: GitBranch,            color: 'bg-purple-100 text-purple-700' },
-      { type: 'wait',      label: 'Wait / Delay', icon: Clock,              color: 'bg-slate-100 text-slate-700' },
-      { type: 'split',     label: 'A/B Split',  icon: SplitSquareHorizontal, color: 'bg-fuchsia-100 text-fuchsia-700' },
+      { type: 'waitEvent', label: 'Wait for Event', icon: Timer,                color: 'bg-teal-100 text-teal-700' },
+      { type: 'condition', label: 'Condition',       icon: GitBranch,            color: 'bg-purple-100 text-purple-700' },
+      { type: 'wait',      label: 'Wait / Delay',    icon: Clock,               color: 'bg-slate-100 text-slate-700' },
+      { type: 'split',     label: 'A/B Split',       icon: SplitSquareHorizontal, color: 'bg-fuchsia-100 text-fuchsia-700' },
     ],
   },
   {
@@ -267,6 +271,42 @@ function WaitNode({ data }: NodeProps) {
   );
 }
 
+function WaitEventNode({ data }: NodeProps) {
+  return (
+    <div className="bg-white border-2 border-teal-400 rounded-xl shadow-el-2 w-56 overflow-hidden">
+      <Handle type="target" position={Position.Top} style={handleStyle} />
+      <div className="bg-teal-100 px-3 py-2 flex items-center gap-2">
+        <Timer className="w-3.5 h-3.5 text-teal-700" />
+        <span className="text-[11px] font-bold text-teal-700 uppercase tracking-wide">Wait for Event</span>
+      </div>
+      <div className="px-3 py-2.5">
+        <p className="text-[13px] font-semibold text-foreground leading-tight">{String(data.label ?? '')}</p>
+        {data.sublabel && (
+          <p className="text-[11px] text-muted-foreground mt-0.5">{String(data.sublabel)}</p>
+        )}
+      </div>
+      {/* Event occurred handle — left (green) */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="event"
+        style={{ ...handleStyle, left: '28%', background: '#10b981' }}
+      />
+      {/* Timed out handle — right (amber) */}
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="timeout"
+        style={{ ...handleStyle, left: '72%', background: '#f59e0b' }}
+      />
+      <div className="flex justify-between px-3 pb-1.5 mt-1">
+        <span className="text-[9px] font-bold text-emerald-600">EVENT</span>
+        <span className="text-[9px] font-bold text-amber-500">TIMEOUT</span>
+      </div>
+    </div>
+  );
+}
+
 function ConditionNode({ data }: NodeProps) {
   return (
     <div className="bg-white border-2 border-purple-300 rounded-xl shadow-el-2 w-52 overflow-hidden">
@@ -332,6 +372,7 @@ const nodeTypes = {
   trigger:   TriggerNode,
   send:      SendNode,
   wait:      WaitNode,
+  waitEvent: WaitEventNode,
   condition: ConditionNode,
   action:    ActionNode,
   end:       EndNode,
@@ -340,73 +381,73 @@ const nodeTypes = {
 // ─── EMI Cascade — pre-loaded nodes & edges ───────────────────────────────────
 
 const initialNodes: Node[] = [
+  // ── Trigger ──────────────────────────────────────────────────────────────
   {
-    id: 'n1', type: 'trigger', position: { x: 280, y: 20 },
+    id: 'n1', type: 'trigger', position: { x: 290, y: 20 },
     data: { label: 'Schedule — Daily 9 AM', sublabel: 'Weekdays only' },
   },
+  // ── Send WA ───────────────────────────────────────────────────────────────
   {
-    id: 'n2', type: 'send', position: { x: 280, y: 160 },
+    id: 'n2', type: 'send', position: { x: 290, y: 155 },
     data: { label: 'EMI Reminder v2', sublabel: 'WhatsApp template', channel: 'WA' },
   },
+  // ── Wait for WA Open (24h timeout) ────────────────────────────────────────
   {
-    id: 'n3', type: 'wait', position: { x: 280, y: 300 },
-    data: { label: 'Wait 24 hours' },
+    id: 'n3', type: 'waitEvent', position: { x: 282, y: 300 },
+    data: { label: 'WA Opened?', sublabel: 'Timeout: 24 hours' },
   },
+  // ── EVENT path: tag + end ─────────────────────────────────────────────────
   {
-    id: 'n4', type: 'condition', position: { x: 280, y: 420 },
-    data: { label: 'WA Opened?' },
-  },
-  {
-    id: 'n5', type: 'action', position: { x: 60, y: 580 },
+    id: 'n4', type: 'action', position: { x: 60, y: 470 },
     data: { label: 'Add tag: EMI_ENGAGED' },
   },
   {
-    id: 'n6', type: 'end', position: { x: 80, y: 710 },
+    id: 'n5', type: 'end', position: { x: 78, y: 590 },
     data: {},
   },
+  // ── TIMEOUT path: Send SMS ────────────────────────────────────────────────
   {
-    id: 'n7', type: 'send', position: { x: 480, y: 580 },
+    id: 'n6', type: 'send', position: { x: 500, y: 470 },
     data: { label: 'EMI Reminder SMS', sublabel: 'DLT template #1042', channel: 'SMS' },
   },
+  // ── Wait for SMS Delivery (24h timeout) ───────────────────────────────────
   {
-    id: 'n8', type: 'wait', position: { x: 480, y: 720 },
-    data: { label: 'Wait 24 hours' },
+    id: 'n7', type: 'waitEvent', position: { x: 492, y: 615 },
+    data: { label: 'SMS Delivered?', sublabel: 'Timeout: 24 hours' },
   },
+  // ── EVENT path: end (delivered) ───────────────────────────────────────────
   {
-    id: 'n9', type: 'condition', position: { x: 480, y: 840 },
-    data: { label: 'SMS Delivered?' },
-  },
-  {
-    id: 'n10', type: 'end', position: { x: 340, y: 1000 },
+    id: 'n8', type: 'end', position: { x: 360, y: 785 },
     data: {},
   },
+  // ── TIMEOUT path: Send RCS ────────────────────────────────────────────────
   {
-    id: 'n11', type: 'send', position: { x: 620, y: 1000 },
+    id: 'n9', type: 'send', position: { x: 630, y: 785 },
     data: { label: 'EMI RCS Card', sublabel: 'RCS agent: ONEXTEL_MAIN', channel: 'RCS' },
   },
   {
-    id: 'n12', type: 'end', position: { x: 640, y: 1140 },
+    id: 'n10', type: 'end', position: { x: 648, y: 925 },
     data: {},
   },
 ];
 
-const green = { stroke: '#10b981', strokeWidth: 2 };
-const red   = { stroke: '#ef4444', strokeWidth: 2 };
-const gray  = { stroke: '#94a3b8', strokeWidth: 1.5 };
+const green  = { stroke: '#10b981', strokeWidth: 2 };
+const amber  = { stroke: '#f59e0b', strokeWidth: 2 };
+const gray   = { stroke: '#94a3b8', strokeWidth: 1.5 };
 const arrowClosed = { type: MarkerType.ArrowClosed };
 
 const initialEdges: Edge[] = [
-  { id: 'e1-2',   source: 'n1',  target: 'n2',  style: gray, markerEnd: arrowClosed },
-  { id: 'e2-3',   source: 'n2',  target: 'n3',  style: gray, markerEnd: arrowClosed },
-  { id: 'e3-4',   source: 'n3',  target: 'n4',  style: gray, markerEnd: arrowClosed },
-  { id: 'e4-5',   source: 'n4',  target: 'n5',  sourceHandle: 'yes', style: green, label: 'Yes', markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
-  { id: 'e5-6',   source: 'n5',  target: 'n6',  style: gray, markerEnd: arrowClosed },
-  { id: 'e4-7',   source: 'n4',  target: 'n7',  sourceHandle: 'no',  style: red,   label: 'No',  markerEnd: { type: MarkerType.ArrowClosed, color: '#ef4444' } },
-  { id: 'e7-8',   source: 'n7',  target: 'n8',  style: gray, markerEnd: arrowClosed },
-  { id: 'e8-9',   source: 'n8',  target: 'n9',  style: gray, markerEnd: arrowClosed },
-  { id: 'e9-10',  source: 'n9',  target: 'n10', sourceHandle: 'yes', style: green, label: 'Yes', markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
-  { id: 'e9-11',  source: 'n9',  target: 'n11', sourceHandle: 'no',  style: red,   label: 'No',  markerEnd: { type: MarkerType.ArrowClosed, color: '#ef4444' } },
-  { id: 'e11-12', source: 'n11', target: 'n12', style: gray, markerEnd: arrowClosed },
+  { id: 'e1-2',  source: 'n1',  target: 'n2',  style: gray,  markerEnd: arrowClosed },
+  { id: 'e2-3',  source: 'n2',  target: 'n3',  style: gray,  markerEnd: arrowClosed },
+  // WaitEvent — event (green) → tag, timeout (amber) → SMS
+  { id: 'e3-4',  source: 'n3',  target: 'n4',  sourceHandle: 'event',   style: green, label: 'Opened',  markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
+  { id: 'e4-5',  source: 'n4',  target: 'n5',  style: gray,  markerEnd: arrowClosed },
+  { id: 'e3-6',  source: 'n3',  target: 'n6',  sourceHandle: 'timeout', style: amber, label: '24h timeout', markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' } },
+  { id: 'e6-7',  source: 'n6',  target: 'n7',  style: gray,  markerEnd: arrowClosed },
+  // WaitEvent — event (green) → end, timeout (amber) → RCS
+  { id: 'e7-8',  source: 'n7',  target: 'n8',  sourceHandle: 'event',   style: green, label: 'Delivered', markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' } },
+  { id: 'e7-9',  source: 'n7',  target: 'n9',  sourceHandle: 'timeout', style: amber, label: '24h timeout', markerEnd: { type: MarkerType.ArrowClosed, color: '#f59e0b' } },
+  { id: 'e9-10', source: 'n9',  target: 'n10', style: gray,  markerEnd: arrowClosed },
 ];
 
 // ─── Node Settings Panel ──────────────────────────────────────────────────────
@@ -435,6 +476,7 @@ function NodeSettingsPanel({ node, onClose }: { node: Node; onClose: () => void 
                 <option>Schedule</option>
                 <option>Segment Entry</option>
                 <option>API / Webhook</option>
+                <option>Inaction / No Response</option>
               </select>
             </div>
             <div>
@@ -451,6 +493,25 @@ function NodeSettingsPanel({ node, onClose }: { node: Node; onClose: () => void 
                       : 'bg-white text-muted-foreground border-border hover:border-primary'
                   )}>{d}</button>
                 ))}
+              </div>
+            </div>
+            {/* Inaction-specific fields (shown for Inaction trigger type) */}
+            <div className="border-t border-border pt-3">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2">Inaction config</p>
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">User did NOT</label>
+              <select className="w-full text-[13px] border border-border rounded-brand-md px-3 py-2 bg-background mb-3">
+                <option>Open message</option>
+                <option>Click any link</option>
+                <option>Reply</option>
+                <option>Complete purchase</option>
+              </select>
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Within</label>
+              <div className="flex gap-2">
+                <Input defaultValue="24" type="number" className="text-[13px] w-20" />
+                <select className="flex-1 text-[13px] border border-border rounded-brand-md px-3 py-2 bg-background">
+                  <option>Hours</option>
+                  <option>Days</option>
+                </select>
               </div>
             </div>
           </>
@@ -494,6 +555,45 @@ function NodeSettingsPanel({ node, onClose }: { node: Node; onClose: () => void 
                   <option>Minutes</option>
                   <option>Days</option>
                 </select>
+              </div>
+            </div>
+          </>
+        )}
+        {type === 'waitEvent' && (
+          <>
+            <div className="bg-teal-50 border border-teal-200 rounded-lg px-3 py-2.5 text-[12px] text-teal-800">
+              Waits for a user to perform an action. Takes the <strong>Event</strong> path immediately when it occurs, or the <strong>Timeout</strong> path if the window expires.
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Wait for event</label>
+              <select className="w-full text-[13px] border border-border rounded-brand-md px-3 py-2 bg-background">
+                <option>Message Opened</option>
+                <option>Message Delivered</option>
+                <option>Link Clicked</option>
+                <option>Replied</option>
+                <option>Button Tapped (RCS)</option>
+                <option>Opted Out</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-1 block">Timeout window</label>
+              <div className="flex gap-2">
+                <Input defaultValue="24" type="number" className="text-[13px] w-20" />
+                <select className="flex-1 text-[13px] border border-border rounded-brand-md px-3 py-2 bg-background">
+                  <option>Hours</option>
+                  <option>Minutes</option>
+                  <option>Days</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                <span className="text-muted-foreground"><strong className="text-foreground">Event path</strong> — user performed the action</span>
+              </div>
+              <div className="flex items-center gap-2 text-[12px]">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 flex-shrink-0" />
+                <span className="text-muted-foreground"><strong className="text-foreground">Timeout path</strong> — window expired without action</span>
               </div>
             </div>
           </>
@@ -706,6 +806,7 @@ function JourneyCanvas({ journey, onBack }: { journey: Journey; onBack: () => vo
               nodeColor={(n) => {
                 if (n.type === 'trigger')   return '#fbbf24';
                 if (n.type === 'send')      return '#6366f1';
+                if (n.type === 'waitEvent') return '#14b8a6';
                 if (n.type === 'condition') return '#a855f7';
                 if (n.type === 'wait')      return '#94a3b8';
                 if (n.type === 'action')    return '#3b82f6';
