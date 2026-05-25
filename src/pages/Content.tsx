@@ -103,7 +103,7 @@ const channelNav: { id: Channel; label: string; icon: React.ElementType; phase2?
   { id: 'SMS',      label: 'SMS',          icon: MessageSquare },
   { id: 'WhatsApp', label: 'WhatsApp',     icon: MessageCircle },
   { id: 'RCS',      label: 'RCS',          icon: Radio },
-  { id: 'Email',    label: 'Email',        icon: Mail,    phase2: true },
+  { id: 'Email',    label: 'Email',        icon: Mail },
   { id: 'Voice',    label: 'Voice',        icon: Phone,   phase2: true },
   { id: 'DLT',      label: 'DLT',          icon: FileText },
   { id: 'Media',    label: 'Media gallery', icon: Image },
@@ -307,7 +307,7 @@ function TemplatesView({ channel }: { channel: Exclude<Channel, 'DLT' | 'Media'>
           <>
             <ScratchBar channel={channel} />
             {/* Pre-built gallery placeholder */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               {[
                 { label: 'OTP / Authentication', count: 12 },
                 { label: 'Payment & Billing',     count: 8  },
@@ -370,7 +370,7 @@ function TemplatesView({ channel }: { channel: Exclude<Channel, 'DLT' | 'Media'>
                 <p className="text-body-sm text-muted-foreground mt-1">Try a different filter or create a new template</p>
               </div>
             ) : (
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {filtered.map(t => <TemplateCard key={t.id} tpl={t} />)}
               </div>
             )}
@@ -625,10 +625,10 @@ function Phase2Placeholder({ channel }: { channel: string }) {
         <Clock className="w-6 h-6 text-muted-foreground" />
       </div>
       <p className="text-[15px] font-semibold text-foreground" style={{ fontFamily: 'var(--font-heading)' }}>
-        {channel} Templates — Phase 2
+        {channel} Templates — Coming Soon
       </p>
       <p className="text-body-sm text-muted-foreground mt-2 max-w-[320px]">
-        {channel} channel infrastructure is being built. Templates will appear here once the channel is live.
+        {channel} template management is on the roadmap. Templates and scripts will appear here once ready.
       </p>
       <span className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted px-2.5 py-1 rounded-brand-full">
         Coming Soon
@@ -666,7 +666,7 @@ const Content = () => {
   const renderContent = () => {
     if (activeChannel === 'DLT')   return <DLTView />;
     if (activeChannel === 'Media') return <MediaGallery />;
-    if (activeChannel === 'Voice' || activeChannel === 'Email') return <Phase2Placeholder channel={activeChannel} />;
+    if (activeChannel === 'Voice') return <Phase2Placeholder channel={activeChannel} />;
     return <TemplatesView channel={activeChannel as Exclude<Channel, 'DLT' | 'Media'>} />;
   };
 
@@ -699,7 +699,7 @@ const Content = () => {
                   {ch.label}
                 </div>
                 {ch.phase2 && (
-                  <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/50 bg-muted px-1 py-0.5 rounded-brand-xs">P2</span>
+                  <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/50 bg-muted px-1 py-0.5 rounded-brand-xs">Soon</span>
                 )}
               </button>
             );
