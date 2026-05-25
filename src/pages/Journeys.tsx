@@ -975,6 +975,22 @@ function JourneyList({ onOpen }: { onOpen: (j: Journey) => void }) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<JourneyStatus | 'all'>('all');
 
+  const createNewJourney = () => {
+    const blank: Journey = {
+      id: `J-${Date.now()}`,
+      name: 'Untitled Journey',
+      status: 'draft',
+      channels: [],
+      trigger: 'Not configured',
+      activeContacts: 0,
+      completions: 0,
+      conversionRate: '—',
+      updatedAt: 'Just now',
+      description: '',
+    };
+    onOpen(blank);
+  };
+
   const filtered = journeys.filter(j => {
     const matchSearch = j.name.toLowerCase().includes(search.toLowerCase());
     const matchStatus = statusFilter === 'all' || j.status === statusFilter;
@@ -998,7 +1014,7 @@ function JourneyList({ onOpen }: { onOpen: (j: Journey) => void }) {
             Build trigger-based, multi-channel automation flows
           </p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90 text-white text-[13px] gap-1.5">
+        <Button onClick={createNewJourney} className="bg-primary hover:bg-primary/90 text-white text-[13px] gap-1.5">
           <Plus className="w-4 h-4" />
           New Journey
         </Button>
