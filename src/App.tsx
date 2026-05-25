@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { DevModeProvider } from "@/context/DevModeContext";
 
 // Auth & onboarding
 import Index from "./pages/Index";
@@ -24,6 +25,7 @@ import Reports from "./pages/Reports";
 import Channels from "./pages/Channels";
 import Governance from "./pages/Governance";
 import SettingsPage from "./pages/SettingsPage";
+import SettingsDevelopers from "./pages/SettingsDevelopers";
 import Audiences from "./pages/Audiences";
 import AccountHealth from "./pages/AccountHealth";
 import PremiumGate from "./pages/PremiumGate"; // placeholder for pending modules
@@ -36,6 +38,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
+        <DevModeProvider>
         <BrowserRouter>
           <Routes>
             {/* Root — Home dashboard */}
@@ -58,8 +61,10 @@ const App = () => (
             <Route path="/reports/*"   element={<Reports />} />
             <Route path="/channels/*"  element={<Channels />} />
             <Route path="/governance/*"     element={<Governance />} />
-            <Route path="/account-health/*" element={<AccountHealth />} />
-            <Route path="/settings/*"       element={<SettingsPage />} />
+            <Route path="/account-health/*"      element={<AccountHealth />} />
+            <Route path="/settings"               element={<SettingsPage />} />
+            <Route path="/settings/developers"    element={<SettingsDevelopers />} />
+            <Route path="/settings/*"             element={<SettingsPage />} />
 
             {/* Legacy redirects — keep old Aura-style paths working */}
             <Route path="/engage/campaigns" element={<Campaigns />} />
@@ -69,6 +74,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        </DevModeProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

@@ -15,9 +15,11 @@ import {
   Bell,
   ChevronsUpDown,
   HeartPulse,
+  FlaskConical,
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useDevMode } from '@/context/DevModeContext';
 
 /* ─── Navigation definition ──────────────────────────────────────────────── */
 
@@ -151,6 +153,7 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const [sidebarHovered, setSidebarHovered] = useState(false);
+  const { sandboxEnabled } = useDevMode();
 
   const isExpanded = sidebarHovered;
 
@@ -280,6 +283,14 @@ export function AppLayout({ children }: AppLayoutProps) {
             </h1>
 
             <div className="flex items-center gap-4">
+              {/* Sandbox indicator */}
+              {sandboxEnabled && (
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-500/15 border border-amber-500/30 px-2.5 py-1 rounded-full">
+                  <FlaskConical className="w-3 h-3" />
+                  SANDBOX
+                </div>
+              )}
+
               {/* Status pill */}
               <div className="flex items-center gap-1.5 text-xs font-medium text-success bg-success/10 px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-success" />
