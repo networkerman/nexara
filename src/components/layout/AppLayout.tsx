@@ -152,9 +152,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const [sidebarHovered, setSidebarHovered] = useState(false);
 
-  // Collapse whenever we're inside a section (not the root dashboard)
-  const isOnRoot = location.pathname === '/';
-  const isExpanded = isOnRoot || sidebarHovered;
+  const isExpanded = sidebarHovered;
 
   // Resolve page title from pathname (handles sub-routes too)
   const pageTitle = React.useMemo(() => {
