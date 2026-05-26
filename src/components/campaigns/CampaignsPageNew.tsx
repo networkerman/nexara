@@ -23,6 +23,13 @@ import {
   CalendarClock,
   FileEdit,
   XCircle,
+  Users,
+  TrendingUp,
+  MousePointerClick,
+  Hourglass,
+  ChevronDown,
+  ExternalLink,
+  Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -401,14 +408,21 @@ function RowActions({ campaign, onRepush }: { campaign: Campaign; onRepush: (c: 
 
 /* ─── Campaign row ───────────────────────────────────────────────────────────── */
 
-function CampaignRowItem({ campaign, onRepush }: { campaign: Campaign; onRepush: (c: Campaign) => void }) {
+function CampaignRowItem({ campaign, onRepush, onSelect }: {
+  campaign: Campaign;
+  onRepush: (c: Campaign) => void;
+  onSelect: (c: Campaign) => void;
+}) {
   const chCfg = channelConfig[campaign.channel];
   const ChIcon = chCfg.icon;
   const stCfg = statusConfig[campaign.status];
   const rate = deliveryRate(campaign);
 
   return (
-    <tr className="border-b border-border hover:bg-muted/25 transition-colors group">
+    <tr
+      className="border-b border-border hover:bg-muted/25 transition-colors group cursor-pointer"
+      onClick={() => onSelect(campaign)}
+    >
       {/* Name + channel */}
       <td className="px-5 py-3.5">
         <div className="flex items-center gap-3">
@@ -485,10 +499,234 @@ function CampaignRowItem({ campaign, onRepush }: { campaign: Campaign; onRepush:
       </td>
 
       {/* Actions */}
-      <td className="px-4 py-3.5">
+      <td className="px-4 py-3.5" onClick={e => e.stopPropagation()}>
         <RowActions campaign={campaign} onRepush={onRepush} />
       </td>
     </tr>
+  );
+}
+
+/* ─── Campaign detail panel (slide-over) ─────────────────────────────────────── */
+
+interface CampaignDetailPanelProps {
+  campaign: Campaign;
+  onClose: () => void;
+  onRepush: (c: Campaign) => void;
+}
+
+function CampaignDetailPanel({ campaign, onClose, onRepush }: CampaignDetailPanelProps) {
+  const chCfg = channelConfig[campaign.channel];
+  const ChIcon = chCfg.icon;
+  const stCfg = statusConfig[campaign.status];
+  const rate = deliveryRate(campaign);
+
+  const kpiRows = [
+    { icon: Users,            label: 'Recipients',    value: fmtNum(campaign.recipients), color: 'text-foreground'    },
+    { icon: CheckCircle2,     label: 'Delivered',     value: fmtNum(campaign.delivered),  color: 'text-success'       },
+    { icon: XCircle,          label: 'Failed',        value: fmtNum(campaign.failed),     color: campaign.failed > 0 ? 'text-destructive' : 'text-muted-foreground' },
+    { icon: Hourglass,        label: 'Awaited',       value: fmtNum(campaign.awaited),    color: 'text-warning'       },
+    { icon: MousePointerClick,label: 'Clicked',       value: fmtNum(campaign.clicked),    color: 'text-info'          },
+  ];
+
+  const isRunning  = campaign.status === 'Running';
+  const isPaused   = campaign.status === 'Paused';
+  const hasFailed  = campaign.failed > 0;
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-foreground/10 backdrop-blur-[1px]"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="fixed top-0 right-0 bottom-0 z-50 w-[400px] bg-card border-l border-border shadow-2xl flex flex-col overflow-hidden">
+
+        {/* Header */}
+        <div className="flex items-start justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className={cn('w-9 h-9 rounded-brand-md flex items-center justify-center flex-shrink-0 mt-0.5', chCfg.bg)}>
+              <ChIcon className={cn('w-4 h-4', chCfg.color)} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[14px] font-semibold text-foreground leading-snug line-clamp-2" style={{ fontFamily: 'var(--font-heading)' }}>
+                {campaign.name}
+              </p>
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-brand-xs', chCfg.bg, chCfg.color)}>
+                  {campaign.channel}
+                </span>
+                <span className={cn('inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-brand-full', stCfg.chip)}>
+                  <span className={cn('w-1.5 h-1.5 rounded-full flex-shrink-0', stCfg.dot)} />
+                  {campaign.status}
+                </span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-7 h-7 flex items-center justify-center rounded-brand-md hover:bg-muted transition-colors flex-shrink-0 ml-2"
+          >
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Campaign ID + template */}
+        <div className="px-5 py-3 border-b border-border bg-muted/20 flex-shrink-0">
+          <div className="flex items-center justify-between text-[12px]">
+            <span className="text-muted-foreground font-mono">{campaign.id}</span>
+            {campaign.sentOn
+              ? <span className="text-muted-foreground">Sent {campaign.sentOn}</span>
+              : <span className="text-muted-foreground italic">Not yet sent</span>
+            }
+          </div>
+          {campaign.template !== '—' && (
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Layers className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[12px] text-muted-foreground font-mono">{campaign.template}</span>
+            </div>
+          )}
+        </div>
+
+        {/* KPI grid */}
+        <div className="px-5 py-4 border-b border-border flex-shrink-0">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Delivery Summary
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {kpiRows.map(k => (
+              <div key={k.label} className="bg-muted/30 rounded-brand-lg px-3 py-2.5 flex items-center gap-2.5">
+                <k.icon className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] text-muted-foreground leading-none">{k.label}</p>
+                  <p className={cn('text-[15px] font-bold leading-tight mt-0.5', k.color)} style={{ fontFamily: 'var(--font-heading)' }}>
+                    {k.value}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {/* Delivery rate */}
+            {rate !== null && (
+              <div className="bg-muted/30 rounded-brand-lg px-3 py-2.5 flex items-center gap-2.5">
+                <TrendingUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground leading-none">Delivery Rate</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="flex-1 h-1.5 bg-muted rounded-brand-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-brand-full', rate >= 95 ? 'bg-success' : rate >= 80 ? 'bg-warning' : 'bg-destructive')}
+                        style={{ width: `${rate}%` }}
+                      />
+                    </div>
+                    <span className={cn('text-[13px] font-bold', rate >= 95 ? 'text-success' : rate >= 80 ? 'text-warning' : 'text-destructive')} style={{ fontFamily: 'var(--font-heading)' }}>
+                      {rate}%
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Spacer fills remaining space */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* Awaited warning */}
+          {campaign.awaited > 0 && (
+            <div className="flex items-start gap-2.5 bg-warning/10 border border-warning/20 rounded-brand-lg px-3 py-3 mb-4">
+              <AlertTriangle className="w-3.5 h-3.5 text-warning flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[12px] font-semibold text-warning">Awaited messages detected</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  {fmtNum(campaign.awaited)} messages are stuck in transit. Monitor or trigger a repush.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Failed warning */}
+          {hasFailed && (
+            <div className="flex items-start gap-2.5 bg-destructive/10 border border-destructive/20 rounded-brand-lg px-3 py-3 mb-4">
+              <XCircle className="w-3.5 h-3.5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[12px] font-semibold text-destructive">{fmtNum(campaign.failed)} messages failed</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Use Repush Failed below to retry delivery for failed recipients.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Channel-specific note */}
+          {campaign.channel === 'WhatsApp' && (
+            <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-brand-lg px-3 py-2.5 mb-4">
+              <span className="font-semibold text-foreground">WhatsApp: </span>
+              Template approval required before broadcast. WABA quality rating impacts delivery.
+            </div>
+          )}
+          {campaign.channel === 'RCS' && (
+            <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-brand-lg px-3 py-2.5 mb-4">
+              <span className="font-semibold text-foreground">RCS: </span>
+              Falling back to SMS for non-RCS capable devices.
+            </div>
+          )}
+          {campaign.channel === 'SMS' && (
+            <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-brand-lg px-3 py-2.5 mb-4">
+              <span className="font-semibold text-foreground">SMS: </span>
+              DLT registration verified. Sender ID routing active.
+            </div>
+          )}
+        </div>
+
+        {/* Action buttons */}
+        <div className="px-5 py-4 border-t border-border bg-muted/10 flex-shrink-0 flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            {/* Pause / Resume */}
+            {(isRunning || isPaused) && (
+              <button className={cn(
+                'flex items-center justify-center gap-1.5 px-3 py-2 rounded-brand-md text-[12px] font-semibold transition-colors border',
+                isRunning
+                  ? 'bg-warning/10 border-warning/20 text-warning hover:bg-warning/20'
+                  : 'bg-success/10 border-success/20 text-success hover:bg-success/20'
+              )}>
+                {isRunning ? <PauseCircle className="w-3.5 h-3.5" /> : <PlayCircle className="w-3.5 h-3.5" />}
+                {isRunning ? 'Pause' : 'Resume'}
+              </button>
+            )}
+
+            {/* Repush failed */}
+            {hasFailed && (
+              <button
+                onClick={() => { onClose(); onRepush(campaign); }}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-brand-md text-[12px] font-semibold transition-colors bg-destructive/10 border border-destructive/20 text-destructive hover:bg-destructive/20"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                Repush Failed
+              </button>
+            )}
+
+            {/* Duplicate */}
+            <button className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-brand-md text-[12px] font-semibold transition-colors bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted/80">
+              <Copy className="w-3.5 h-3.5" />
+              Duplicate
+            </button>
+
+            {/* View report */}
+            <button className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-brand-md text-[12px] font-semibold transition-colors bg-muted border border-border text-muted-foreground hover:text-foreground hover:bg-muted/80">
+              <BarChart2 className="w-3.5 h-3.5" />
+              View Report
+            </button>
+          </div>
+
+          {/* Full report link */}
+          <button className="flex items-center justify-center gap-1.5 w-full px-3 py-2.5 rounded-brand-md text-[13px] font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-el-1">
+            <ExternalLink className="w-3.5 h-3.5" />
+            Open Full Campaign Report
+          </button>
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -498,11 +736,12 @@ const ALL_CHANNELS: Array<Channel | 'All'> = ['All', 'SMS', 'WhatsApp', 'RCS', '
 const ALL_STATUSES: Array<CampaignStatus | 'All'> = ['All', 'Running', 'Scheduled', 'Draft', 'Sent', 'Paused', 'Failed'];
 
 export function CampaignsPageNew() {
-  const [activeChannel, setActiveChannel] = useState<Channel | 'All'>('All');
-  const [activeStatus, setActiveStatus]   = useState<CampaignStatus | 'All'>('All');
-  const [search, setSearch]               = useState('');
-  const [showNewModal, setShowNewModal]   = useState(false);
-  const [repushTarget, setRepushTarget]   = useState<Campaign | null>(null);
+  const [activeChannel, setActiveChannel]       = useState<Channel | 'All'>('All');
+  const [activeStatus, setActiveStatus]         = useState<CampaignStatus | 'All'>('All');
+  const [search, setSearch]                     = useState('');
+  const [showNewModal, setShowNewModal]         = useState(false);
+  const [repushTarget, setRepushTarget]         = useState<Campaign | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
   const filtered = useMemo(() => {
     return mockCampaigns.filter(c => {
@@ -676,7 +915,12 @@ export function CampaignsPageNew() {
               </thead>
               <tbody>
                 {filtered.map(c => (
-                  <CampaignRowItem key={c.id} campaign={c} onRepush={setRepushTarget} />
+                  <CampaignRowItem
+                    key={c.id}
+                    campaign={c}
+                    onRepush={setRepushTarget}
+                    onSelect={setSelectedCampaign}
+                  />
                 ))}
               </tbody>
             </table>
@@ -693,8 +937,17 @@ export function CampaignsPageNew() {
       </div>
 
       {/* Modals */}
-      {showNewModal  && <ChannelPickerModal onClose={() => setShowNewModal(false)} />}
-      {repushTarget  && <RepushModal campaign={repushTarget} onClose={() => setRepushTarget(null)} />}
+      {showNewModal    && <ChannelPickerModal onClose={() => setShowNewModal(false)} />}
+      {repushTarget    && <RepushModal campaign={repushTarget} onClose={() => setRepushTarget(null)} />}
+
+      {/* Campaign detail slide-over */}
+      {selectedCampaign && (
+        <CampaignDetailPanel
+          campaign={selectedCampaign}
+          onClose={() => setSelectedCampaign(null)}
+          onRepush={setRepushTarget}
+        />
+      )}
     </>
   );
 }
