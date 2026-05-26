@@ -41,15 +41,15 @@ const currentCycle = {
 };
 
 const channelUsage = [
-  { channel: 'SMS',      icon: SMSIcon,      color: 'text-indigo-600',  bg: 'bg-indigo-50',  border: 'border-indigo-100',
+  { channel: 'SMS',      icon: SMSIcon,      color: 'text-indigo-400',  bg: 'bg-indigo-50',  border: 'border-indigo-100',
     msgs: 2840000, rate: '₹0.12', spend: 340800, creditsUsed: 8200 },
-  { channel: 'WhatsApp', icon: WhatsAppIcon, color: 'text-[#25D366]',   bg: 'bg-green-50',   border: 'border-green-100',
+  { channel: 'WhatsApp', icon: WhatsAppIcon, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100',
     msgs:  481000, rate: '₹0.48', spend: 231000, creditsUsed: 3100 },
-  { channel: 'RCS',      icon: RCSIcon,      color: 'text-[#4285F4]',   bg: 'bg-blue-50',    border: 'border-blue-100',
+  { channel: 'RCS',      icon: RCSIcon,      color: 'text-blue-400',    bg: 'bg-blue-50',    border: 'border-blue-100',
     msgs:   97000, rate: '₹0.34', spend:  32980, creditsUsed: 1180 },
-  { channel: 'Email',    icon: EmailIcon,    color: 'text-sky-600',     bg: 'bg-sky-50',     border: 'border-sky-100',
+  { channel: 'Email',    icon: EmailIcon,    color: 'text-sky-400',     bg: 'bg-sky-50',     border: 'border-sky-100',
     msgs:  142000, rate: '₹0.04', spend:   5680, creditsUsed:    0 },
-  { channel: 'Voice',    icon: VoiceIcon,    color: 'text-violet-600',  bg: 'bg-violet-50',  border: 'border-violet-100',
+  { channel: 'Voice',    icon: VoiceIcon,    color: 'text-violet-400',  bg: 'bg-violet-50',  border: 'border-violet-100',
     msgs:    8400, rate: '₹1.20', spend:  10080, creditsUsed:    0 },
 ];
 

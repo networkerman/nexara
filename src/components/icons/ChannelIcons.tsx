@@ -33,10 +33,10 @@ export const RCSIcon = ({ className }: IconProps) => (
     <rect x="2" y="3" width="20" height="14" rx="3" fill="currentColor" opacity="0.15" />
     <rect x="2" y="3" width="20" height="14" rx="3" stroke="currentColor" strokeWidth="1.5" />
     <path d="M8 21l4-4h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    {/* Google-style coloured dots */}
-    <circle cx="8"  cy="10" r="1.5" fill="#4285F4" />
-    <circle cx="12" cy="10" r="1.5" fill="#EA4335" />
-    <circle cx="16" cy="10" r="1.5" fill="#34A853" />
+    {/* Google-style dots — muted opacity so they don't overpower */}
+    <circle cx="8"  cy="10" r="1.5" fill="#4285F4" fillOpacity="0.55" />
+    <circle cx="12" cy="10" r="1.5" fill="#EA4335" fillOpacity="0.55" />
+    <circle cx="16" cy="10" r="1.5" fill="#34A853" fillOpacity="0.55" />
   </svg>
 );
 

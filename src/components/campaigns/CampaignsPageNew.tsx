@@ -206,11 +206,11 @@ const mockCampaigns: Campaign[] = [
 /* ─── Channel config ─────────────────────────────────────────────────────────── */
 
 const channelConfig: Record<Channel, { icon: React.ElementType; color: string; bg: string }> = {
-  SMS:      { icon: SMSIcon,       color: 'text-indigo-600',  bg: 'bg-indigo-50'  },
-  WhatsApp: { icon: WhatsAppIcon,  color: 'text-[#25D366]',   bg: 'bg-green-50'   },
-  RCS:      { icon: RCSIcon,       color: 'text-[#4285F4]',   bg: 'bg-blue-50'    },
-  Voice:    { icon: VoiceIcon,     color: 'text-violet-600',  bg: 'bg-violet-50'  },
-  Email:    { icon: EmailIcon,     color: 'text-sky-600',     bg: 'bg-sky-50'     },
+  SMS:      { icon: SMSIcon,      color: 'text-indigo-400',  bg: 'bg-indigo-50'  },
+  WhatsApp: { icon: WhatsAppIcon, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+  RCS:      { icon: RCSIcon,      color: 'text-blue-400',    bg: 'bg-blue-50'    },
+  Voice:    { icon: VoiceIcon,    color: 'text-violet-400',  bg: 'bg-violet-50'  },
+  Email:    { icon: EmailIcon,    color: 'text-sky-400',     bg: 'bg-sky-50'     },
 };
 
 /* ─── Status config ──────────────────────────────────────────────────────────── */

@@ -72,25 +72,25 @@ const channelComparison = [
 
 const channelStats = [
   {
-    channel: 'SMS', icon: SMSIcon, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200',
+    channel: 'SMS', icon: SMSIcon, color: 'text-indigo-400', bg: 'bg-indigo-50', border: 'border-indigo-100',
     volume: '2.8M', delivRate: '94.2%', openRate: '28.4%', ctr: '7.2%',
     delivDelta: +0.3, openDelta: -1.1, ctrDelta: +0.4,
     cost: '₹0.12/msg',
   },
   {
-    channel: 'WhatsApp', icon: WhatsAppIcon, color: 'text-[#25D366]', bg: 'bg-green-50', border: 'border-green-200',
+    channel: 'WhatsApp', icon: WhatsAppIcon, color: 'text-emerald-500', bg: 'bg-emerald-50', border: 'border-emerald-100',
     volume: '1.4M', delivRate: '96.8%', openRate: '61.3%', ctr: '18.9%',
     delivDelta: +1.2, openDelta: +3.4, ctrDelta: +2.1,
     cost: '₹0.48/msg',
   },
   {
-    channel: 'RCS', icon: RCSIcon, color: 'text-[#4285F4]', bg: 'bg-blue-50', border: 'border-blue-200',
+    channel: 'RCS', icon: RCSIcon, color: 'text-blue-400', bg: 'bg-blue-50', border: 'border-blue-100',
     volume: '481K', delivRate: '91.4%', openRate: '72.1%', ctr: '31.4%',
     delivDelta: -0.8, openDelta: +5.7, ctrDelta: +4.2,
     cost: '₹0.34/msg',
   },
   {
-    channel: 'Email', icon: EmailIcon, color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-200',
+    channel: 'Email', icon: EmailIcon, color: 'text-sky-400', bg: 'bg-sky-50', border: 'border-sky-100',
     volume: '142K', delivRate: '88.1%', openRate: '22.7%', ctr: '4.3%',
     delivDelta: -2.1, openDelta: -0.5, ctrDelta: -0.3,
     cost: '₹0.04/msg',
