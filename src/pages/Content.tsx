@@ -1,12 +1,8 @@
 import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { CreateTemplate } from '@/components/content/CreateTemplate';
+import { WhatsAppIcon, RCSIcon, SMSIcon, EmailIcon, VoiceIcon } from '@/components/icons/ChannelIcons';
 import {
-  Mail,
-  MessageSquare,
-  MessageCircle,
-  Radio,
-  Phone,
   Image,
   Plus,
   Search,
@@ -100,13 +96,13 @@ const mockMedia: MediaFile[] = [
 /* ─── Channel nav config ─────────────────────────────────────────────────────── */
 
 const channelNav: { id: Channel; label: string; icon: React.ElementType; phase2?: boolean }[] = [
-  { id: 'SMS',      label: 'SMS',          icon: MessageSquare },
-  { id: 'WhatsApp', label: 'WhatsApp',     icon: MessageCircle },
-  { id: 'RCS',      label: 'RCS',          icon: Radio },
-  { id: 'Email',    label: 'Email',        icon: Mail },
-  { id: 'Voice',    label: 'Voice',        icon: Phone,   phase2: true },
-  { id: 'DLT',      label: 'DLT',          icon: FileText },
-  { id: 'Media',    label: 'Media gallery', icon: Image },
+  { id: 'SMS',      label: 'SMS',           icon: SMSIcon      },
+  { id: 'WhatsApp', label: 'WhatsApp',      icon: WhatsAppIcon },
+  { id: 'RCS',      label: 'RCS',           icon: RCSIcon      },
+  { id: 'Email',    label: 'Email',         icon: EmailIcon    },
+  { id: 'Voice',    label: 'Voice',         icon: VoiceIcon,   phase2: true },
+  { id: 'DLT',      label: 'DLT',           icon: FileText     },
+  { id: 'Media',    label: 'Media gallery', icon: Image        },
 ];
 
 /* ─── Status config ──────────────────────────────────────────────────────────── */

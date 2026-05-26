@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { WhatsAppIcon, RCSIcon, SMSIcon, EmailIcon, VoiceIcon } from '@/components/icons/ChannelIcons';
 import {
-  MessageSquare, MessageCircle, Radio, Phone, Mail,
   Plus, MoreHorizontal, CheckCircle2, AlertTriangle, XCircle,
   Clock, RefreshCw, Shield, Zap, Link, Settings,
   ChevronDown, ToggleLeft, ToggleRight, Info, ArrowRight,
@@ -1300,11 +1300,11 @@ const channelNav: {
   id: Channel; label: string; icon: React.ElementType;
   phase2?: boolean; status?: 'live' | 'warn';
 }[] = [
-  { id: 'SMS',       label: 'SMS',       icon: MessageSquare, status: 'warn' },
-  { id: 'WhatsApp',  label: 'WhatsApp',  icon: MessageCircle, status: 'warn' },
-  { id: 'RCS',       label: 'RCS',       icon: Radio },
-  { id: 'Voice',     label: 'Voice',     icon: Phone  },
-  { id: 'Email',     label: 'Email',     icon: Mail   },
+  { id: 'SMS',      label: 'SMS',      icon: SMSIcon,      status: 'warn' },
+  { id: 'WhatsApp', label: 'WhatsApp', icon: WhatsAppIcon, status: 'warn' },
+  { id: 'RCS',      label: 'RCS',      icon: RCSIcon      },
+  { id: 'Voice',    label: 'Voice',    icon: VoiceIcon    },
+  { id: 'Email',    label: 'Email',    icon: EmailIcon    },
 ];
 
 /* ─── Main page ──────────────────────────────────────────────────────────── */
