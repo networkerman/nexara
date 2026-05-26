@@ -1009,7 +1009,7 @@ const Audiences = () => {
 
   return (
     <AppLayout>
-      <div className="flex h-full">
+      <div className="flex flex-1 min-h-0">
 
         {/* Left sub-nav */}
         <aside className="w-[240px] flex-shrink-0 bg-card border-r border-border flex flex-col overflow-y-auto">

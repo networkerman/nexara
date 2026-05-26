@@ -355,7 +355,7 @@ function PageChrome({
   children: React.ReactNode;
 }) {
   return (
-    <div className="h-full flex flex-col bg-background">
+    <div className="flex-1 flex flex-col bg-background min-h-0">
       {/* Top bar */}
       <div className="flex-shrink-0 px-8 py-4 border-b border-border flex items-center gap-3">
         <button

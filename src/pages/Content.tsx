@@ -668,7 +668,7 @@ const Content = () => {
 
   return (
     <AppLayout>
-      <div className="flex h-full">
+      <div className="flex flex-1 min-h-0">
 
         {/* ── Left sub-nav ────────────────────────────────────────── */}
         <aside className="w-[200px] flex-shrink-0 border-r border-border bg-muted/20 flex flex-col py-4">

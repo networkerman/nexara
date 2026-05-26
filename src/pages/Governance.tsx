@@ -718,7 +718,7 @@ const Governance = () => {
 
   return (
     <AppLayout>
-      <div className="flex h-full">
+      <div className="flex flex-1 min-h-0">
 
         {/* Left sub-nav */}
         <aside className="w-[248px] flex-shrink-0 border-r border-border bg-card h-full overflow-y-auto">
