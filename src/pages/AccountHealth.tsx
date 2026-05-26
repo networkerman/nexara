@@ -10,7 +10,7 @@ import {
 import {
   CheckCircle2, AlertTriangle, XCircle,
   TrendingUp, TrendingDown,
-  Phone, MessageSquare, Layers, Mail, Mic,
+  Phone, Mail,
   Shield, Plug2, FileText, HeartPulse,
   ChevronDown, Download, RefreshCw,
   Clock, ArrowUpRight, ArrowDownRight,
@@ -19,6 +19,7 @@ import {
   Bell, ExternalLink,
   ServerCrash, CheckCheck,
 } from 'lucide-react';
+import { WhatsAppIcon, RCSIcon, SMSIcon, EmailIcon, VoiceIcon } from '@/components/icons/ChannelIcons';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -103,13 +104,13 @@ const healthCfg: Record<HealthLevel, { label: string; color: string; bg: string;
 };
 
 const channelIcon: Record<string, React.ElementType> = {
-  SMS: Phone, WhatsApp: MessageSquare, RCS: Layers, Email: Mail, Voice: Mic,
+  SMS: SMSIcon, WhatsApp: WhatsAppIcon, RCS: RCSIcon, Email: EmailIcon, Voice: VoiceIcon,
 };
 const channelColor: Record<string, string> = {
-  SMS: 'text-indigo-600', WhatsApp: 'text-green-600', RCS: 'text-red-600', Email: 'text-sky-600', Voice: 'text-violet-600',
+  SMS: 'text-indigo-400', WhatsApp: 'text-emerald-500', RCS: 'text-blue-400', Email: 'text-sky-400', Voice: 'text-violet-400',
 };
 const channelBg: Record<string, string> = {
-  SMS: 'bg-indigo-50', WhatsApp: 'bg-green-50', RCS: 'bg-red-50', Email: 'bg-sky-50', Voice: 'bg-violet-50',
+  SMS: 'bg-indigo-50', WhatsApp: 'bg-emerald-50', RCS: 'bg-blue-50', Email: 'bg-sky-50', Voice: 'bg-violet-50',
 };
 
 function ScoreRing({ score, size = 96 }: { score: number; size?: number }) {
