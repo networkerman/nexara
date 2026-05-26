@@ -1,5 +1,5 @@
 # OneXtel — Claude Working Guide
-**Branch: `onextel` | PM: Udayan Das Chowdhury | May 2026**
+**Branch: `main` | PM: Udayan Das Chowdhury | May 2026**
 
 ---
 
@@ -8,7 +8,8 @@
 - **Product:** OneXtel — a CPaaS engagement platform (superset of Onextel's existing Aura product)
 - **Codebase name:** Nexara (internal engine name, not visible to users)
 - **`main` branch** = the product. There is no separate `onextel` branch anymore.
-- **Deployed to:** Netlify at `http://localhost:8080` (dev) via `npm run dev`
+- **Dev server:** `http://localhost:8080` via `npm run dev`
+- **Production:** Vercel — auto-deploys on every push to `main`
 
 ---
 
@@ -40,7 +41,7 @@ src/lib/utils.ts    → cn() only. Before writing any utility, check here first.
 **Components**
 - shadcn/ui components live in `src/components/ui/` — use them for primitives (Dialog, Select, Input, etc.)
 - Our custom components do NOT use shadcn Dialog/Sheet for full-page modals — they use fixed-position divs with backdrop
-- Icons: `lucide-react` only. Import individually, not as `* from lucide-react`
+- Icons: `lucide-react` for UI/utility icons. **Channel brand icons** (WhatsApp, RCS, SMS, Email, Voice) → always use `src/components/icons/ChannelIcons.tsx`. Never use generic Lucide icons as channel substitutes. Import Lucide individually, never `* from lucide-react`.
 
 **State**
 - Server state: TanStack Query (`@tanstack/react-query`)
@@ -76,7 +77,7 @@ src/lib/utils.ts    → cn() only. Before writing any utility, check here first.
 |---|---|
 | Add a new page route | `src/App.tsx` + new file in `src/pages/` |
 | Change sidebar nav items | `src/components/layout/AppLayout.tsx` — `primaryNav` array |
-| Add a new channel | Check `src/pages/Channels.tsx` pattern first |
+| Add a new channel | Check `src/pages/Channels.tsx` pattern first, add icon to `src/components/icons/ChannelIcons.tsx` |
 | Shared class helper | `src/lib/utils.ts` → `cn()` |
 | New form with validation | Use `react-hook-form` + `zod` (see CreateCampaignModal.tsx for reference) |
 | Date formatting | Use `luxon` — `DateTime` from `luxon`. NOT `date-fns` (both exist; prefer luxon for new code) |
@@ -89,6 +90,15 @@ src/lib/utils.ts    → cn() only. Before writing any utility, check here first.
 ## Mock Data Policy
 
 All data is currently mocked (no live Supabase reads in the UI). Mock data lives inline in each page/component file. Task #12 (Supabase schema wiring) will replace these. When adding new features, continue the mock pattern — don't try to wire live data until #12 is actioned.
+
+---
+
+## Known Gotchas — Read Before Debugging
+
+- **`bun.lockb` + `package-lock.json` both exist** — Vercel uses npm (ignores bun.lockb). If Vercel fails with "Rollup failed to resolve import X", the package is missing from `package.json`. Fix: `npm install <pkg>`, commit `package.json` + `package-lock.json`.
+- **`CreateCampaignModal` exports both a component and `fmt`** — causes a Vite HMR "fmt export incompatible" warning. Pre-existing, not a bug. Do not split the file to fix this.
+- **Mid-file `import` statements crash React silently** — always put imports at the top of the file. A blank `#root` with no console errors = check for misplaced imports.
+- **Channel icon colours** — use muted shades: `text-indigo-400` (SMS), `text-emerald-500` (WhatsApp), `text-blue-400` (RCS), `text-sky-400` (Email), `text-violet-400` (Voice). Never vivid `-600` shades for channel badges.
 
 ---
 
