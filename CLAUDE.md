@@ -1,121 +1,118 @@
-# OneXtel — Project Context for Claude
+# OneXtel — Claude Working Guide
 **Branch: `onextel` | PM: Udayan Das Chowdhury | May 2026**
 
 ---
 
-## What This Project Is
+## What This Repo Is
 
-This is the `onextel` branch of the Nexara codebase. The product being built is **OneXtel** — a new engagement platform that is a superset of Onextel's existing Aura product.
-
-- **Aura** = current production platform (onexaura.com). Telecoms operator console — SMS/WhatsApp/RCS broadcast tool. Java + React V2.
-- **OneXtel** = new product layer built on top of Nexara (React + Vite + Supabase + Tailwind). Solves the problems Aura never solved.
-- **Nexara** = the codebase/engine name. Not visible to end users.
-- The `main` branch is the Nexara baseline. The `onextel` branch is the product.
+- **Product:** OneXtel — a CPaaS engagement platform (superset of Onextel's existing Aura product)
+- **Codebase name:** Nexara (internal engine name, not visible to users)
+- **`main` branch** = the product. There is no separate `onextel` branch anymore.
+- **Deployed to:** Netlify at `http://localhost:8080` (dev) via `npm run dev`
 
 ---
 
-## Design System
+## Architecture in 8 Lines
 
-All UI follows the **Onextel Design System** — defined in `/AI Projects/onextel/DESIGN.md`.
-
-Key tokens:
-- Primary red: `#FF3535` (Tailwind: `text-primary`, `bg-primary`, or `text-brand-red`)
-- Charcoal: `#2E2E2E` (sidebar background, dark text)
-- Font headings: Pluto → Montserrat fallback (`font-heading`)
-- Font body/UI: Montserrat (`font-sans`)
-- Card shadow at rest: `shadow-el-1` → `0 1px 4px rgba(0,0,0,0.08)`
-- Card shadow on hover: `shadow-el-2` → `0 4px 16px rgba(0,0,0,0.12)`
-- Border radius standard: `rounded-brand-xl` (12px for cards), `rounded-brand-md` (6px for buttons/inputs)
-- Button primary: red fill, white Montserrat Bold 17px, 6px radius, 12px 24px padding
-
----
-
-## The Problem We Are Solving
-
-Full detail in `PROBLEMS.md`. Summary of the 8 problems in priority order:
-
-1. **Data trust** — Delivery counts are wrong. Customers can't trust the platform. "Awaited" transactions get stuck and require manual DB fixes.
-2. **Reporting self-serve** — 1,126 support tickets about reports. Customers call support because the product can't give them their own data.
-3. **Enterprise governance** — No RBAC, no Maker-Checker, no audit log. Blocking every BFSI and Govt deal.
-4. **Failure visibility** — Campaigns fail silently. No alerts, no failure reasons, no template sync status.
-5. **Journey Automation** — Aura is a broadcast tool. No trigger-based, conditional, multi-step sequences.
-6. **Audience Management** — Contacts are a flat phonebook. No segmentation, no event history.
-7. **Unified Content / Templates** — Templates siloed per channel (DLT for SMS, WARCS for WA/RCS). No unified library.
-8. **Channel onboarding** — RCS generated 339 onboarding support tickets. Setup is not self-serve.
+```
+src/pages/          → One file per route. Thin wrappers — import layout + feature component, nothing else.
+src/components/     → Feature components. Heavy logic lives here.
+  layout/           → AppLayout.tsx — sidebar + topbar shell used by every authenticated page
+  campaigns/        → Campaign list, create wizard, row components
+  content/          → Template editor, media library
+  ui/               → shadcn/ui components. DO NOT edit these unless fixing a shadcn bug.
+src/contexts/       → AuthContext (Supabase auth), DevModeContext (sandbox toggle)
+src/types/          → Shared TypeScript types (campaign.ts, database.ts)
+src/lib/utils.ts    → cn() only. Before writing any utility, check here first.
+```
 
 ---
 
-## Current Product Structure (Aura Today)
+## Conventions — Follow These Exactly
 
-What exists in Aura (onexaura.com) that OneXtel must be a superset of:
+**Styling**
+- Tailwind only. No inline styles except `fontFamily: 'var(--font-heading)'` for heading font
+- Design tokens: `text-primary` / `bg-primary` = `#FF3535` (brand red). Never hardcode the hex except in AppLayout logo.
+- Spacing: cards use `rounded-brand-xl` (12px), buttons/inputs use `rounded-brand-md` (6px)
+- Shadows: `shadow-el-1` at rest, `shadow-el-2` on hover
+- `cn()` from `@/lib/utils` for conditional classes — never string concatenation
 
-**Sidebar:** Dashboard · Campaign · User Management · Credits · Channels · Reports · Telco Reports · DLT · API · Phonebook · Config
+**Components**
+- shadcn/ui components live in `src/components/ui/` — use them for primitives (Dialog, Select, Input, etc.)
+- Our custom components do NOT use shadcn Dialog/Sheet for full-page modals — they use fixed-position divs with backdrop
+- Icons: `lucide-react` only. Import individually, not as `* from lucide-react`
 
-**What's shipped and working:**
-- SMS: DLT template management, bulk campaigns, scheduling, Sender ID mapping, reports
-- WhatsApp/RCS: Templates (LTO/Carousel/Catalog/Flows), campaigns, URL shortener, frequency capping, plugins
-- CRM integrations: CleverTap, MoEngage, WebEngage live; Shopify + LeadSquared in progress
-- Reseller/whitelabel mode (partial)
-- Multi-provider setup (multiple WA + RCS vendors)
+**State**
+- Server state: TanStack Query (`@tanstack/react-query`)
+- Local/ephemeral UI state: `useState` / `useReducer`
+- Wizard/canvas state: Zustand (used in Journeys)
+- Global app state: React Context (AuthContext, DevModeContext)
+- Never use localStorage directly — go through the context that owns that concern
 
-**What's NOT in Aura:**
-- Journey automation (entirely absent)
-- Audience segments (only flat phonebook)
-- Unified cross-channel reporting
-- Email channel (marketed, not built)
-- Voice channel (marketed, not built)
-- RBAC (in every platform's P0 backlog)
-- Maker-Checker (being built, currently buggy — PROD-311)
-- Audit log (absent everywhere)
-- AI features (marketed as "AI orchestration", nothing built)
+**Routing**
+- React Router v6. All routes defined in `src/App.tsx`.
+- Page routes use `/*` suffix to allow sub-routes (e.g. `/campaigns/*`)
+- `AppLayout` reads `location.pathname` to derive the topbar title
 
----
-
-## Tech Stack
-
-- **Framework:** React 18 + TypeScript + Vite
-- **Styling:** Tailwind CSS + shadcn/ui components
-- **Backend:** Supabase (auth + database + realtime)
-- **Payments:** Razorpay (already integrated)
-- **State:** TanStack Query for server state
-- **Charts:** Recharts (for dashboards/analytics)
-- **Journey builder:** React Flow + Zustand (planned)
-- **Deploy:** Netlify
+**TypeScript**
+- Strict. No `any`. If you genuinely need escape hatch, use `unknown` + guard.
+- Props interfaces defined inline above the component they belong to (not in a separate types file unless shared across 3+ files)
 
 ---
 
-## Task List (17 tasks)
+## DO NOT TOUCH
 
-See task manager for live status. Dependency order:
-
-**Unblocked now:** #1 Rebrand · #2 Pluto font · #12 Supabase schema · #13 Governance · #14 Credits · #15 Reporting
-
-**Blocked by #1:** #3 Sidebar redesign
-**Blocked by #3:** #4 Dashboard · #5 Campaigns · #6 Audiences · #7 Content · #9 Channels · #11 On-site · #16 Transaction Health
-
-**Blocked by #3 + #12:** #6 Audiences · #7 Content
-**Blocked by #7 + #6 + #12:** #8 Journey Builder
-**Blocked by #5 + #8 + #15:** #10 Analytics
-**Blocked by #3 + #15:** #17 Account Health
+- `src/components/ui/` — shadcn scaffolded files. Edit only to fix a shadcn-specific bug.
+- `src/components/ui/sidebar.tsx` — legacy shadcn sidebar, unused. Do not delete (referenced in older pages).
+- `public/fonts/` — self-hosted Pluto font files. Never modify.
+- `tailwind.config.ts` — design tokens are locked. Ask before adding new tokens.
+- `src/contexts/AuthContext.tsx` — Supabase auth wiring. Fragile, don't refactor without full session context.
 
 ---
 
-## Key Customers to Design For
+## Key Files — Check Before Writing New Code
 
-- **SBI** — 1,295 support tickets. Needs: reliable delivery counts, SFTP report push, RBAC
-- **DMI Finance / Credgenics** — BFSI, needs Maker-Checker
-- **CRIS / NICSI** — Government, needs DLT compliance, template sync, VAPT
-- **KPN** — Fallback routing issues (PROD-345, PROD-389)
-- **Hero FinCorp / OYO / Growtele** — Automated SFTP report delivery
+| Need | File |
+|---|---|
+| Add a new page route | `src/App.tsx` + new file in `src/pages/` |
+| Change sidebar nav items | `src/components/layout/AppLayout.tsx` — `primaryNav` array |
+| Add a new channel | Check `src/pages/Channels.tsx` pattern first |
+| Shared class helper | `src/lib/utils.ts` → `cn()` |
+| New form with validation | Use `react-hook-form` + `zod` (see CreateCampaignModal.tsx for reference) |
+| Date formatting | Use `luxon` — `DateTime` from `luxon`. NOT `date-fns` (both exist; prefer luxon for new code) |
+| Campaign wizard reference | `src/components/campaigns/CreateCampaignModal.tsx` (3003 lines — read before touching) |
+| Template editor reference | `src/components/content/CreateTemplate.tsx` |
+| Auth guard | `src/components/ProtectedRoute.tsx` |
 
 ---
 
-## Source Documents
+## Mock Data Policy
 
-- `/AI Projects/onextel/DESIGN.md` — Full Onextel design system
-- `/AI Projects/nexara/PROBLEMS.md` — Full problem analysis with data sources
-- `/Documents/OneXtel Visions/OneXtel-Product-Teardown-Phase1.docx` — Phase 1 audit
-- `/Documents/OneXtel Visions/onexaura_v2_architecture.html` — V2 architecture diagram
-- `/AI Projects/CPaaS-Competitive-Brief.docx` — Competitive landscape
-- JIRA AURA project — feature backlog (auth: udayan.chowdhury@onextel.com)
-- JIRA PROD project — production issues (376 tickets, Apr–May 2026)
+All data is currently mocked (no live Supabase reads in the UI). Mock data lives inline in each page/component file. Task #12 (Supabase schema wiring) will replace these. When adding new features, continue the mock pattern — don't try to wire live data until #12 is actioned.
+
+---
+
+## Commands
+
+```bash
+npm run dev        # Start dev server on :8080
+npm run build      # Production build
+npm run lint       # ESLint
+npx tsc --noEmit   # Type-check without building (run before every commit)
+```
+
+**Git push:**
+```bash
+git -c credential.helper='!gh auth git-credential' push origin main
+```
+GitHub account: `networkerman`. Never use `--no-verify` or amend pushed commits.
+
+---
+
+## Completed Modules (don't re-build these)
+
+Home · Campaigns (list + CreateCampaignModal wizard) · Audiences · Content (Templates + DLT + Media) · Journeys (canvas) · Analytics · Reports · Channels (SMS/WA/RCS/Email/Voice) · Governance (RBAC + Maker-Checker + Audit) · Credits · Account Health · Transaction Health · Settings (Team/Billing/Developers/Integrations/Config) · Developer Mode (Settings → Developers)
+
+## Pending Modules
+
+\#12 Supabase schema · #22 Live Activity Feed · #23 Integration Hub · #24 Support Centre · #25 What's New · #26 Enterprise Onboarding Wizard
