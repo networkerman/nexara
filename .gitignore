@@ -142,3 +142,10 @@ test-results/
 playwright-report/
 playwright/.cache/
 .vercel
+
+# Secrets / keys — never commit
+rzp-key.csv
+*-key.csv
+*.pem
+*.key
+secrets.*
