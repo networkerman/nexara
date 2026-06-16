@@ -812,10 +812,12 @@ const WIZARD_STORAGE_KEY = 'onextel-campaign-wizard-state';
 const WIZARD_STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCampaignModalProps) {
-  // When the picker pre-selects WhatsApp, skip start/channels and open the
-  // WhatsApp builder directly. Any other entry point starts at 'start'.
+  // Channel is always chosen before this modal opens (row click carries the
+  // campaign's channel; New Campaign goes through the channel picker first), so
+  // open straight into the builder at 'setup'. The 'start'/'channels' picker
+  // steps are only a fallback for the legacy entry with no channel.
   const [currentStep, setCurrentStep] = useState<Step>(
-    initialChannel === 'WhatsApp' ? 'setup' : 'start'
+    initialChannel ? 'setup' : 'start'
   );
   const [legacyMigrationNote, setLegacyMigrationNote] = useState<string | null>(null);
   
@@ -1262,7 +1264,9 @@ export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCam
     if (currentStep === 'channels') {
       setCurrentStep('start');
     } else if (currentStep === 'setup') {
-      setCurrentStep('channels');
+      // Setup is the first step you see (channel already chosen), so Back here
+      // exits the wizard back to the campaign list — never the channel picker.
+      onClose();
     } else if (currentStep === 'audience') {
       setCurrentStep('setup');
     } else if (currentStep === 'content') {
