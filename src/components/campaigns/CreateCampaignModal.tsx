@@ -59,7 +59,7 @@ interface CreateCampaignModalProps {
   initialChannel?: string;
 }
 
-type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
+type Step = 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
 type StepKey = 'setup' | 'audience' | 'content' | 'schedule';
 type StepIndex = 0 | 1 | 2 | 3;
 type StepStatus = 'idle' | 'editing' | 'valid' | 'invalid';
@@ -460,66 +460,6 @@ const SegmentsDropdown = ({
   );
 };
 
-const startOptions = [
-  {
-    id: 'engage',
-    title: 'Engage with users',
-    description: 'Create personalized campaigns and user journeys',
-    icon: MessageSquare,
-  },
-  {
-    id: 'analyze',
-    title: 'Analyze user behaviour',
-    description: 'Create funnels, cohorts, and RFM to measure performance',
-    icon: Search,
-  },
-  {
-    id: 'template',
-    title: 'Create template',
-    description: 'Customize reusable templates for your campaigns',
-    icon: MessageSquareText,
-  },
-  {
-    id: 'contacts',
-    title: 'Manage contacts',
-    description: 'Add contacts, import list or create segment',
-    icon: Users,
-  },
-];
-
-// Channel brand icons imported at top of file
-
-const channelOptions = [
-  {
-    category: 'Journey',
-    items: [
-      { id: 'journey', name: 'Journey', icon: MessageSquare, color: 'text-blue-600' }
-    ]
-  },
-  {
-    category: 'Campaigns',
-    items: [
-      { id: 'email', name: 'Email', icon: Mail, color: 'text-blue-600' },
-      { id: 'sms', name: 'SMS', icon: MessageCircle, color: 'text-purple-600' },
-      { id: 'app-push', name: 'App push', icon: Smartphone, color: 'text-purple-600' },
-      { id: 'web-push', name: 'Web push', icon: Globe, color: 'text-gray-600' },
-    ]
-  },
-  {
-    category: 'Messaging',
-    items: [
-      { id: 'whatsapp', name: 'WhatsApp', icon: WhatsAppIcon, color: 'text-green-600', badge: 'New' },
-      { id: 'rcs', name: 'RCS', icon: GoogleMessagesIcon, color: 'text-blue-600', badge: 'New' },
-    ]
-  },
-  {
-    category: 'On-site',
-    items: [
-      { id: 'in-app', name: 'In-app message', icon: Smartphone, color: 'text-blue-600' },
-      { id: 'web-message', name: 'Web message', icon: Monitor, color: 'text-gray-600' },
-    ]
-  }
-];
 
 const SummaryPanel = ({ formData, currentStep }: { formData: CampaignFormData; currentStep: Step }) => {
   const [expandedSections, setExpandedSections] = useState({
@@ -814,11 +754,8 @@ const WIZARD_STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCampaignModalProps) {
   // Channel is always chosen before this modal opens (row click carries the
   // campaign's channel; New Campaign goes through the channel picker first), so
-  // open straight into the builder at 'setup'. The 'start'/'channels' picker
-  // steps are only a fallback for the legacy entry with no channel.
-  const [currentStep, setCurrentStep] = useState<Step>(
-    initialChannel ? 'setup' : 'start'
-  );
+  // the wizard always opens directly on the builder's first step, Setup.
+  const [currentStep, setCurrentStep] = useState<Step>('setup');
   const [legacyMigrationNote, setLegacyMigrationNote] = useState<string | null>(null);
   
   // Initialize wizard progress with proper state model
@@ -1248,24 +1185,10 @@ export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCam
     );
   };
 
-  const handleStartOptionClick = (optionId: string) => {
-    if (optionId === 'engage') {
-      setCurrentStep('channels');
-    }
-  };
-
-  const handleChannelClick = (channelId: string) => {
-    if (channelId === 'whatsapp') {
-      setCurrentStep('setup');
-    }
-  };
-
   const handleBack = () => {
-    if (currentStep === 'channels') {
-      setCurrentStep('start');
-    } else if (currentStep === 'setup') {
+    if (currentStep === 'setup') {
       // Setup is the first step you see (channel already chosen), so Back here
-      // exits the wizard back to the campaign list — never the channel picker.
+      // exits the wizard back to the campaign list.
       onClose();
     } else if (currentStep === 'audience') {
       setCurrentStep('setup');
@@ -1344,7 +1267,7 @@ export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCam
   };
 
   const handleClose = () => {
-    setCurrentStep('start');
+    setCurrentStep('setup');
     setWizardProgress(initializeWizardProgress());
     clearPersistedState();
     setFormData(normalizeCampaignData({
@@ -2366,99 +2289,6 @@ export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCam
     );
   };
 
-  const renderStartStep = () => (
-    <div className="p-4 sm:p-6">
-      <DialogHeader className="mb-4 sm:mb-6">
-        <DialogTitle className="text-lg sm:text-xl font-semibold">How would you like to start?</DialogTitle>
-      </DialogHeader>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {startOptions.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => handleStartOptionClick(option.id)}
-            className="p-6 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left"
-          >
-            <div className="flex flex-col items-center space-y-4">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                <option.icon className="w-6 h-6 text-primary" />
-              </div>
-              <div className="text-center">
-                <h3 className="font-medium text-foreground">{option.title}</h3>
-                <p className="text-sm text-muted-foreground mt-1">{option.description}</p>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderChannelsStep = () => (
-    <div className="p-4 sm:p-6">
-      <DialogHeader className="mb-4 sm:mb-6">
-        <div className="flex items-center space-x-3">
-          <Button variant="ghost" size="sm" onClick={handleBack}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <DialogTitle className="text-lg sm:text-xl font-semibold">
-            How do you want to engage with your users?
-          </DialogTitle>
-        </div>
-      </DialogHeader>
-
-      <div className="space-y-6">
-        {channelOptions.map((category) => (
-          <div key={category.category}>
-            <h3 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wide">
-              {category.category}
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              {category.items.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleChannelClick(item.id)}
-                  className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors text-left flex items-center space-x-3"
-                >
-                  <item.icon className={`w-5 h-5 ${item.color}`} />
-                  <span className="font-medium text-foreground">{item.name}</span>
-                  {item.badge && (
-                    <span className="bg-warning text-warning-foreground text-xs px-2 py-0.5 rounded-full">
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-8 pt-6 border-t border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1 uppercase tracking-wide">
-              Personalization
-            </h3>
-            <p className="text-xs text-muted-foreground">
-              Advanced options to enhance your campaign
-            </p>
-          </div>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowPersonalizationDrawer(true)}
-            className="flex items-center space-x-2"
-          >
-            <Settings className="w-4 h-4" />
-            <span>Configure</span>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderSetupStep = () => (
     <div className="h-screen flex flex-col lg:flex-row gap-4 lg:gap-6">
       <div className="flex-1 flex flex-col min-w-0">
@@ -2981,8 +2811,6 @@ export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCam
     <>
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className={`${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'w-screen h-screen max-w-none max-h-none' : 'w-[36rem] max-w-[90vw]'} p-0 overflow-hidden ${currentStep === 'setup' || currentStep === 'audience' || currentStep === 'content' || currentStep === 'schedule' || currentStep === 'preview' ? 'left-0 top-0 translate-x-0 translate-y-0' : ''}`}>
-          {currentStep === 'start' && renderStartStep()}
-          {currentStep === 'channels' && renderChannelsStep()}
           {currentStep === 'setup' && renderSetupStep()}
           {currentStep === 'audience' && renderAudienceStep()}
           {currentStep === 'content' && renderContentStep()}
