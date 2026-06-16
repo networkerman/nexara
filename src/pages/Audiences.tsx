@@ -1048,7 +1048,7 @@ const Audiences = () => {
             <p className="text-[12px] text-muted-foreground mt-0.5">{viewMeta[activeView].sub}</p>
           </div>
 
-          <div className="p-6 max-w-[1300px]">
+          <div className="p-6">
             {activeView === 'segments'    && <SegmentsView />}
             {activeView === 'contacts'    && <ContactsView onImport={() => setActiveView('import')} />}
             {activeView === 'import'      && <ImportView />}
