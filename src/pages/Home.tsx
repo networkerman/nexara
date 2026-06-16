@@ -264,7 +264,7 @@ const Home = () => {
         </div>
 
         {/* ── Delivery health chart + Channel summary ─────────────────────── */}
-        <div className="grid grid-cols-[1fr_320px] gap-4">
+        <div className="grid grid-cols-[7fr_2fr] gap-4">
 
           {/* Delivery health chart */}
           <div className="bg-card border border-border rounded-brand-xl p-5 shadow-el-1">
@@ -359,7 +359,7 @@ const Home = () => {
         </div>
 
         {/* ── Active campaigns + Alerts ───────────────────────────────────── */}
-        <div className="grid grid-cols-[1fr_320px] gap-4">
+        <div className="grid grid-cols-[7fr_2fr] gap-4">
 
           {/* Active campaigns */}
           <div className="bg-card border border-border rounded-brand-xl p-5 shadow-el-1">
