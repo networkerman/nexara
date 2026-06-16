@@ -37,6 +37,7 @@ src/lib/utils.ts    → cn() only. Before writing any utility, check here first.
 - Spacing: cards use `rounded-brand-xl` (12px), buttons/inputs use `rounded-brand-md` (6px)
 - Shadows: `shadow-el-1` at rest, `shadow-el-2` on hover
 - `cn()` from `@/lib/utils` for conditional classes — never string concatenation
+- **Page content width:** data/dashboard pages wrap content in `p-6 max-w-[1400px] mx-auto` (Home, Analytics, Reports, Credits, Account Health, Journeys). Sidebar-nav pages (Content, Audiences, Channels, Governance) use `flex flex-1 min-h-0` to fill fluidly. This keeps content scaling in step with the L1 sidebar expand/collapse. Settings (`max-w-[800px]`) and legal pages (`max-w-4xl`) stay intentionally narrow — do not widen.
 
 **Components**
 - shadcn/ui components live in `src/components/ui/` — use them for primitives (Dialog, Select, Input, etc.)

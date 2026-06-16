@@ -182,7 +182,7 @@ const Home = () => {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-[1280px] mx-auto space-y-6">
+      <div className="p-6 max-w-[1400px] mx-auto space-y-6">
 
         {/* ── Page header ─────────────────────────────────────────────────── */}
         <div className="flex items-end justify-between">
