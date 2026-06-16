@@ -733,7 +733,7 @@ const Analytics = () => {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-[1400px] mx-auto">
+      <div className="w-full p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>

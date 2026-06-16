@@ -37,7 +37,8 @@ src/lib/utils.ts    → cn() only. Before writing any utility, check here first.
 - Spacing: cards use `rounded-brand-xl` (12px), buttons/inputs use `rounded-brand-md` (6px)
 - Shadows: `shadow-el-1` at rest, `shadow-el-2` on hover
 - `cn()` from `@/lib/utils` for conditional classes — never string concatenation
-- **Page content width:** data/dashboard pages wrap content in `p-6 max-w-[1400px] mx-auto` (Home, Analytics, Reports, Credits, Account Health, Journeys). Sidebar-nav pages (Content, Audiences, Channels, Governance) use `flex flex-1 min-h-0` to fill fluidly. This keeps content scaling in step with the L1 sidebar expand/collapse. Settings (`max-w-[800px]`) and legal pages (`max-w-4xl`) stay intentionally narrow — do not widen.
+- **Page content width:** the AppLayout content container (`max-w-[1440px] mx-auto`) is the SINGLE source of max content width. Data pages wrap content in `w-full p-6` (NOT `max-w-[…] mx-auto`) so they fill that container and scale with the L1 sidebar. Sidebar-nav pages (Content, Audiences, Channels, Governance) use `flex flex-1 min-h-0`. Settings (`max-w-[800px]`) and legal pages (`max-w-4xl`) stay intentionally narrow — do not widen.
+  - **GOTCHA:** the AppLayout container is `flex flex-col`. A direct child with `mx-auto` (auto cross-axis margins) **collapses to its content width** and stops stretching/scaling — this silently breaks L1 width scaling. Use `w-full` on page roots, never `mx-auto`, for full-width data pages. To centre a narrower block, nest it: `w-full` outer → `max-w-[…] mx-auto` inner.
 
 **Components**
 - shadcn/ui components live in `src/components/ui/` — use them for primitives (Dialog, Select, Input, etc.)
