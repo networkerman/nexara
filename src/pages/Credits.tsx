@@ -515,8 +515,8 @@ function AlertsTab() {
               >
                 <span
                   className={cn(
-                    'absolute top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform duration-200',
-                    a.enabled ? 'translate-x-5' : 'translate-x-0.5'
+                    'absolute left-0.5 top-0.5 w-4.5 h-4.5 bg-white rounded-full shadow transition-transform duration-200',
+                    a.enabled ? 'translate-x-[18px]' : 'translate-x-0'
                   )}
                   style={{ width: '18px', height: '18px' }}
                 />
