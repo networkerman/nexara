@@ -312,9 +312,11 @@ export function AppLayout({ children }: AppLayoutProps) {
             </div>
           </header>
 
-          {/* Page content */}
+          {/* Page content — fully fluid: fills the viewport at any width, floored
+              at 900px so it never gets cramped on small screens. No max cap, so
+              large/ultra-wide monitors use the full available space. */}
           <main className="flex-1 flex flex-col overflow-x-auto overflow-y-auto min-h-0">
-            <div className="w-full min-w-[900px] max-w-[1440px] mx-auto flex-1 flex flex-col">
+            <div className="w-full min-w-[900px] flex-1 flex flex-col">
               {children}
             </div>
           </main>
