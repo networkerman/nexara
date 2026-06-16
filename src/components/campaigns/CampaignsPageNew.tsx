@@ -247,7 +247,7 @@ const channelOptions: { channel: Channel; label: string; desc: string; phase2?: 
   { channel: 'Email',    label: 'Email',     desc: 'HTML and AMP emails at scale', phase2: true },
 ];
 
-function ChannelPickerModal({ onClose }: { onClose: () => void }) {
+function ChannelPickerModal({ onClose, onSelect }: { onClose: () => void; onSelect: (channel: Channel) => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
@@ -273,6 +273,7 @@ function ChannelPickerModal({ onClose }: { onClose: () => void }) {
               <button
                 key={channel}
                 disabled={phase2}
+                onClick={() => !phase2 && onSelect(channel)}
                 className={cn(
                   'flex items-center gap-4 px-4 py-3.5 rounded-brand-lg border text-left transition-all',
                   phase2
@@ -508,6 +509,7 @@ export function CampaignsPageNew() {
   const [showNewModal, setShowNewModal]         = useState(false);
   const [repushTarget, setRepushTarget]         = useState<Campaign | null>(null);
   const [showCampaignModal, setShowCampaignModal] = useState(false);
+  const [campaignChannel, setCampaignChannel]   = useState<Channel | undefined>(undefined);
 
   const filtered = useMemo(() => {
     return mockCampaigns.filter(c => {
@@ -685,7 +687,7 @@ export function CampaignsPageNew() {
                     key={c.id}
                     campaign={c}
                     onRepush={setRepushTarget}
-                    onSelect={() => setShowCampaignModal(true)}
+                    onSelect={() => { setCampaignChannel(c.channel); setShowCampaignModal(true); }}
                   />
                 ))}
               </tbody>
@@ -703,9 +705,24 @@ export function CampaignsPageNew() {
       </div>
 
       {/* Modals */}
-      {showNewModal        && <ChannelPickerModal onClose={() => setShowNewModal(false)} />}
+      {showNewModal        && (
+        <ChannelPickerModal
+          onClose={() => setShowNewModal(false)}
+          onSelect={(channel) => {
+            setShowNewModal(false);
+            setCampaignChannel(channel);
+            setShowCampaignModal(true);
+          }}
+        />
+      )}
       {repushTarget        && <RepushModal campaign={repushTarget} onClose={() => setRepushTarget(null)} />}
-      {showCampaignModal   && <CreateCampaignModal open={showCampaignModal} onClose={() => setShowCampaignModal(false)} />}
+      {showCampaignModal   && (
+        <CreateCampaignModal
+          open={showCampaignModal}
+          onClose={() => { setShowCampaignModal(false); setCampaignChannel(undefined); }}
+          initialChannel={campaignChannel}
+        />
+      )}
     </>
   );
 }

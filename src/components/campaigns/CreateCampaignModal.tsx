@@ -51,6 +51,12 @@ import {
 interface CreateCampaignModalProps {
   open: boolean;
   onClose: () => void;
+  /**
+   * When launched from the channel picker, jump straight into that channel's
+   * builder instead of the generic "How would you like to start?" screen.
+   * 'WhatsApp' opens the full WhatsApp campaign builder at the Setup step.
+   */
+  initialChannel?: string;
 }
 
 type Step = 'start' | 'channels' | 'setup' | 'audience' | 'content' | 'schedule' | 'preview';
@@ -805,8 +811,12 @@ const normalizeCampaignData = (data: any): CampaignFormData => {
 const WIZARD_STORAGE_KEY = 'onextel-campaign-wizard-state';
 const WIZARD_STORAGE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
-export function CreateCampaignModal({ open, onClose }: CreateCampaignModalProps) {
-  const [currentStep, setCurrentStep] = useState<Step>('start');
+export function CreateCampaignModal({ open, onClose, initialChannel }: CreateCampaignModalProps) {
+  // When the picker pre-selects WhatsApp, skip start/channels and open the
+  // WhatsApp builder directly. Any other entry point starts at 'start'.
+  const [currentStep, setCurrentStep] = useState<Step>(
+    initialChannel === 'WhatsApp' ? 'setup' : 'start'
+  );
   const [legacyMigrationNote, setLegacyMigrationNote] = useState<string | null>(null);
   
   // Initialize wizard progress with proper state model
