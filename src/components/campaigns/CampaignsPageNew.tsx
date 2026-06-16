@@ -8,7 +8,6 @@ import {
   Copy,
   BarChart2,
   X,
-  Filter,
   Download,
   AlertTriangle,
   CheckCircle2,
@@ -435,13 +434,6 @@ function CampaignRowItem({ campaign, onRepush, onSelect }: {
         </div>
       </td>
 
-      {/* Channel badge */}
-      <td className="px-4 py-3.5">
-        <span className={cn('text-[11px] font-semibold px-2 py-0.5 rounded-brand-xs', chCfg.bg, chCfg.color)}>
-          {campaign.channel}
-        </span>
-      </td>
-
       {/* Status */}
       <td className="px-4 py-3.5">
         <span className={cn('inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-brand-full', stCfg.chip)}>
@@ -647,10 +639,6 @@ export function CampaignsPageNew() {
                 className="pl-9 pr-3 py-1.5 text-[13px] bg-muted border border-border rounded-brand-md focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 w-[220px] placeholder:text-muted-foreground/60"
               />
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-brand-md transition-colors border border-border">
-              <Filter className="w-3.5 h-3.5" />
-              Filter
-            </button>
           </div>
         </div>
 
@@ -666,7 +654,7 @@ export function CampaignsPageNew() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/30">
-                  {['Campaign', 'Channel', 'Status', 'Sent On', 'Recipients', 'Delivered', 'Failed', 'Delivery Rate', ''].map(h => (
+                  {['Campaign', 'Status', 'Sent On', 'Recipients', 'Delivered', 'Failed', 'Delivery Rate', ''].map(h => (
                     <th
                       key={h}
                       className={cn(
