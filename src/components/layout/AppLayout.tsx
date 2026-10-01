@@ -16,6 +16,8 @@ import {
   ChevronsUpDown,
   HeartPulse,
   FlaskConical,
+  Sparkles,
+  Target,
 } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -28,10 +30,14 @@ interface NavItem {
   href: string;
   icon: React.ElementType;
   locked?: boolean;
+  /** Served by the xAura sub-app (/xaura/*), not this router — full-page link. */
+  external?: boolean;
 }
 
 const primaryNav: NavItem[] = [
   { name: 'Home',       href: '/',           icon: Home      },
+  { name: 'xAura',      href: '/xaura/',     icon: Sparkles, external: true },
+  { name: 'Decisioning', href: '/xaura/decisioning-engine', icon: Target, external: true },
   { name: 'Campaigns',  href: '/campaigns',  icon: Megaphone },
   { name: 'Journeys',   href: '/journeys',   icon: Route     },
   { name: 'Audiences',  href: '/audiences',  icon: Users     },
@@ -100,6 +106,29 @@ function SidebarItem({ item, expanded }: SidebarItemProps) {
           Soon
         </span>
       </div>
+    );
+  }
+
+  if (item.external) {
+    return (
+      <a
+        href={item.href}
+        title={!expanded ? item.name : undefined}
+        className={cn(
+          'group flex items-center rounded-brand-md transition-colors duration-150 relative text-white/55 hover:text-white/90 hover:bg-white/[0.05]',
+          expanded ? 'gap-3 px-3 py-2.5' : 'justify-center py-2.5 px-0',
+        )}
+      >
+        <item.icon className="w-[18px] h-[18px] flex-shrink-0 text-[#8FA8FF]" />
+        <span
+          className={cn(
+            'text-[13px] font-medium leading-none whitespace-nowrap transition-all duration-200 overflow-hidden',
+            expanded ? 'opacity-100 max-w-[160px]' : 'opacity-0 max-w-0',
+          )}
+        >
+          {item.name}
+        </span>
+      </a>
     );
   }
 
@@ -290,6 +319,15 @@ export function AppLayout({ children }: AppLayoutProps) {
                   SANDBOX
                 </div>
               )}
+
+              {/* Ask xAura — jumps into the AI copilot sub-app */}
+              <a
+                href="/xaura/"
+                className="flex items-center gap-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#2F68E5] to-[#7B4DFF] px-3 py-1.5 rounded-full hover:opacity-90 transition-opacity"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                Ask xAura
+              </a>
 
               {/* Status pill */}
               <div className="flex items-center gap-1.5 text-xs font-medium text-success bg-success/10 px-2.5 py-1 rounded-full">

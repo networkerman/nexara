@@ -1,0 +1,879 @@
+/* Manrope is loaded via the @fontsource/manrope library (see src/main.tsx) */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* =========================================================================
+     COLOR SYSTEM — all colors live here, expressed in OKLCH.
+     See COLORS.md for the full palette, roles, and source-hex mapping.
+
+     Two conventions:
+     1. Functional shadcn tokens (--background, --primary, --border, …) are
+        stored as BARE oklch channels "L C H" so Tailwind can inject alpha via
+        `oklch(var(--x) / <alpha-value>)` (keeps utilities like `bg-primary/80`).
+     2. Palette tokens (--color-*) are the brand/neutral library, stored as
+        full `oklch(...)` values and used directly via `var(--color-*)`.
+     ========================================================================= */
+  :root {
+    /* ---- Functional tokens (bare oklch channels) ---- */
+    --background: 1 0 0;
+    --foreground: 0.137 0.036 258.526;
+
+    --card: 1 0 0;
+    --card-foreground: 0.137 0.036 258.526;
+
+    --popover: 1 0 0;
+    --popover-foreground: 0.137 0.036 258.526;
+
+    --primary: 0.208 0.04 265.727;
+    --primary-foreground: 0.984 0.003 247.858;
+
+    --secondary: 0.968 0.007 247.895;
+    --secondary-foreground: 0.208 0.04 265.727;
+
+    --muted: 0.968 0.007 247.895;
+    --muted-foreground: 0.555 0.041 257.44;
+
+    --accent: 0.754 0.125 243.665;
+    --accent-foreground: 1 0 0;
+
+    --destructive: 0.637 0.208 25.326;
+    --destructive-foreground: 0.984 0.003 247.858;
+
+    --border: 0.929 0.013 255.532;
+    --input: 0.929 0.013 255.532;
+    --input-border: 0.863 0.022 256.738;
+    --ring: 0.137 0.036 258.526;
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0.985 0 0;
+    --sidebar-foreground: 0.37 0.012 285.801;
+    --sidebar-primary: 0.21 0.006 285.884;
+    --sidebar-primary-foreground: 0.985 0 0;
+    --sidebar-accent: 0.968 0.001 286.375;
+    --sidebar-accent-foreground: 0.21 0.006 285.884;
+    --sidebar-border: 0.928 0.006 264.531;
+    --sidebar-ring: 0.623 0.188 259.796;
+
+    --avatar-bg: oklch(0.911 0.018 271.219 / 0.2);
+    --tertiary-foreground: 0.523 0.036 285.093;
+    --header-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+    --footer-shadow: 0 -1px 2px 0 oklch(0 0 0 / 0.05);
+    --input-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.05);
+
+    /* ---- Palette library (full oklch) ---- */
+    /* Neutrals — text & surfaces (dark → light) */
+    --color-ink: oklch(0.227 0.066 279.78);          /* primary text / darkest */
+    --color-charcoal: oklch(0.293 0.023 235.598);    /* dark slate surfaces/text */
+    --color-slate: oklch(0.393 0.012 238.826);       /* secondary text (Slate/800) */
+    --color-grey: oklch(0.553 0.046 284.785);        /* secondary/tertiary grey text */
+    --color-grey-soft: oklch(0.713 0.024 260.709);   /* muted / placeholder / disabled */
+    --color-line-strong: oklch(0.87 0 0);            /* strong borders & dividers */
+    --color-line: oklch(0.928 0.006 264.531);        /* default borders */
+    --color-line-input: oklch(0.913 0.017 267.783);  /* input / field borders */
+    --color-surface-2: oklch(0.952 0.006 264.532);   /* soft surface */
+    --color-surface-1: oklch(0.966 0.005 258.325);   /* muted surface */
+    --color-surface-0: oklch(0.985 0.002 247.839);   /* subtle surface */
+    --color-white: oklch(1 0 0);
+
+    /* Royal blue — primary action (unified from all action blues) */
+    --color-royal: oklch(0.554 0.199 263.043);       /* #2F68E5 primary action */
+    --color-royal-strong: oklch(0.441 0.205 262.067);/* pressed / border / hover-dark */
+    --color-royal-pale: oklch(0.953 0.022 260.723);  /* pale tint background */
+    --color-royal-pale-soft: oklch(0.978 0.01 261.789);/* softer pale tint */
+
+    /* Navy / cobalt — kept brand secondary (gradients, avatars) */
+    --color-navy: oklch(0.394 0.147 261.904);
+    --color-navy-deep: oklch(0.32 0.128 259.637);
+    --color-navy-deepest: oklch(0.251 0.093 258.021);
+    --color-steel: oklch(0.426 0.108 247.015);
+
+    /* Semantic / accent */
+    --color-success: oklch(0.639 0.145 155.921);
+    --color-mint: oklch(0.726 0.155 164.016);
+    --color-warning: oklch(0.765 0.144 81.869);
+    --color-orange: oklch(0.681 0.208 41.372);
+    --color-danger: oklch(0.576 0.209 29.482);
+    --color-pink: oklch(0.832 0.12 343.407);
+    --color-plum: oklch(0.257 0.038 310.318);        /* logo disc background */
+  }
+
+  .dark {
+    --background: 0.246 0.003 274.881;
+    --foreground: 1 0 0;
+
+    --card: 0.287 0.005 271.245;
+    --card-foreground: 1 0 0;
+
+    --popover: 0.276 0.007 268.603;
+    --popover-foreground: 1 0 0;
+
+    --primary: 0.985 0 0;
+    --primary-foreground: 0.21 0.006 285.884;
+
+    --secondary: 0.287 0.005 271.245;
+    --secondary-foreground: 0.985 0 0;
+
+    --muted: 0.287 0.005 271.245;
+    --muted-foreground: 0.789 0 0;
+
+    --accent: 0.754 0.125 243.665;
+    --accent-foreground: 1 0 0;
+
+    --destructive: 0.396 0.133 25.721;
+    --destructive-foreground: 0.985 0 0;
+
+    --border: 0.378 0.003 264.524;
+    --input: 0.328 0.004 271.282;
+    --input-border: 0.462 0.003 286.288;
+    --ring: 0.754 0.125 243.665;
+
+    --sidebar-background: 0.21 0.006 285.884;
+    --sidebar-foreground: 0.968 0.001 286.375;
+    --sidebar-primary: 0.488 0.217 264.388;
+    --sidebar-primary-foreground: 1 0 0;
+    --sidebar-accent: 0.274 0.006 286.033;
+    --sidebar-accent-foreground: 0.968 0.001 286.375;
+    --sidebar-border: 0.274 0.006 286.033;
+    --sidebar-ring: 0.623 0.188 259.796;
+
+    --avatar-bg: oklch(0.911 0.018 271.219 / 0.2);
+    --tertiary-foreground: 0.789 0 0;
+    --header-shadow: 0px 14px 23px oklch(0.243 0 0 / 0.6);
+    --footer-shadow: 0px -14px 23px oklch(0.221 0 0 / 0.6);
+    --input-shadow: 0px 4px 8px oklch(0 0 0 / 0.12);
+
+    /* ---- Palette library (full oklch) — dark overrides ----
+       The neutral ramp inverts: ink→near-white text, surfaces darken, lines
+       lighten relative to the dark canvas. Brand/semantic accents are lifted
+       in lightness so they stay legible on dark surfaces. */
+    /* Neutrals — text & surfaces (inverted) */
+    --color-ink: oklch(0.985 0 0);                   /* primary text (near-white) */
+    --color-charcoal: oklch(0.92 0.005 260);         /* strong secondary text */
+    --color-slate: oklch(0.85 0.008 260);            /* secondary text */
+    --color-grey: oklch(0.72 0.02 264);              /* tertiary grey text */
+    --color-grey-soft: oklch(0.6 0.02 262);          /* muted / placeholder / disabled */
+    --color-line-strong: oklch(0.44 0.004 264);      /* strong borders & dividers */
+    --color-line: oklch(0.378 0.003 265);            /* default borders */
+    --color-line-input: oklch(0.42 0.004 267);       /* input / field borders */
+    --color-surface-2: oklch(0.33 0.004 271);        /* soft surface (raised) */
+    --color-surface-1: oklch(0.3 0.004 271);         /* muted surface */
+    --color-surface-0: oklch(0.276 0.004 274);       /* subtle surface (base card) */
+    --color-white: oklch(0.287 0.005 271);           /* was pure white — now a dark surface */
+
+    /* Royal blue — primary action (lifted for dark bg) */
+    --color-royal: oklch(0.62 0.19 263);
+    --color-royal-strong: oklch(0.7 0.16 263);       /* hover/pressed now goes lighter */
+    --color-royal-pale: oklch(0.33 0.06 263);        /* dark-tinted pale background */
+    --color-royal-pale-soft: oklch(0.3 0.04 263);
+
+    /* Navy / cobalt — brand secondary (lifted) */
+    --color-navy: oklch(0.55 0.15 262);
+    --color-navy-deep: oklch(0.48 0.14 260);
+    --color-navy-deepest: oklch(0.42 0.12 258);
+    --color-steel: oklch(0.58 0.11 247);
+
+    /* Semantic / accent — nudged brighter for contrast on dark */
+    --color-success: oklch(0.72 0.16 156);
+    --color-mint: oklch(0.78 0.16 164);
+    --color-warning: oklch(0.8 0.15 82);
+    --color-orange: oklch(0.72 0.2 41);
+    --color-danger: oklch(0.68 0.2 26);
+    --color-pink: oklch(0.85 0.12 343);
+    --color-plum: oklch(0.4 0.08 310);               /* logo disc background */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    @apply bg-main-app-bg bg-cover bg-top bg-no-repeat min-h-screen fixed inset-0;
+    font-family: 'Manrope', sans-serif;
+  }
+
+  /* Enforce Manrope across the entire app — no other fonts should render */
+  html,
+  body,
+  button,
+  input,
+  textarea,
+  select {
+    font-family: 'Manrope', sans-serif;
+  }
+}
+
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border/70 rounded hover:bg-border;
+}
+
+/* Scroll containers whose scrollbar stays hidden until the container is
+   hovered (campaigns page column, tab strip, table). Keeps the layout stable —
+   the gutter is reserved, only the thumb fades in. */
+.scroll-slim {
+  scrollbar-width: thin;            /* Firefox */
+  scrollbar-color: transparent transparent;
+}
+.scroll-slim:hover {
+  scrollbar-color: oklch(var(--border) / 0.7) transparent;
+}
+.scroll-slim::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+.scroll-slim:hover::-webkit-scrollbar-thumb {
+  @apply bg-border/70 rounded hover:bg-border;
+}
+
+/* Thinking text shimmer - gradient moves across the text */
+.thinking-shimmer-gradient {
+  background: linear-gradient(
+    to right,
+    var(--color-grey) 0%,
+    var(--color-grey) 40%,
+    var(--color-ink) 50%,
+    var(--color-grey) 60%,
+    var(--color-grey) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerMove 2.5s ease-in-out infinite;
+}
+
+.dark .thinking-shimmer-gradient {
+  background: linear-gradient(
+    to right,
+    var(--color-grey) 0%,
+    var(--color-grey) 40%,
+    var(--color-line-strong) 50%,
+    var(--color-grey) 60%,
+    var(--color-grey) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@keyframes shimmerMove {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Chat input textarea — stays scrollable past 4 lines, but the scrollbar only
+   appears on hover (modern, uncluttered). */
+.chat-input-scroll {
+  scrollbar-width: none; /* Firefox */
+}
+.chat-input-scroll::-webkit-scrollbar {
+  width: 0;
+}
+.chat-input-scroll:hover {
+  scrollbar-width: thin;
+}
+.chat-input-scroll:hover::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-input-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+.chat-input-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-strong);
+}
+
+/* Attachments row — single horizontal line, scrollable but with no visible
+   scrollbar handle in any state. */
+.attachments-scroll {
+  scrollbar-width: none; /* Firefox */
+}
+.attachments-scroll::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+/* ===========================================================================
+   Atmosphere (Settings → Translucent sidebar theme).
+   When enabled, the selected preset gradient replaces the page background and
+   surfaces tagged `.atmo-glass` turn into frosted glass (56% white + 40px blur)
+   so the gradient shows through. Driven by AtmosphereContext via the
+   data-atmo attribute + --atmo-page-gradient on :root.
+   =========================================================================== */
+/* Atmosphere is always active when enabled — EXCEPT in the minimized widget view
+   where we suppress it so the default app background image shows through. */
+:root[data-atmo="on"]:not([data-chat-minimized]) body {
+  background-image: var(--atmo-page-gradient, none);
+  background-attachment: fixed;
+}
+
+/* Frosted-glass surface — only "activates" while atmosphere is on and not minimized;
+   otherwise stays a normal opaque surface so the off-state look is unchanged.
+   Values match the Figma translucent spec: 88% white + 20px backdrop blur. */
+:root[data-atmo="on"]:not([data-chat-minimized]) .atmo-glass {
+  background-color: oklch(1 0 0 / 0.88) !important;
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+/* RHS header gets the frosted background WITHOUT backdrop-filter.
+   backdrop-filter creates a clipping context in WebKit/Blink that swallows
+   absolutely-positioned tooltip children — using background-color only avoids
+   that browser quirk while keeping the same visual frosted appearance. */
+:root[data-atmo="on"]:not([data-chat-minimized]) .atmo-glass-header {
+  background-color: oklch(1 0 0 / 0.88) !important;
+}
+
+/* End-of-conversation feedback nudge — rises in from the bottom with a soft
+   ease-out overshoot so it doesn't pop in abruptly. */
+@keyframes feedbackNudgeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.feedback-nudge-in {
+  animation: feedbackNudgeIn 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Typed-trigger suggestions ("How do I…") — the list drops in from the top and
+   fades up to full opacity, with each row staggered slightly after the last so
+   the block reads as unfurling downward rather than popping in. */
+@keyframes suggestDropIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.suggest-drop-in {
+  animation: suggestDropIn 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+/* Figma shimmer palette — shared by input + welcome card shimmers */
+:root {
+  --shimmer-blue: var(--color-royal);
+  --shimmer-pink: var(--color-pink);
+  --shimmer-orange: var(--color-orange);
+  --shimmer-teal: var(--color-steel);
+}
+
+/* Chat-input shimmer (active while a conversation is in progress).
+   Two independent layers, per the reference:
+   1. .input-border-shimmer — a rotating conic gradient clipped to the border ring
+   2. .input-inner-shimmer   — soft radial color blobs revealed by a rotating
+                               conic mask, so the inner gradient sweeps around. */
+@property --input-shimmer-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* Snake-border CTA (Ask xAura button).
+   Matches the Figma "Snake Border CTA": ONE stroke. A single ring element holds
+   both a solid grey base (bottom background layer) and a bright blue snake
+   segment (top conic layer) that travels clockwise. Where the conic is
+   transparent the grey base shows through, so the grey ring is continuous and
+   the snake rides on top of it — no second concentric border, no gaps.
+   The button itself must NOT set a CSS border (that would sit outside this
+   overlay's padding box and create a second ring). */
+@property --snake-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.snake-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    conic-gradient(
+      from var(--snake-angle),
+      transparent 0deg,
+      transparent 255deg,
+      rgba(47, 104, 229, 0) 280deg,
+      #2F68E5 330deg,
+      #6f9bf0 350deg,
+      rgba(47, 104, 229, 0) 360deg
+    ),
+    #dee5f0;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: snakeSpin 3s linear infinite;
+}
+
+@keyframes snakeSpin {
+  to { --snake-angle: 360deg; }
+}
+
+/* Decisioning empty-state flow diagram ---------------------------------- */
+
+/* A single bright pulse that RELAYS through the decisioning path in order —
+   signal -> engine -> selected action -> learn -> feed back — then repeats.
+   All segments share one master duration and start delay; each segment only
+   travels during its own slice of the cycle and stays fully off-path (hidden)
+   before and after, so exactly one dot is ever moving and it hands off cleanly
+   from one connector to the next.
+
+   Paths set pathLength="1" with stroke-dasharray "0.16 1", so offsets are in
+   normalised 0..1 units. Offset 0.16 parks the dash just before the start
+   (hidden); -1 parks it just past the end (hidden). */
+@keyframes flowSeg1 {
+  0% { stroke-dashoffset: 0.16; }
+  20% { stroke-dashoffset: -1; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes flowSeg2 {
+  0%, 20% { stroke-dashoffset: 0.16; }
+  44% { stroke-dashoffset: -1; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes flowSeg3 {
+  0%, 44% { stroke-dashoffset: 0.16; }
+  68% { stroke-dashoffset: -1; }
+  100% { stroke-dashoffset: -1; }
+}
+@keyframes flowSeg4 {
+  0%, 68% { stroke-dashoffset: 0.16; }
+  92% { stroke-dashoffset: -1; }
+  100% { stroke-dashoffset: -1; }
+}
+
+/* A left-to-right shine sweep across a card, fired once per relay cycle as the
+   pulse arrives (last ~1s of the shared 5s cycle) — signals "this action was
+   taken". Held off-screen the rest of the cycle. A white streak is invisible
+   on a white card, so the visible tint is applied on the element itself. */
+@keyframes cardShine {
+  0%, 80% { transform: translateX(-160%) skewX(-12deg); }
+  100% { transform: translateX(320%) skewX(-12deg); }
+}
+
+/* Gentle node halo — a soft breathing ring, deliberately small so it never
+   reaches the connectors (unlike Tailwind's animate-ping, which scales to 2x
+   and swallowed the arrows). */
+@keyframes deHalo {
+  0% { transform: scale(0.9); opacity: 0.55; }
+  70% { transform: scale(1.18); opacity: 0; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+/* Amber variant — the decisioning-engine icon on the dark L1 rail. Same
+   rotating snake, but in the icon's peach/orange palette over a faint warm
+   base ring instead of the light-blue-on-white treatment. */
+.snake-border--amber {
+  background:
+    conic-gradient(
+      from var(--snake-angle),
+      transparent 0deg,
+      transparent 255deg,
+      rgba(255, 154, 68, 0) 280deg,
+      #ff9a44 330deg,
+      #ffc744 350deg,
+      rgba(255, 154, 68, 0) 360deg
+    ),
+    rgba(255, 154, 68, 0.28);
+  animation: none;
+}
+
+/* Green variant — the live decisioning objective card. Same travelling snake
+   as the xAura CTA, in the card's success-green palette over a solid
+   green base ring so the border stays continuous with a bright segment
+   sweeping around it. */
+.snake-border--green {
+  background:
+    conic-gradient(
+      from var(--snake-angle),
+      transparent 0deg,
+      transparent 255deg,
+      rgba(0, 196, 140, 0) 280deg,
+      #00c48c 330deg,
+      #5ce0bd 350deg,
+      rgba(0, 196, 140, 0) 360deg
+    ),
+    #00c48c;
+}
+
+.input-border-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  z-index: 1;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--input-shimmer-angle),
+    var(--shimmer-blue) 0deg,
+    var(--shimmer-pink) 40deg,
+    var(--shimmer-orange) 75deg,
+    var(--color-white) 105deg,
+    var(--color-white) 255deg,
+    var(--shimmer-teal) 285deg,
+    var(--shimmer-blue) 325deg,
+    var(--shimmer-blue) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(var(--color-white) 0 0) content-box,
+    linear-gradient(var(--color-white) 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(var(--color-white) 0 0) content-box,
+    linear-gradient(var(--color-white) 0 0);
+  mask-composite: exclude;
+  animation: inputShimmerSpin 4s linear infinite;
+}
+
+.input-inner-shimmer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.9;
+  /* Thin color wisps along the top/bottom edges (per reference) — keeping the
+     blobs off-center is what prevents the conic mask's center "pinch". */
+  background:
+    radial-gradient(ellipse 156px 30px at 84% 0%, color-mix(in srgb, var(--shimmer-blue) 42%, transparent), transparent 72%),
+    radial-gradient(ellipse 176px 40px at 9% 100%, color-mix(in srgb, var(--shimmer-pink) 36%, transparent), transparent 74%),
+    radial-gradient(ellipse 156px 34px at 52% 100%, color-mix(in srgb, var(--shimmer-orange) 28%, transparent), transparent 78%),
+    radial-gradient(ellipse 116px 24px at 30% 0%, color-mix(in srgb, var(--shimmer-teal) 22%, transparent), transparent 75%);
+  /* Exact reference compositing: conic reveal ∩ vertical edge-fade, then the
+     horizontal edge-fade added on top — produces the smooth perimeter sweep. */
+  -webkit-mask-image:
+    conic-gradient(
+      from var(--input-shimmer-angle),
+      transparent 0%,
+      transparent 18%,
+      oklch(1 0 0 / 0.24) 26%,
+      oklch(1 0 0 / 0.52) 38%,
+      oklch(1 0 0 / 0.7) 50%,
+      oklch(1 0 0 / 0.78) 62%,
+      oklch(1 0 0 / 0.78) 82%,
+      oklch(1 0 0 / 0.56) 90%,
+      oklch(1 0 0 / 0.26) 96%,
+      transparent 99%,
+      transparent 100%
+    ),
+    linear-gradient(white, transparent 24px, transparent calc(100% - 24px), white),
+    linear-gradient(to right, white, transparent 22px, transparent calc(100% - 22px), white);
+  -webkit-mask-composite: source-in, source-over;
+  mask-image:
+    conic-gradient(
+      from var(--input-shimmer-angle),
+      transparent 0%,
+      transparent 18%,
+      oklch(1 0 0 / 0.24) 26%,
+      oklch(1 0 0 / 0.52) 38%,
+      oklch(1 0 0 / 0.7) 50%,
+      oklch(1 0 0 / 0.78) 62%,
+      oklch(1 0 0 / 0.78) 82%,
+      oklch(1 0 0 / 0.56) 90%,
+      oklch(1 0 0 / 0.26) 96%,
+      transparent 99%,
+      transparent 100%
+    ),
+    linear-gradient(white, transparent 24px, transparent calc(100% - 24px), white),
+    linear-gradient(to right, white, transparent 22px, transparent calc(100% - 22px), white);
+  mask-composite: intersect, add;
+  animation:
+    inputShimmerSpin 3.2s linear infinite,
+    inputShimmerHue 9s ease-in-out infinite;
+}
+
+@keyframes inputShimmerSpin {
+  to { --input-shimmer-angle: 360deg; }
+}
+
+@keyframes inputShimmerHue {
+  0% { filter: hue-rotate(-18deg) brightness(1.1) saturate(1.12); }
+  50% { filter: hue-rotate(18deg) brightness(1.1) saturate(1.12); }
+  100% { filter: hue-rotate(-18deg) brightness(1.1) saturate(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input-border-shimmer,
+  .input-inner-shimmer,
+  .snake-border {
+    animation: none;
+  }
+}
+
+/* border-beam md: hide bloom spill only — keep rotating ::after/::before shimmer */
+.welcome-card-beam[data-beam] [data-beam-bloom] {
+  display: none !important;
+}
+
+/* Chat message content styling - matching Figma design specs */
+.text-sm p {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  margin: 0;
+  padding: 0;
+}
+
+.text-sm strong,
+.text-sm b {
+  font-family: 'Manrope', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.42px;
+  display: block;
+  margin: 0;
+}
+
+.text-sm ul,
+.text-sm ol {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 22px;
+  margin-left: 21px;
+  margin: 0;
+}
+
+.text-sm li {
+  margin-bottom: 0;
+  line-height: 22px;
+}
+
+.text-sm h1,
+.text-sm h2,
+.text-sm h3 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.42px;
+  margin: 0;
+}
+
+.text-sm h4,
+.text-sm h5,
+.text-sm h6 {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.42px;
+  margin: 0;
+}
+
+.text-sm em,
+.text-sm i {
+  font-style: italic;
+}
+
+/* Thought indicator styling */
+.thought-indicator {
+  font-family: 'Manrope', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: 0.42px;
+  color: var(--color-grey);
+}
+
+/* Table styling - 4px border radius */
+.text-sm .table-wrapper {
+  border-radius: 4px;
+  overflow: hidden;
+  display: block;
+}
+
+.text-sm .table-wrapper table {
+  margin: 0;
+  display: table;
+}
+
+
+/* Scrollbar hidden by default, visible only while scrolling */
+.chat-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.chat-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.chat-scroll.is-scrolling::-webkit-scrollbar-thumb {
+  background: oklch(0 0 0 / 0.18);
+}
+
+/* Scrollbar hidden by default; revealed only while hovering the scroll area.
+   Used by the chat conversation and the artifact panel. */
+.hover-scroll {
+  scrollbar-width: none; /* Firefox: hidden until hover */
+}
+.hover-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.hover-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hover-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.hover-scroll:hover {
+  scrollbar-width: thin; /* Firefox */
+}
+.hover-scroll:hover::-webkit-scrollbar-thumb {
+  background: oklch(0.55 0 0 / 0.45);
+}
+
+/* Figma "Primary button" style (node 1357:205) — used for starter chips and
+   suggested-prompt cards. Default: white with a soft top→bottom gradient, a
+   hairline border, a 1px drop and a subtle inner bottom shadow.
+   Hover: gradient/fill deepen slightly to a light grey. */
+.fig-chip {
+  border: 0.5px solid var(--color-line-strong);
+  background-color: var(--color-white);
+  /* No shadow in the default state — flat white chip. */
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+.fig-chip:hover {
+  /* Light, subtle hover (previous grey was too dark). */
+  border-color: var(--color-line-strong);
+  background-color: var(--color-surface-0);
+}
+
+/* ---- Decisioning "ready" isometric illustration ---- */
+@keyframes isoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+@keyframes isoCoinBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+@keyframes isoShadow {
+  0%, 100% { transform: scaleX(1); opacity: 0.5; }
+  50% { transform: scaleX(0.85); opacity: 0.32; }
+}
+@keyframes isoRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes objTap {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-3px, -3px); }
+}
+
+/* ===========================================================================
+   Decisioning action-button system — one shared spec for the toolbar-style
+   action buttons across the Decisioning Engine (page header, panel footers,
+   card CTAs), so labels like "Create objective" or "Save" render identically
+   wherever they appear instead of each call site hand-tuning its own height/
+   radius/blue. Uses the --color-royal palette token (the app's single brand
+   blue) rather than a locally hardcoded hex.
+   Not applied to buttons with a different intentional scale/role (hero CTAs,
+   bevelled card CTAs, buttons height-locked to a sibling input).
+   ========================================================================= */
+.dc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.dc-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.dc-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+/* Primary — filled royal blue, white text/icon. The default action. */
+.dc-btn-primary {
+  border: 1.5px solid var(--color-royal);
+  background-color: var(--color-royal);
+  color: var(--color-white);
+}
+.dc-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-royal-strong);
+  border-color: var(--color-royal-strong);
+}
+
+/* Secondary (neutral) — white bg, grey border, dark text. Non-blue actions
+   like "Edit configuration" or "Cancel". */
+.dc-btn-secondary {
+  border: 1px solid var(--color-line);
+  background-color: var(--color-white);
+  color: var(--color-ink);
+}
+.dc-btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-royal-pale-soft);
+}
+.dc-btn-secondary svg {
+  color: var(--color-grey);
+}
+
+/* Secondary (royal blue) — white bg, royal-blue border/text. For blue-emphasis
+   actions that sit next to a neutral secondary and shouldn't read as filled,
+   e.g. "Create objective" next to "Edit configuration". */
+.dc-btn-secondary-blue {
+  border: 1.5px solid var(--color-royal);
+  background-color: var(--color-white);
+  color: var(--color-royal);
+}
+.dc-btn-secondary-blue:hover:not(:disabled) {
+  background-color: var(--color-royal-pale);
+}

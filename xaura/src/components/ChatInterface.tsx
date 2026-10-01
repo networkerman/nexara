@@ -1,0 +1,3845 @@
+import React, { useEffect, useLayoutEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAtmosphere } from '@/contexts/AtmosphereContext';
+// Lucide icons for various UI elements
+import { MoreHorizontal, Maximize2, Plus, X, Bot, Minimize2, Bookmark, PlusCircle, PanelLeftOpen, PanelLeftClose, Settings2, MessageSquare, CornerDownRight, Users, Trash2, Info, ChevronDown, StopCircle, MoreVertical, ArrowDown, Menu } from 'lucide-react';
+import { Card } from "@/components/ui/card";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import SystemMessage from './SystemMessage';
+import ChatInput from './ChatInput';
+import ChatMessage from './ChatMessage';
+import { MarketingAgent, marketingAgents } from '@/data/agents';
+import { CONVERSATIONS, ConversationVariant, CAMPAIGNS_FLOW, AgentArtifactCardData } from '@/data/conversations';
+import AgentSwitchDivider from './AgentSwitchDivider';
+import AgentThreadHeader from './AgentThreadHeader';
+import AvatarStack from './AvatarStack';
+import { cn } from '@/lib/utils';
+import { ThemeToggle } from '../../components/theme-provider';
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import DeepResearchPlan from "./DeepResearchPlan";
+import DeepResearchDoc from "./DeepResearchDoc";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ModeSwitchConfirmation } from './ModeSwitchConfirmation';
+import LhsSidebar, { defaultChats } from './LhsSidebar';
+import type { LhsChatItem } from './LhsSidebar';
+import SettingsModal from './SettingsModal';
+import ChatListPage from './ChatListPage';
+import ReportsPage from './ReportsPage';
+import SchedulerPage from './SchedulerPage';
+import CustomAgentsPage from './CustomAgentsPage';
+import CustomAgentDetail from './CustomAgentDetail';
+import CreateCustomAgentModal from './CreateCustomAgentModal';
+import { initialCustomAgents, MONTHLY_REPORT_AGENT_NAME, type CustomAgent } from '@/data/customAgents';
+import { generateAgentAvatar, generateAgentOrbTheme } from '@/lib/agentAvatar';
+import type { OrbTheme } from '@/components/orb/agentOrbTheme';
+import { generatedReports } from '@/data/reports';
+import { scheduledReports, scheduleTemplates } from '@/data/schedules';
+import RhsHeader from './RhsHeader';
+import RotatingWord from './RotatingWord';
+import { GradientShimmer } from 'gradient-shimmer';
+import MinViewLhsOverlay from './MinViewLhsOverlay';
+import ArtifactPreview from './ArtifactPreview';
+import LineNav, { LineNavItem } from './LineNav';
+import FeedbackModal, { FeedbackSentiment } from './FeedbackModal';
+import { ThumbsUp, ThumbsDown, CheckCircle2, TrendingUp, MousePointerClick, FileText, Activity, DollarSign, Search, RefreshCw, Megaphone, Compass } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { playResponseCue, playToggleCue, playExpandCue } from '@/lib/playCue';
+import { ContentAgentSegmentAccordions } from './ContentAgentSegmentAccordions';
+import GeneratingLoader from './GeneratingLoader';
+import { BorderBeam } from 'border-beam';
+import { welcomeCardBeamStyleBlock } from './welcomeCardBeamStyles';
+
+
+// Interface for individual chat message data
+interface ChatMessageData {
+  type: 'system' | 'chat';
+  isAI?: boolean;
+  content: string;
+  agentName?: string;
+  agentId?: string;
+  avatarSrc?: string;
+  avatarIcon?: React.ElementType;
+  avatarBgClass?: string;
+  animate?: boolean;
+  animationSpeed?: number;
+  onAnimationComplete?: () => void;
+  // System message specific
+  systemType?: 'join' | 'leave';
+  agentIcon?: React.ElementType;
+  agentColorClass?: string;
+  // Chat message specific
+  showExecuteFlowCTA?: boolean;
+  onExecuteFlow?: () => void;
+  isContentAgent?: boolean;
+  isContentAgentClarification?: boolean;
+  isContentAgentQuestionChoice?: boolean;
+  onAnswerQuestions?: () => void;
+  onSkipAndGenerate?: () => void;
+  onGenerateContent?: () => void;
+  showApproveContentCTA?: boolean;
+  onApproveContent?: () => void;
+  isFlowExecutionProgress?: boolean;
+  onFlowExecutionComplete?: () => void;
+  waitForUserInput?: boolean;
+  isPlanMode?: boolean;
+  isSegmentAccordion?: boolean;
+  isSchedulerAccordion?: boolean;
+  isSegmentAgentRationale?: boolean;
+  isContentAgentRationale?: boolean;
+  isExecutiveSummaryWithContent?: boolean;
+  onContinueSegment?: () => void;
+  onRefineThis?: () => void;
+  updatedContent?: any; // New field to store updated content
+  // Thinking state specific
+  isThinkingState?: boolean;
+  thinkingDuration?: number;
+  reasoningSteps?: string[];
+  // Doc-like artifact
+  artifact?: { title: string; subtitle?: string; intro?: string };
+  // Inline campaign performance dashboard escape hatch
+  hidePerformanceDashboard?: boolean;
+  // Short title used by the vertical line-nav (only meaningful on user turns)
+  navLabel?: string;
+  // Lightweight per-message graphics for follow-up answers (visual parity)
+  statCards?: { label: string; value: string; sub?: string }[];
+  miniChart?: 'delivery' | 'rates';
+  // Centered "Switched to <agent>" divider (campaigns agent-relay flow).
+  // The divider reuses avatarSrc/avatarIcon/avatarBgClass for the agent chip.
+  isAgentSwitch?: boolean;
+  switchAgentLabel?: string;
+  // Previous agent in the relay — the 3D orb morphs from their color (baton pass).
+  switchFromLabel?: string;
+  // Set once this switch's answer finishes streaming: the header swaps the live
+  // orb for the agent's SVG avatar and the divider waves freeze.
+  switchSettled?: boolean;
+  // Custom-agent hand-off: an orb theme derived from the agent's avatar palette
+  // (so the live fluid orb matches it) and a one-line "what it does" saying.
+  switchOrbTheme?: OrbTheme;
+  switchSaying?: string;
+  // Agent-handed artifact card (segment / journey), revealed after the answer streams.
+  agentArtifactCard?: AgentArtifactCardData;
+  // ChatGPT-style deep-research plan card (title + steps), rendered inline.
+  deepResearchPlan?: { title: string; steps: string[] };
+  // Finished deep-research report, shown as a full-width doc preview.
+  deepResearchDoc?: { title: string; citations: number; summaryHeading?: string; paragraphs: string[]; skeletonMs?: number; docFeedback?: boolean };
+  // The doc a plan card swaps itself into once it finishes (agent report flow).
+  planResultDoc?: { title: string; citations: number; summaryHeading?: string; paragraphs: string[] };
+  // Suppress this message's copy/thumbs feedback row (e.g. a lead-in above a doc).
+  hideFeedback?: boolean;
+  // Reply chip shown above a user turn (e.g. the plan title an edit follows up on).
+  replyContext?: string;
+}
+
+// Props for the main ChatInterface component
+interface ChatInterfaceProps {
+  onBotIconClick?: () => void; // Handler for agent selection overlay toggle in widget view
+  enabledAgents: Set<string>;
+  setEnabledAgents: React.Dispatch<React.SetStateAction<Set<string>>>;
+  onCloseInterface?: () => void; // Handler to close the entire chat interface
+  initialExpanded?: boolean; // Start expanded (full-screen) vs. docked widget. Defaults to true.
+  docked?: boolean; // When true (and not dragged), the widget fills its parent height instead of a fixed 776px.
+  conversationVariant?: ConversationVariant; // Which scripted storyline to play. Defaults to 'default' (home page); '/campaigns' passes 'campaigns'.
+}
+
+// Rotating example topics shown in the empty-state greeting slot animation
+const GREETING_TOPICS = [
+  'Campaign performance',
+  'Revenue trends',
+  'Journey drop-offs',
+  'Audience behavior',
+  'Channel anomalies',
+  'Conversion opportunities',
+];
+
+// Bookmarked chats — the saved subset of the chat list
+const bookmarkedChats = defaultChats.filter((c) => ['2', '5', '8', '11', '17'].includes(c.id));
+
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+};
+
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ onBotIconClick, enabledAgents, setEnabledAgents, onCloseInterface, initialExpanded = true, docked = false, conversationVariant = 'default' }) => {
+  const navigate = useNavigate();
+  const { active: atmoActive } = useAtmosphere();
+  // The scripted storyline this interface plays. Home (`/`) uses 'default';
+  // the /campaigns docked chat passes 'campaigns'. See src/data/conversations.ts.
+  const script = CONVERSATIONS[conversationVariant];
+  const [messages, setMessages] = useState<ChatMessageData[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const [isMockAgentChatActive, setIsMockAgentChatActive] = useState(false);
+  // Briefly shimmers the input after every send (survives the empty→conversation input swap)
+  const [inputShimmer, setInputShimmer] = useState(false);
+  const inputShimmerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
+  // True once the chat has actually been scrolled down — used to reveal the top
+  // fade only while scrolling (not on the resting first message).
+  const [isChatScrolled, setIsChatScrolled] = useState(false);
+  const [mockChatCompleted, setMockChatCompleted] = useState(false); // New state
+  // Shows the suggested follow-up chips after the first output completes (until thread 2 starts)
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  // Contextual suggested prompts driven by the campaigns agent-relay flow. When
+  // set, these override the static script.suggestedPrompts under the last answer.
+  const [dynamicSuggestions, setDynamicSuggestions] = useState<string[] | null>(null);
+  // Which turn of the campaigns flow (Insights → Segment → Journey) is next.
+  const campaignsTurnRef = useRef(0);
+  // End-of-conversation feedback: floating prompt → modal (up/down) → success toast
+  const [showFeedbackPrompt, setShowFeedbackPrompt] = useState(false);
+  const [feedbackModal, setFeedbackModal] = useState<FeedbackSentiment | null>(null);
+  const [showFeedbackToast, setShowFeedbackToast] = useState(false);
+  const feedbackToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Feedback nudge/toast occupies the band just above the input; while it's up we
+  // hide the scroll-to-latest button so the two don't overlap (until dismissed).
+  const feedbackNudgeVisible = showFeedbackToast || (showFeedbackPrompt && !feedbackModal);
+
+  const handleFeedbackSubmit = () => {
+    setFeedbackModal(null);
+    setShowFeedbackPrompt(false);
+    setShowFeedbackToast(true);
+    if (feedbackToastTimerRef.current) clearTimeout(feedbackToastTimerRef.current);
+    feedbackToastTimerRef.current = setTimeout(() => setShowFeedbackToast(false), 3000);
+  };
+
+  const resetFeedback = () => {
+    setShowFeedbackPrompt(false);
+    setFeedbackModal(null);
+    setShowFeedbackToast(false);
+    if (feedbackToastTimerRef.current) clearTimeout(feedbackToastTimerRef.current);
+  };
+  const [isGeneratingOutput, setIsGeneratingOutput] = useState(false); // Drives the persistent bottom-of-thread loader
+  const [contentApproved, setContentApproved] = useState(false); // New state for content approval
+  const [segmentsApproved, setSegmentsApproved] = useState(false); // New state for segments approval
+  const [contentGenerated, setContentGenerated] = useState(false); // New state for content generation
+  const mockMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMockAgentChatActiveRef = useRef(isMockAgentChatActive);
+  // True while the performance "story" flow is running, so re-typing restarts the
+  // story instead of being captured by the Valentine collaborative continuation path.
+  const isStoryFlowActiveRef = useRef(false);
+  // Which "act" of the performance story the conversation is on: the opening
+  // recap runs first, then the next message auto-plays the follow-up batch.
+  const hasRunStoryRef = useRef(false);
+  const hasRunFollowupsRef = useRef(false);
+  const [selectedMode, setSelectedMode] = useState<'collaborative' | 'autonomous'>('collaborative'); // Added state for mode
+  const [autonomousWaitingForInput, setAutonomousWaitingForInput] = useState(false); // State to track if autonomous mode is waiting for user input
+  const [showModeSwitchConfirmation, setShowModeSwitchConfirmation] = useState(false); // State for mode switch confirmation popup
+  const [pendingMode, setPendingMode] = useState<'collaborative' | 'autonomous' | null>(null); // Mode that user wants to switch to
+  
+  // Dev mode states
+  const [showDevOptions, setShowDevOptions] = useState(false);
+  const [disableAnimation, setDisableAnimation] = useState(false);
+  const [disableContentAccordion, setDisableContentAccordion] = useState(true); // Enabled by default to hide old content accordion
+  const [promptTemplateExists, setPromptTemplateExists] = useState(true); // New toggle for prompt template existence - ON by default
+  
+  // Chat options dropdown state
+  const [openChatId, setOpenChatId] = useState<string | null>(null);
+  const [selectedStarterChip, setSelectedStarterChip] = useState<string | null>(null);
+  // Deep-research mode — toggled from the ChatInput "+" popover. When on, the
+  // empty-state starter chips are replaced by the deep-research category pills;
+  // picking a category then reveals its prompts (mirrors the starter-chip flow).
+  const [deepResearchActive, setDeepResearchActive] = useState(false);
+  const [selectedDeepResearchCategory, setSelectedDeepResearchCategory] = useState<string | null>(null);
+  // Set (to the card's title) when the user taps "Edit" on a plan card — the
+  // composer switches into an editable "follow up" field carrying that reply chip.
+  const [deepResearchEditTitle, setDeepResearchEditTitle] = useState<string | null>(null);
+  // The scripted deep-research story reused by the initial send and every edit.
+  const DEEP_RESEARCH_STORY = {
+    title: 'WhatsApp channel performance — this quarter',
+    steps: [
+      "Pull this quarter's WhatsApp delivery, open, and click-through rates across every campaign.",
+      "Break down where messages are lost — undelivered, blocked, and opted-out — and size the leak.",
+      "Benchmark WhatsApp against Email, SMS, and APN for the same audiences and journeys.",
+      "Identify the segments, templates, and send-times driving the strongest WhatsApp engagement.",
+      "Recommend the fixes most likely to recover delivery and lift conversions next quarter.",
+    ],
+  };
+  // The finished report, shown as a full-width doc preview once the card completes.
+  const DEEP_RESEARCH_DOC = {
+    title: 'WhatsApp Channel Performance — This Quarter',
+    citations: 9,
+    summaryHeading: 'Executive summary',
+    paragraphs: [
+      "This quarter WhatsApp reached more people than any other channel but <strong>delivered the least of what it sent</strong> — over 60% of published messages never landed. The gap traces back to a handful of templates and unverified sender numbers, not the audience, which means most of it is recoverable.",
+      "Email and APN are quietly carrying your qualified engagement, with near-100% delivery and the steadiest click rates. WhatsApp's raw reach is being wasted at the delivery step, so the channel looks weak on outcomes despite the largest send volume.",
+      "The three lowest-performing templates account for the majority of failures, and a small cluster of multi-channel, high-intent users are the ones most worth protecting. Re-verifying sender identities and re-sequencing the 48-hour follow-up are the highest-leverage fixes.",
+      "If delivery recovers to roughly 85%, we estimate <strong>~4,800 recovered conversations and an 18–24% lift in WhatsApp-attributed conversions</strong> next quarter — at no additional send cost.",
+    ],
+  };
+  // Monthly report agent — the report it generates when a chat is launched from
+  // its page. Reuses DeepResearchDoc (skeleton loader → report preview).
+  const MONTHLY_REPORT_DOC = {
+    title: 'Monthly Marketing Performance — Last Month',
+    citations: 0, // hide the citations label for this report
+    summaryHeading: 'Executive summary',
+    skeletonMs: 2200,
+    docFeedback: true, // show a thumbs feedback row below the finished report
+    paragraphs: [
+      "Last month total marketing-attributed revenue rose <strong>+14.2% month-over-month</strong> to ₹2.41 Cr, driven almost entirely by Email and a recovering WhatsApp channel. Overall reach was flat, so the gain came from better conversion of the audience you already have — not more sends.",
+      "Email remains the workhorse: <strong>near-100% delivery, a 22.6% open rate, and 41% of attributed revenue</strong>. Push quietly had its best month of the year on click-through, while SMS engagement slipped and is the one channel trending the wrong way for the third month running.",
+      "The top three journeys — Welcome, Abandoned Cart, and Win-back — account for <strong>68% of automated revenue</strong>, with Abandoned Cart the single biggest mover at +31% MoM after the 48-hour follow-up was re-sequenced. High-intent, multi-channel users are your most valuable and fastest-growing segment.",
+      "Going into next month, the highest-leverage moves are to <strong>scale the re-sequenced cart journey, refresh the two fatiguing SMS templates, and shift more Win-back budget to Push</strong>, where cost-per-conversion is now lowest.",
+    ],
+  };
+  const starterChips = [
+    "Seasonal Trend",
+    "CTR Monitoring",
+    "QBR Report",
+    "Channel Anomalies",
+    "Revenue Monitoring",
+  ];
+  // A relevant icon for each starter chip.
+  const starterChipIcons: Record<string, LucideIcon> = {
+    "Seasonal Trend": TrendingUp,
+    "CTR Monitoring": MousePointerClick,
+    "QBR Report": FileText,
+    "Channel Anomalies": Activity,
+    "Revenue Monitoring": DollarSign,
+  };
+  // Flat outline icons for the deep-research category pills — matches the default
+  // starter chips (was emoji). Keyed by the group header.
+  const deepResearchGroupIcons: Record<string, LucideIcon> = {
+    "Performance & diagnostics": Search,
+    "Retention & lifetime value": TrendingUp,
+    "Revenue growth": DollarSign,
+    "Win-back & reactivation": RefreshCw,
+    "Channels & campaigns": Megaphone,
+    "Journeys & audiences": Compass,
+  };
+  const starterPromptsByChip: Record<string, string[]> = {
+    "Seasonal Trend": [
+      "Show me seasonal engagement trends across channels for the last 12 months.",
+      "Which campaigns performed best during festival periods, and why?",
+      "What seasonal patterns should we use for next quarter planning?",
+    ],
+    "CTR Monitoring": [
+      "Which campaigns had the highest CTR but lowest conversions, and what could be the possible reasons?",
+      "Find the top 5 and bottom 5 campaigns in the last 30 days. Show success rates and patterns behind high and low performance.",
+      "Tell me the best time slots to send campaigns on APN, WPN, Email, SMS, and WhatsApp for higher engagement.",
+    ],
+    "QBR Report": [
+      "Summarize this quarter's campaign performance with wins, gaps, and next actions.",
+      "Build a QBR snapshot by channel with CTR, CVR, and revenue trends.",
+      "Highlight top opportunities and risks for next quarter's campaign plan.",
+    ],
+    "Channel Anomalies": [
+      "Detect unusual drops or spikes in campaign performance by channel in the last 30 days.",
+      "Which channels show anomaly patterns in delivery, CTR, or conversion rates?",
+      "Suggest likely reasons and next checks for identified channel anomalies.",
+    ],
+    "Revenue Monitoring": [
+      "Which campaigns contributed the most revenue in the last 30 days?",
+      "Show revenue trends by channel with week-over-week changes.",
+      "Identify low-efficiency campaigns with high spend but low revenue impact.",
+    ],
+  };
+  // Contextual header shown above the suggested prompts for the selected category
+  const starterPromptHeaderByChip: Record<string, string> = {
+    "Seasonal Trend": "Explore seasonal trends",
+    "CTR Monitoring": "Monitor click-through performance",
+    "QBR Report": "Build your QBR report",
+    "Channel Anomalies": "Investigate channel anomalies",
+    "Revenue Monitoring": "Track revenue performance",
+  };
+
+  // Deep-research suggestion set: category sections (emoji + header) each with a
+  // couple of chips. The chip's short `label` is shown; clicking sends the fuller
+  // `prompt` — a "get a detailed report" style deep-research request.
+  const deepResearchPromptGroups: {
+    emoji: string;
+    header: string;
+    chips: { label: string; prompt: string }[];
+  }[] = [
+    {
+      emoji: "🔍",
+      header: "Performance & diagnostics",
+      chips: [
+        {
+          label: "Quarterly performance diagnostic",
+          prompt:
+            "Run a full quarterly performance diagnostic across every channel — delivery, engagement, conversion, and spend — and tell me exactly where we're winning and where we're leaking.",
+        },
+        {
+          label: "Executive summary & opportunities",
+          prompt:
+            "Give me an executive summary of this quarter's marketing performance, with the top three opportunities I should act on next.",
+        },
+      ],
+    },
+    {
+      emoji: "📈",
+      header: "Retention & lifetime value",
+      chips: [
+        {
+          label: "Is our retention improving?",
+          prompt:
+            "Analyze our customer retention and repeat-purchase trends over the last four quarters and tell me whether retention is actually improving.",
+        },
+        {
+          label: "Best long-term-value channel",
+          prompt:
+            "Which acquisition channel produces the highest long-term customer lifetime value, and how should that change where we invest?",
+        },
+      ],
+    },
+    {
+      emoji: "💰",
+      header: "Revenue growth",
+      chips: [
+        {
+          label: "A plan to grow revenue",
+          prompt:
+            "Build me a data-backed plan to grow revenue next quarter, with the specific segments, channels, and journeys to prioritize.",
+        },
+        {
+          label: "Where revenue concentrates",
+          prompt:
+            "Show me where our revenue actually concentrates — by segment, channel, and campaign — and how dependent we are on our top customers.",
+        },
+      ],
+    },
+    {
+      emoji: "🔁",
+      header: "Win-back & reactivation",
+      chips: [
+        {
+          label: "Reactivate lapsed customers",
+          prompt:
+            "Identify our lapsed customers and design a win-back strategy to reactivate the ones most likely to return.",
+        },
+        {
+          label: "Dormant-audience opportunity",
+          prompt:
+            "Estimate the revenue opportunity sitting in our dormant audience and the best way to re-engage them.",
+        },
+      ],
+    },
+    {
+      emoji: "📢",
+      header: "Channels & campaigns",
+      chips: [
+        {
+          label: "Optimize the channel mix",
+          prompt:
+            "Analyze our current channel mix and recommend how to reallocate budget across channels for the best return.",
+        },
+        {
+          label: "What made winning campaigns win",
+          prompt:
+            "Break down what our best-performing campaigns had in common and how to repeat those wins.",
+        },
+      ],
+    },
+    {
+      emoji: "🧭",
+      header: "Journeys & audiences",
+      chips: [
+        {
+          label: "Journey health audit",
+          prompt:
+            "Audit the health of our active journeys — entry rates, drop-off points, and conversion — and flag the ones that need fixing.",
+        },
+        {
+          label: "Best & worst segments",
+          prompt:
+            "Compare our best and worst performing segments and tell me what's driving the difference.",
+        },
+      ],
+    },
+  ];
+
+  // Live mirror of the ChatInput textarea value — drives the typed-trigger suggestions below.
+  const [liveInputValue, setLiveInputValue] = useState("");
+  // Recognized opening phrases → 5 curated, product-grounded prompt completions each.
+  const typedSuggestionTriggers: { trigger: string; suggestions: string[] }[] = [
+    {
+      trigger: "I want to",
+      suggestions: [
+        "I want to plan a campaign around this month's seasonal trends.",
+        "I want to create content variants for our next email campaign.",
+        "I want to segment our customer base by engagement level.",
+        "I want to find the best send times for our WhatsApp campaigns.",
+        "I want to improve the conversion rate on our last campaign.",
+      ],
+    },
+    {
+      trigger: "How do I",
+      suggestions: [
+        "How do I set up A/B testing for a new campaign?",
+        "How do I write subject lines that improve open rates?",
+        "How do I build a lookalike segment from my top customers?",
+        "How do I choose the right channel mix for a launch?",
+        "How do I fix a campaign with high CTR but low conversions?",
+      ],
+    },
+    {
+      trigger: "What is",
+      suggestions: [
+        "What is the best performing channel for us this quarter?",
+        "What is driving the drop in email engagement this month?",
+        "What is the ideal send time for my SMS campaigns?",
+        "What is the size of our high-value customer segment?",
+        "What is causing the anomaly in yesterday's delivery rates?",
+      ],
+    },
+    {
+      trigger: "Show me",
+      suggestions: [
+        "Show me seasonal engagement trends across channels for the last 12 months.",
+        "Show me the top 5 and bottom 5 campaigns from the last 30 days.",
+        "Show me a breakdown of customers by lifecycle stage.",
+        "Show me the best time slots to send campaigns by channel.",
+        "Show me revenue trends by channel with week-over-week changes.",
+      ],
+    },
+    {
+      trigger: "Help me",
+      suggestions: [
+        "Help me plan next quarter's campaign calendar.",
+        "Help me write content for a re-engagement campaign.",
+        "Help me identify at-risk customers before they churn.",
+        "Help me schedule campaigns for maximum engagement.",
+        "Help me understand why our QBR numbers dipped this quarter.",
+      ],
+    },
+  ];
+  const matchedTypedTrigger = useMemo(() => {
+    const normalized = liveInputValue.trim().toLowerCase();
+    if (!normalized) return null;
+    return typedSuggestionTriggers.find((t) =>
+      normalized.startsWith(t.trigger.toLowerCase())
+    ) ?? null;
+  }, [liveInputValue]);
+
+  const handleCopyChatId = (chatId: string) => {
+    navigator.clipboard.writeText(chatId);
+    setOpenChatId(null);
+  };
+
+  const handleShareChat = () => {
+    setOpenChatId(null);
+  };
+
+  const handleDeleteChat = () => {
+    setOpenChatId(null);
+  };
+  
+  // Reference to mock messages definition for use in handlers across the component
+  const mockMessagesDefinitionRef = useRef<(Omit<ChatMessageData, 'onAnimationComplete'> & { agentId?: string })[]>([]);
+  // Function reference to continue the mock conversation from a specific index
+  const addNextMockMessageRef = useRef<(index: number) => void>(() => {}); // Default no-op function
+
+  // State to manage the expanded (full-screen like) view vs. widget view
+  const [isExpanded, setIsExpanded] = useState(initialExpanded);
+  // State to manage which sidebar (bookmarks/history or agents) is active in expanded view
+  const [activeSidebar, setActiveSidebar] = useState<'bookmarks' | 'agents' | null>('bookmarks');
+  // Collapsed (icon-rail) state for the LHS sidebar in expanded view.
+  // A single sidebar component animates its own width + label opacity, so there is
+  // no component swap and no position jump between the two states.
+  const [lhsCollapsed, setLhsCollapsed] = useState(false);
+  // RHS page: the default conversation view, or the full Chats / Bookmarks list page
+  const [activePage, setActivePage] = useState<'home' | 'chats' | 'bookmarks' | 'reports' | 'scheduler' | 'custom-agents'>('home');
+
+  // Custom agents (Claude-Projects-style) — prototype store in React state. The
+  // list page shows all agents; selecting one opens its detail page.
+  const [customAgents, setCustomAgents] = useState<CustomAgent[]>(initialCustomAgents);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  // Agent attached to the home composer via "+" → "Add to agent" (shows a chip).
+  const [composerAgent, setComposerAgent] = useState<{ id: string; name: string } | null>(null);
+  const [composerCreateOpen, setComposerCreateOpen] = useState(false);
+  // When a chat is launched from a custom-agent's detail page, we (a) override the
+  // derived chat title with the agent's name and (b) queue the launch so the
+  // scripted "Switched to <agent>" intro can play once the view has reset.
+  const [chatTitleOverride, setChatTitleOverride] = useState<string | null>(null);
+  const [pendingAgentChat, setPendingAgentChat] = useState<{ agent: { id: string; name: string }; message: string } | null>(null);
+  // Chats started from an agent's page, persisted so they show in Recents (global)
+  // and under that agent's page as its chat history. `activeAgentChatId` is the one
+  // currently open in the conversation view (so Recents doesn't double it up).
+  const [agentChats, setAgentChats] = useState<LhsChatItem[]>([]);
+  const [activeAgentChatId, setActiveAgentChatId] = useState<string | null>(null);
+
+  const createCustomAgent = (data: { name: string; description: string }): CustomAgent => {
+    const agent: CustomAgent = {
+      id: `agent-${Date.now()}`,
+      name: data.name,
+      description: data.description,
+      instructions: '',
+      files: [],
+      updatedAt: 'now',
+      avatarSrc: generateAgentAvatar(data.name),
+    };
+    setCustomAgents((prev) => [agent, ...prev]);
+    setSelectedAgentId(agent.id);
+    return agent;
+  };
+  const updateCustomAgent = (id: string, patch: Partial<CustomAgent>) =>
+    setCustomAgents((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a)));
+  const deleteCustomAgent = (id: string) => {
+    setCustomAgents((prev) => prev.filter((a) => a.id !== id));
+    setSelectedAgentId((cur) => (cur === id ? null : cur));
+  };
+  const openCustomAgents = () => { setSelectedAgentId(null); setActivePage('custom-agents'); };
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  // Minimized-view LHS overlay (opened from the widget header menu icon)
+  const [showMinOverlay, setShowMinOverlay] = useState(false);
+  // Artifact preview split-view (opened from a message's "Preview" button)
+  const [showArtifactPreview, setShowArtifactPreview] = useState(false);
+  const [artifactFullExpanded, setArtifactFullExpanded] = useState(false);
+  // Opened from the Reports page → no chat to split with (hide the split-view
+  // toggle), and closing returns to the Reports page rather than home.
+  const [artifactFromReports, setArtifactFromReports] = useState(false);
+  const [artifactClosing, setArtifactClosing] = useState(false); // exit-animation flag
+  const hasOpenedArtifactRef = useRef(false);
+  const artifactCloseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // What the artifact panel renders. `null` → the default dashboard readout;
+  // a `deepResearch` entry → that report's document (see ArtifactPreview `doc`).
+  const [activeArtifact, setActiveArtifact] = useState<
+    | { kind: 'deepResearch'; doc: { title: string; citations: number; summaryHeading?: string; paragraphs: string[] } }
+    | null
+  >(null);
+
+  // Artifact column is drag-resizable; width is a % of the whole content row.
+  // Minimum widths (px) that must hold while resizing so nothing overflows or
+  // bounces: the artifact never goes below ARTIFACT_MIN, and the chat keeps CHAT_MIN.
+  const ARTIFACT_MIN = 360;
+  const CHAT_MIN = 460;
+  const [artifactWidth, setArtifactWidth] = useState(50);
+  const [artifactResizing, setArtifactResizing] = useState(false);
+  const contentRowRef = useRef<HTMLDivElement>(null);
+
+  const startArtifactResize = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setArtifactResizing(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    const onMove = (ev: MouseEvent) => {
+      const row = contentRowRef.current;
+      if (!row) return;
+      const rect = row.getBoundingClientRect();
+      // Artifact sits on the right, so its width is (right edge − cursor).
+      // Clamp in PIXELS to the valid range so it can't overshoot the min/max and
+      // then snap back — the panel stays exactly where the cursor leaves it.
+      const maxPx = Math.max(ARTIFACT_MIN, rect.width - CHAT_MIN);
+      const px = Math.min(maxPx, Math.max(ARTIFACT_MIN, rect.right - ev.clientX));
+      setArtifactWidth((px / rect.width) * 100);
+    };
+    const onUp = () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove, true);
+      window.removeEventListener('mouseup', onUp, true);
+      setArtifactResizing(false);
+      // No snap — leave the panel where the user dropped it.
+    };
+    // Capture phase so charts/SVGs inside the artifact can't swallow mousemove
+    // via stopPropagation while dragging right to shrink the panel.
+    window.addEventListener('mousemove', onMove, true);
+    window.addEventListener('mouseup', onUp, true);
+  };
+
+  const handleOpenArtifactPreview = () => {
+    if (artifactCloseTimerRef.current) clearTimeout(artifactCloseTimerRef.current);
+    setArtifactClosing(false);
+    setShowArtifactPreview(true);
+    setArtifactFullExpanded(false);
+    // First time a user previews, collapse the LHS to give room
+    if (!hasOpenedArtifactRef.current) {
+      hasOpenedArtifactRef.current = true;
+      setLhsCollapsed(true);
+    }
+  };
+
+  // Open a Deep Research report in the RHS artifact panel. `fullExpanded` opens
+  // the doc previewer full-bleed (chat hidden) — used when arriving from the
+  // Reports page, where there's no conversation to sit beside.
+  const openDeepResearchArtifact = (
+    doc: { title: string; citations: number; summaryHeading?: string; paragraphs: string[] },
+    opts?: { fullExpanded?: boolean; fromReports?: boolean }
+  ) => {
+    setActiveArtifact({ kind: 'deepResearch', doc });
+    handleOpenArtifactPreview();
+    if (opts?.fullExpanded) setArtifactFullExpanded(true);
+    setArtifactFromReports(!!opts?.fromReports);
+  };
+
+  const handleCloseArtifactPreview = () => {
+    // If the doc was opened from the Reports page, return there on close
+    // (instead of landing on whatever chat/home was behind it).
+    const returnToReports = artifactFromReports;
+    // Play the slide-out/fade exit before unmounting
+    setArtifactClosing(true);
+    if (artifactCloseTimerRef.current) clearTimeout(artifactCloseTimerRef.current);
+    artifactCloseTimerRef.current = setTimeout(() => {
+      setShowArtifactPreview(false);
+      setArtifactFullExpanded(false);
+      setArtifactFromReports(false);
+      setArtifactClosing(false);
+      setActiveArtifact(null);
+      if (returnToReports) setActivePage('reports');
+    }, 320);
+  };
+
+  // --- DRAG AND DROP STATE AND REFS ---
+  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const chatWindowRef = useRef<HTMLDivElement>(null); // Ref for the main draggable window
+  const dragStartRef = useRef({ initialMouseX: 0, initialMouseY: 0, initialWindowX: 0, initialWindowY: 0 });
+
+  // FLIP animation for expand/collapse: capture the panel's rect just before the
+  // layout change, then invert + play so it smoothly morphs between the docked
+  // widget and full-screen (instead of an instant jump).
+  const flipFirstRect = useRef<DOMRect | null>(null);
+  const flipAnimRef = useRef<Animation | null>(null);
+  const requestExpand = useCallback((next: boolean) => {
+    const el = chatWindowRef.current;
+    if (el) flipFirstRect.current = el.getBoundingClientRect();
+    setIsExpanded(next);
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = chatWindowRef.current;
+    const first = flipFirstRect.current;
+    flipFirstRect.current = null;
+    if (!el || !first || typeof el.animate !== 'function') return;
+
+    const last = el.getBoundingClientRect();
+    const dx = first.left - last.left;
+    const dy = first.top - last.top;
+    const sx = last.width ? first.width / last.width : 1;
+    const sy = last.height ? first.height / last.height : 1;
+    // Nothing meaningful to animate.
+    if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) return;
+
+    flipAnimRef.current?.cancel();
+    const anim = el.animate(
+      [
+        { transformOrigin: 'top left', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+        { transformOrigin: 'top left', transform: 'translate(0px, 0px) scale(1, 1)' },
+      ],
+      { duration: 420, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'both' }
+    );
+    flipAnimRef.current = anim;
+    const clear = () => {
+      el.style.transform = '';
+      el.style.willChange = '';
+      el.style.zIndex = '';
+    };
+    // Keep the morphing panel above page content (e.g. the table's sticky cells) while it animates.
+    el.style.willChange = 'transform';
+    el.style.zIndex = '50';
+    anim.onfinish = clear;
+    anim.oncancel = clear;
+  }, [isExpanded]);
+
+  useEffect(() => {
+    // Reset position if window is expanded
+    if (isExpanded) {
+      setPosition(null);
+      setIsDragging(false); // Ensure dragging stops if expanded mid-drag
+    }
+    // Suppress the atmosphere gradient in minimized/widget view only
+    if (isExpanded) {
+      document.documentElement.removeAttribute('data-chat-minimized');
+    } else {
+      document.documentElement.setAttribute('data-chat-minimized', 'true');
+    }
+    return () => { document.documentElement.removeAttribute('data-chat-minimized'); };
+  }, [isExpanded]);
+
+  // Keep the ref synchronized with the state
+  useEffect(() => {
+    isMockAgentChatActiveRef.current = isMockAgentChatActive;
+  }, [isMockAgentChatActive]);
+
+
+  const handleDragMouseDown = useCallback((event: React.MouseEvent<HTMLElement>) => {
+    const targetElement = event.target as HTMLElement;
+    // Check if the click was on an interactive element within the header, not the header itself.
+    // If so, don't start dragging, let the button/interactive element handle the click.
+    if (targetElement.closest('button, a, input, select, textarea, [role="button"]')) {
+      // Further check if the closest interactive element is actually part of the header controls,
+      // and not the drag handle itself if it somehow gained a role=button.
+      // This ensures clicks on actual buttons within the header are not hijacked.
+      if (event.currentTarget.contains(targetElement) && targetElement !== event.currentTarget) {
+         return;
+      }
+    }
+
+    if (isExpanded || !chatWindowRef.current) {
+      return;
+    }
+    event.preventDefault();
+    setIsDragging(true);
+
+    const currentPosition = position ?? (() => {
+      const rect = chatWindowRef.current!.getBoundingClientRect();
+      return { x: rect.left, y: rect.top };
+    })();
+
+    dragStartRef.current = {
+      initialMouseX: event.clientX,
+      initialMouseY: event.clientY,
+      initialWindowX: currentPosition.x,
+      initialWindowY: currentPosition.y,
+    };
+    
+    if (!position) { // If it's the first drag, set the position to activate fixed styling
+      setPosition(currentPosition);
+    }
+    document.body.style.userSelect = 'none';
+  }, [isExpanded, position]);
+
+  const handleDragMouseMove = useCallback((event: MouseEvent) => {
+    if (!isDragging || isExpanded || !chatWindowRef.current) {
+      return;
+    }
+
+    const deltaX = event.clientX - dragStartRef.current.initialMouseX;
+    const deltaY = event.clientY - dragStartRef.current.initialMouseY;
+
+    let newX = dragStartRef.current.initialWindowX + deltaX;
+    let newY = dragStartRef.current.initialWindowY + deltaY;
+
+    const windowWidth = chatWindowRef.current.offsetWidth;
+    const windowHeight = chatWindowRef.current.offsetHeight;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    newX = Math.max(0, Math.min(newX, viewportWidth - windowWidth));
+    newY = Math.max(0, Math.min(newY, viewportHeight - windowHeight));
+    
+    setPosition({ x: newX, y: newY });
+  }, [isDragging, isExpanded]);
+
+  const handleDragMouseUp = useCallback(() => {
+    if (isDragging) {
+      setIsDragging(false);
+      document.body.style.userSelect = '';
+    }
+  }, [isDragging]);
+
+  useEffect(() => {
+    if (isDragging && !isExpanded) {
+      document.addEventListener('mousemove', handleDragMouseMove);
+      document.addEventListener('mouseup', handleDragMouseUp);
+    } else {
+      document.removeEventListener('mousemove', handleDragMouseMove);
+      document.removeEventListener('mouseup', handleDragMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleDragMouseMove);
+      document.removeEventListener('mouseup', handleDragMouseUp);
+      if (document.body.style.userSelect === 'none') { // Clean up just in case
+          document.body.style.userSelect = '';
+      }
+    };
+  }, [isDragging, isExpanded, handleDragMouseMove, handleDragMouseUp]);
+
+  // Toggles the enabled state of a marketing agent and dispatches an event
+  const handleAgentToggle = (agentId: string) => {
+    const agent = marketingAgents.find(a => a.id === agentId);
+    if (!agent) return;
+
+    let newStatus: 'join' | 'leave';
+
+    setEnabledAgents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(agentId)) {
+        newSet.delete(agentId);
+        newStatus = 'leave';
+      } else {
+        newSet.add(agentId);
+        newStatus = 'join';
+      }
+      return newSet;
+    });
+
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('agentStatusChange', {
+        detail: {
+          name: agent.name,
+          status: newStatus,
+          icon: agent.icon,
+          colorClass: agent.colorClass
+        }
+      }));
+    }, 0);
+  };
+
+  const activeAgents: MarketingAgent[] = useMemo(() => {
+    return marketingAgents.filter(agent => enabledAgents.has(agent.id));
+  }, [enabledAgents]);
+
+  // Whether the current live conversation has been bookmarked from the RHS header.
+  const [isChatBookmarked, setIsChatBookmarked] = useState(false);
+
+  // Chat name shown in the header — derived from the first user turn, kept short.
+  const chatName = useMemo(() => {
+    const firstUser = messages.find(m => m.type === 'chat' && !m.isAI);
+    const raw = (firstUser?.navLabel || firstUser?.content || '').trim();
+    if (!raw) return null;
+    const MAX = 32;
+    return raw.length > MAX ? `${raw.slice(0, MAX).trimEnd()}…` : raw;
+  }, [messages]);
+
+  // Agent-launched chats (newest first) sit above the seeded defaults in Recents.
+  const allRecents = useMemo<LhsChatItem[]>(() => [...agentChats, ...defaultChats], [agentChats]);
+
+  // The live conversation shows up as the top "active" chat in the LHS list.
+  const CURRENT_CHAT_ID = '__current__';
+  const lhsChats = useMemo(() => {
+    if (messages.length === 0) return allRecents;
+    const live: LhsChatItem = { id: CURRENT_CHAT_ID, title: chatName || 'New chat', time: 'now' };
+    // The live chat already represents the active agent chat — drop its persisted
+    // twin so Recents doesn't show it twice.
+    return [live, ...allRecents.filter(c => c.id !== activeAgentChatId)];
+  }, [messages.length, chatName, allRecents, activeAgentChatId]);
+  const activeLhsChatId = messages.length > 0 ? CURRENT_CHAT_ID : null;
+  // Pulse the active chat while it is still generating output.
+  const busyLhsChatId =
+    messages.length > 0 && (isGeneratingOutput || isMockAgentChatActive) ? CURRENT_CHAT_ID : null;
+
+  // One line-nav entry per user turn, anchored to its message div (msg-<index>).
+  const navItems: LineNavItem[] = useMemo(() => {
+    const stripHtml = (s: string) =>
+      s.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+
+    return messages
+      .map((m, index) => ({ m, index }))
+      .filter(({ m }) => m.type === 'chat' && !m.isAI)
+      .map(({ m, index }) => {
+        // The AI reply for this turn is the next chat message that carries text.
+        const reply = messages
+          .slice(index + 1)
+          .find(n => n.type === 'chat' && n.isAI && !!stripHtml(n.content));
+        return {
+          id: `msg-${index}`,
+          label: m.navLabel || (m.content.length > 28 ? `${m.content.slice(0, 28)}…` : m.content),
+          userText: stripHtml(m.content) || m.navLabel || '',
+          aiText: reply ? stripHtml(reply.content) : '',
+        };
+      });
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowScrollButton(false); // Hide button after scrolling
+  };
+
+  // Detect if user is near bottom of chat and show/hide scroll button
+  useEffect(() => {
+    const chatContainer = chatContainerRef.current;
+    if (!chatContainer) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      setShowScrollButton(!isNearBottom);
+      // Reveal the top fade only once content has scrolled up under the header.
+      setIsChatScrolled(scrollTop > 4);
+    };
+
+    chatContainer.addEventListener('scroll', handleScroll);
+    
+    return () => chatContainer.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Monitor content changes and show scroll button when content overflows
+  useEffect(() => {
+    const chatContainer = chatContainerRef.current;
+    if (!chatContainer) return;
+
+    const checkScrollButton = () => {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainer;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      
+      // Show button if content exceeds viewport and user is not at bottom
+      if (scrollHeight > clientHeight && !isNearBottom) {
+        setShowScrollButton(true);
+      } else if (isNearBottom) {
+        setShowScrollButton(false);
+      }
+    };
+
+    // Use MutationObserver to detect when content changes (including typing animation).
+    // Observe the scroll container's whole subtree — the messages list class isn't
+    // stable, so keying off a specific selector silently no-ops.
+    const observer = new MutationObserver(() => {
+      checkScrollButton();
+    });
+    observer.observe(chatContainer, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: false,
+    });
+
+    // Also re-check on messages load and whenever generation starts/ends, so the
+    // button appears once the output finishes and the view is scrolled up.
+    checkScrollButton();
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [messages, isGeneratingOutput]);
+
+  // Stop the input shimmer (output generation ended / was stopped).
+  const clearInputShimmer = () => {
+    if (inputShimmerTimerRef.current) clearTimeout(inputShimmerTimerRef.current);
+    setInputShimmer(false);
+  };
+
+  const stopMockConversation = () => {
+    setIsMockAgentChatActive(false);
+    isStoryFlowActiveRef.current = false;
+    setIsGeneratingOutput(false);
+    clearInputShimmer();
+    if (mockMessageTimeoutRef.current) {
+      clearTimeout(mockMessageTimeoutRef.current);
+      mockMessageTimeoutRef.current = null;
+    }
+  };
+
+  // Resets the RHS to its default empty state so the user can start a fresh chat.
+  const handleNewChat = () => {
+    stopMockConversation();
+    hasRunStoryRef.current = false;
+    hasRunFollowupsRef.current = false;
+    setActivePage('home');
+    setSelectedAgentId(null);
+    setComposerAgent(null);
+    setChatTitleOverride(null);
+    setPendingAgentChat(null);
+    setActiveAgentChatId(null);
+    setMessages([]);
+    setShowSuggestions(false);
+    setDynamicSuggestions(null);
+    campaignsTurnRef.current = 0;
+    setIsChatBookmarked(false);
+    resetFeedback();
+    setMockChatCompleted(false);
+    setContentApproved(false);
+    setContentGenerated(false);
+    setAutonomousWaitingForInput(false);
+    setSelectedStarterChip(null);
+    setLiveInputValue("");
+    setShowMinOverlay(false);
+    // Tear down the artifact preview split-view
+    if (artifactCloseTimerRef.current) {
+      clearTimeout(artifactCloseTimerRef.current);
+      artifactCloseTimerRef.current = null;
+    }
+    setShowArtifactPreview(false);
+    setArtifactFullExpanded(false);
+    setArtifactClosing(false);
+    setActiveArtifact(null);
+    hasOpenedArtifactRef.current = false;
+  };
+
+  // A recents-list title, derived from the user's first message. Kept short.
+  const shortenChatTitle = (raw: string) => {
+    const t = raw.trim();
+    const MAX = 32;
+    return t.length > MAX ? `${t.slice(0, MAX).trimEnd()}…` : t;
+  };
+
+  // The user can type anything into the composer, but the first message shown in
+  // an agent chat should always read as a sensible, well-formed prompt for that
+  // agent. So we map whatever was typed to the agent's clean starter prompt: its
+  // own `starterPrompt` when set, otherwise one derived from its name/description.
+  const senseAgentPrompt = (agentId: string, _typed: string): string => {
+    const full = customAgents.find(a => a.id === agentId);
+    const starter = full?.starterPrompt?.trim();
+    if (starter) return starter;
+    // No explicit starter: a clean, always-grammatical opener based on the name.
+    const name = full?.name?.trim() || 'this agent';
+    return `Help me get started with ${name}.`;
+  };
+
+  // Reset the conversation and queue a scripted "Switched to <agent>" intro for
+  // the given agent + prompt. Shared by both a fresh launch from the agent's
+  // page (handleStartAgentChat) and re-opening a past chat (handleOpenAgentChat).
+  const primeAgentChat = (agent: { id: string; name: string }, message: string, chatId: string) => {
+    handleNewChat();
+    setComposerAgent({ id: agent.id, name: agent.name });
+    setChatTitleOverride(agent.name); // header label = agent name
+    setActiveAgentChatId(chatId);
+    setPendingAgentChat({ agent, message });
+  };
+
+  // Launched from a custom-agent's detail page: persist a Recents entry for this
+  // agent, then prime the scripted intro chat.
+  const handleStartAgentChat = (agent: { id: string; name: string }, message: string) => {
+    const chatId = `agent-chat-${Date.now()}`;
+    // Map whatever the user typed into a sensible, well-formed first prompt.
+    const prompt = senseAgentPrompt(agent.id, message);
+    const title = prompt.trim() ? shortenChatTitle(prompt) : `Chat with ${agent.name}`;
+    setAgentChats(prev => [{ id: chatId, title, time: 'now', agentId: agent.id }, ...prev]);
+    primeAgentChat(agent, prompt, chatId);
+  };
+
+  // Re-open a persisted agent chat from a Recents / history row — replays its
+  // intro without creating a duplicate entry.
+  const handleOpenAgentChat = (chat: LhsChatItem) => {
+    const agent = customAgents.find(a => a.id === chat.agentId);
+    if (!agent) return;
+    setAgentChats(prev => [chat, ...prev.filter(c => c.id !== chat.id)]); // bump to top
+    primeAgentChat({ id: agent.id, name: agent.name }, chat.title, chat.id);
+  };
+
+  // Selecting any Recents / chat-list row: agent chats replay their scripted
+  // intro; everything else just returns to the (current) conversation view.
+  const handleSelectChat = (id: string) => {
+    const agentChat = agentChats.find(c => c.id === id);
+    if (agentChat) handleOpenAgentChat(agentChat);
+    else setActivePage('home');
+  };
+
+  // Scripted intro for an agent-launched chat: the user's prompt, a
+  // "Switched to <agent>" hand-off divider, a thinking beat, then the agent's
+  // reply. Mirrors the campaigns relay sequencer (switch → thinking → answer).
+  const runAgentIntroChat = (agent: { id: string; name: string }, message: string) => {
+    const userMessage: ChatMessageData = {
+      type: 'chat', isAI: false, content: message, onAnimationComplete: () => {},
+    };
+    // The agent's soft-gradient avatar drives the hand-off thread header.
+    const fullAgent = customAgents.find(a => a.id === agent.id);
+    const avatarSrc = fullAgent?.avatarSrc;
+    const isReportAgent = agent.name.trim().toLowerCase() === MONTHLY_REPORT_AGENT_NAME.toLowerCase();
+    // One-line "what it does" saying under the agent's name in the hand-off header.
+    const saying = isReportAgent
+      ? "Let me pull last month's performance into a clear report."
+      : (fullAgent?.description || undefined);
+
+    // The "Switched to <agent>" hand-off + a thinking beat open every agent chat.
+    const intro: ChatMessageData[] = [
+      {
+        type: 'chat', isAI: true, content: '',
+        isAgentSwitch: true,
+        switchAgentLabel: agent.name,
+        avatarSrc,
+        // The live fluid orb animates in the agent's own avatar colors, then
+        // settles into its SVG avatar; plus a one-line "what it does" saying.
+        switchOrbTheme: generateAgentOrbTheme(agent.name),
+        switchSaying: saying,
+        reasoningSteps: [`Understanding your request`, `Reviewing ${agent.name}'s instructions`],
+      },
+      {
+        type: 'chat', isAI: true, content: '',
+        isThinkingState: true,
+        thinkingDuration: 3,
+        reasoningSteps: isReportAgent
+          ? [
+              `Gathering last month's campaign metrics`,
+              `Comparing against the prior month and last year`,
+              `Drafting the report outline`,
+            ]
+          : [
+              `Reading the prompt and any attached context`,
+              `Mapping it to ${agent.name}'s instructions`,
+              `Outlining a first response`,
+            ],
+      },
+    ];
+
+    // The Monthly report agent generates a document: a short lead-in line
+    // (feedback suppressed so nothing sits between it and the doc), then the
+    // finished report reveals itself (loading skeleton → report → thumbs).
+    const body: ChatMessageData[] = isReportAgent
+      ? [
+          {
+            type: 'chat', isAI: true, agentName: agent.name, avatarSrc,
+            content:
+              "Here's your monthly performance report. I pulled last month's numbers across " +
+              "every channel, compared them to the prior month and last year, and summarized " +
+              "the headline movers below.",
+            hidePerformanceDashboard: true,
+            hideFeedback: true,
+          },
+          {
+            type: 'chat', isAI: true, content: '',
+            deepResearchDoc: MONTHLY_REPORT_DOC,
+          },
+        ]
+      : [
+          {
+            type: 'chat', isAI: true, agentName: agent.name, avatarSrc,
+            content:
+              `I'm on it as <strong>${agent.name}</strong>. Here's how I'd approach ` +
+              `${message.trim() ? `“${message.trim()}”` : 'this'}:\n\n` +
+              `• Break the request down and pull in the relevant context from my instructions and files\n` +
+              `• Draft an initial plan and flag anything I need from you\n` +
+              `• Iterate with you until it's ready to ship\n\n` +
+              `Want me to go deeper on any of these?`,
+            hidePerformanceDashboard: true,
+          },
+        ];
+
+    const sequence: ChatMessageData[] = [...intro, ...body];
+
+    setMessages([userMessage]);
+    setIsGeneratingOutput(true);
+    setInputShimmer(true);
+    setIsMockAgentChatActive(true);
+    isMockAgentChatActiveRef.current = true;
+    isStoryFlowActiveRef.current = true;
+
+    const finalize = () => {
+      // Settle the switch marker (orb → SVG avatar, waves stop) and hand control
+      // back. A plan card, if present, self-drives from here and swaps to the doc.
+      setMessages(prev => prev.map(m =>
+        m.isAgentSwitch && !m.switchSettled ? { ...m, switchSettled: true } : m
+      ));
+      setIsMockAgentChatActive(false);
+      isStoryFlowActiveRef.current = false;
+      setIsGeneratingOutput(false);
+      clearInputShimmer();
+      setMockChatCompleted(true);
+      playResponseCue();
+      if (mockMessageTimeoutRef.current) { clearTimeout(mockMessageTimeoutRef.current); mockMessageTimeoutRef.current = null; }
+    };
+
+    const step = (index: number) => {
+      if (!isMockAgentChatActiveRef.current) {
+        if (mockMessageTimeoutRef.current) { clearTimeout(mockMessageTimeoutRef.current); mockMessageTimeoutRef.current = null; }
+        return;
+      }
+      if (index >= sequence.length) { finalize(); return; }
+      const def = sequence[index];
+      // The switch divider isn't a ChatMessage and never fires onAnimationComplete
+      // — advance on a timer once its two-beat reveal has played.
+      if (def.isAgentSwitch) {
+        setMessages(prev => [...prev, def]);
+        if (mockMessageTimeoutRef.current) clearTimeout(mockMessageTimeoutRef.current);
+        mockMessageTimeoutRef.current = setTimeout(() => step(index + 1), 2600);
+        return;
+      }
+      // The report doc renders its own loading skeleton before revealing and
+      // isn't a streaming ChatMessage — drop it in and finalize.
+      if (def.deepResearchDoc || def.deepResearchPlan) {
+        setMessages(prev => [...prev, def]);
+        finalize();
+        return;
+      }
+      setMessages(prev => [...prev, {
+        ...def,
+        onAnimationComplete: () => {
+          if (mockMessageTimeoutRef.current) clearTimeout(mockMessageTimeoutRef.current);
+          mockMessageTimeoutRef.current = setTimeout(() => step(index + 1), 650);
+        },
+      }]);
+    };
+
+    if (mockMessageTimeoutRef.current) clearTimeout(mockMessageTimeoutRef.current);
+    mockMessageTimeoutRef.current = setTimeout(() => step(0), 600);
+  };
+
+  // Play the queued agent intro once `handleNewChat` has emptied the thread, so
+  // the sequence runs from a fresh, clean conversation.
+  useEffect(() => {
+    if (!pendingAgentChat || messages.length > 0) return;
+    const { agent, message } = pendingAgentChat;
+    setPendingAgentChat(null);
+    runAgentIntroChat(agent, message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingAgentChat, messages.length]);
+
+  const handleModeSwitch = (newMode: 'collaborative' | 'autonomous') => {
+    if (newMode !== selectedMode) {
+      // If there are messages, show confirmation popup
+      if (messages.length > 0) {
+        setPendingMode(newMode);
+        setShowModeSwitchConfirmation(true);
+      } else {
+        // If no messages, switch directly
+        setSelectedMode(newMode);
+      }
+    }
+  };
+
+  const confirmModeSwitch = () => {
+    if (pendingMode) {
+      // Clear current conversation
+      setMessages([]);
+      setIsMockAgentChatActive(false);
+      isStoryFlowActiveRef.current = false;
+      hasRunStoryRef.current = false;
+      hasRunFollowupsRef.current = false;
+      setShowSuggestions(false);
+      setDynamicSuggestions(null);
+      campaignsTurnRef.current = 0;
+      resetFeedback();
+      setIsGeneratingOutput(false);
+      setMockChatCompleted(false);
+      setContentApproved(false);
+      setContentGenerated(false);
+      setAutonomousWaitingForInput(false);
+      
+      // Clear any timeouts
+      if (mockMessageTimeoutRef.current) {
+        clearTimeout(mockMessageTimeoutRef.current);
+        mockMessageTimeoutRef.current = null;
+      }
+      
+      // Switch to new mode
+      setSelectedMode(pendingMode);
+      
+      // Close popup and reset pending mode
+      setShowModeSwitchConfirmation(false);
+      setPendingMode(null);
+    }
+  };
+
+  const cancelModeSwitch = () => {
+    setShowModeSwitchConfirmation(false);
+    setPendingMode(null);
+  };
+
+  // Dev mode handlers
+  const toggleDevOptions = () => {
+    setShowDevOptions(!showDevOptions);
+  };
+
+  const handleDisableAnimationToggle = () => {
+    setDisableAnimation(!disableAnimation);
+  };
+
+  const handleDisableContentAccordionToggle = () => {
+    setDisableContentAccordion(!disableContentAccordion);
+  };
+
+  const handlePromptTemplateExistsToggle = () => {
+    setPromptTemplateExists(!promptTemplateExists);
+  };
+
+  const handleApproveContent = () => {
+    setContentApproved(true);
+    // Find the Content Agent Response message index and continue from the next message (Scheduler Agent)
+    const contentAgentResponseIndex = mockMessagesDefinitionRef.current.findIndex(msg => msg.isContentAgent);
+    if (contentAgentResponseIndex >= 0) {
+      // Continue the flow from the next message after content agent response (Scheduler Agent)
+      addNextMockMessageRef.current(contentAgentResponseIndex + 1);
+    }
+  };
+
+  const handleApproveSegments = () => {
+    setSegmentsApproved(true);
+    // Find the Segment Agent table message index and continue from the next message (Content Agent Question Choice)
+    const segmentAgentTableIndex = mockMessagesDefinitionRef.current.findIndex(msg => 
+      msg.agentName === 'Segment agent' && msg.content.includes('<table')
+    );
+    if (segmentAgentTableIndex >= 0) {
+      // Continue the flow from the next message after segment agent table (Content Agent Question Choice)
+      addNextMockMessageRef.current(segmentAgentTableIndex + 1);
+    }
+  };
+
+  const handleUpdateContent = (updatedContent: any) => {
+    // Find the content agent from the imported marketingAgents
+    const contentAgent = marketingAgents.find(agent => agent.id === 'content-agent');
+    
+    // Create a summary of the changes made
+    const { collaborativeContentData, selectedSegment } = updatedContent;
+    const segmentData = collaborativeContentData.email[selectedSegment];
+    
+    // Create a message that shows the updated content
+    const updateMessage = `I've incorporated your changes into the content. Here's the updated version with your modifications:
+
+**Email Subject Line:** ${segmentData.subject}
+
+The content has been updated across all channels to reflect your changes.`;
+    
+    // Create a new content agent response message with the updated content
+    const newContentAgentMessage = {
+      agentId: contentAgent?.id || 'content-agent',
+      type: 'chat' as const,
+      isAI: true,
+      agentName: contentAgent?.name || 'Content Agent',
+      content: updateMessage,
+      avatarSrc: contentAgent?.avatarSrc,
+      avatarIcon: contentAgent?.icon,
+      avatarBgClass: contentAgent?.colorClass,
+      isContentAgent: true,
+      isPlanMode: false,
+      showApproveContentCTA: true,
+      updatedContent: updatedContent  // Pass the updated content
+    };
+
+    // Add the new message to the conversation
+    setMessages(prev => [...prev, newContentAgentMessage]);
+    
+    // Reset content approved state so user needs to approve the new content
+    setContentApproved(false);
+  };
+
+  const handleDiscardChanges = () => {
+    // Just revert the changes, no new message needed
+    // The ContentAgentResponse component will handle the actual content revert
+  };
+
+  const handleFlowExecutionMessage = () => {
+    const xAuraAgent = marketingAgents.find(agent => agent.id === 'xaura');
+    const executionMessage: ChatMessageData = {
+      type: 'chat',
+      agentName: xAuraAgent?.name || "xAura",
+      avatarSrc: xAuraAgent?.avatarSrc,
+      avatarIcon: xAuraAgent?.icon,
+      avatarBgClass: xAuraAgent?.colorClass,
+      isAI: true,
+      content: "", // Content is handled by the FlowExecutionProgress component
+      isFlowExecutionProgress: true,
+      onFlowExecutionComplete: () => {
+        // This callback is called when the FlowExecutionProgress component completes all steps
+        setTimeout(() => {
+          const followUpMessage: ChatMessageData = {
+            type: 'chat',
+            agentName: xAuraAgent?.name || "xAura",
+            avatarSrc: xAuraAgent?.avatarSrc,
+            avatarIcon: xAuraAgent?.icon,
+            avatarBgClass: xAuraAgent?.colorClass,
+            isAI: true,
+            content: `Great! The <strong>Email</strong> and <strong>APN campaigns</strong> have now been saved as drafts and are ready to go. However, there's a slight issue with the <strong>WhatsApp templates</strong> that requires your manual review.\n\n<strong>WhatsApp Template Issues:</strong>\n• Initial template was approved but Meta assigned it a different category than expected\n• Second template was rejected by Meta due to policy compliance issues\n\n<strong>Manual Steps Required:</strong>\n1. <strong>Review Template Categories:</strong> Log into Meta Business Manager and check the assigned category for the approved template. Decide if you want to proceed with the different category or request a change.\n\n2. <strong>Address Rejected Template:</strong> Review the rejection reasons in your Meta Business Manager dashboard. Common issues include:\n   • Promotional content in template headers\n   • Missing required opt-out language\n   • Non-compliant call-to-action buttons\n\n3. <strong>Template Resubmission:</strong> If needed, modify and resubmit the rejected template with the necessary compliance updates.\n\n4. <strong>Campaign Activation:</strong> Once WhatsApp templates are resolved, you can activate all three campaigns simultaneously.\n\nWould you like me to provide more specific guidance on any of these steps?`,
+            onAnimationComplete: () => {}
+          };
+          setMessages(prev => [...prev, followUpMessage]);
+        }, 1000); // Small delay to make the conversation flow feel natural
+      },
+      onAnimationComplete: () => {}
+    };
+    setMessages(prev => [...prev, executionMessage]);
+  };
+
+  // --- Campaigns agent-relay flow --------------------------------------------
+  // A scripted three-turn hand-off (Insights → Segment → Journey). Every send
+  // advances one turn: it drops a centered "Switched to <agent>" divider, plays
+  // the agent's thinking, streams the answer (+ dashboard or artifact card), and
+  // surfaces the single prompt that leads into the next agent. See CAMPAIGNS_FLOW.
+  const handleCampaignsSend = (message: string) => {
+    const turnIndex = campaignsTurnRef.current;
+    const turn = CAMPAIGNS_FLOW[turnIndex];
+
+    // The turns are scripted, so we substitute the canonical prompt/label.
+    const userMessage: ChatMessageData = {
+      type: 'chat',
+      isAI: false,
+      content: turn ? turn.userPrompt : message,
+      navLabel: turn?.navLabel,
+      onAnimationComplete: () => {},
+    };
+    const sentMsgIndex = messages.length;
+    setMessages(prev => [...prev, userMessage]);
+    setShowSuggestions(false);
+    setDynamicSuggestions(null);
+    resetFeedback();
+    setMockChatCompleted(false);
+    setIsGeneratingOutput(true);
+
+    // Pin the just-sent message near the top so the response reveals below it.
+    setTimeout(() => {
+      document.getElementById(`msg-${sentMsgIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+
+    setInputShimmer(true);
+    if (inputShimmerTimerRef.current) clearTimeout(inputShimmerTimerRef.current);
+    inputShimmerTimerRef.current = setTimeout(() => setInputShimmer(false), 30000);
+
+    // Past the scripted turns — a gentle acknowledgement, no further hand-offs.
+    if (!turn) {
+      setIsGeneratingOutput(false);
+      clearInputShimmer();
+      const xAuraAgent = marketingAgents.find(a => a.id === 'xaura');
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          type: 'chat', isAI: true, agentName: xAuraAgent?.name,
+          avatarSrc: xAuraAgent?.avatarSrc, avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass,
+          content: "Your insights, segment, and journey are all set. Tap any card above to review, or ask me for anything else.",
+          hidePerformanceDashboard: true,
+          onAnimationComplete: () => {},
+        }]);
+      }, 400);
+      return;
+    }
+
+    campaignsTurnRef.current = turnIndex + 1;
+    const agent = marketingAgents.find(a => a.id === turn.switchAgentId);
+    // Turn 0 has no previous agent — the orb morphs from the neutral default
+    // theme, reading as "handed off from the system".
+    const prevLabel = turnIndex > 0 ? CAMPAIGNS_FLOW[turnIndex - 1].switchAgentLabel : undefined;
+
+    // This turn's sequence: switch divider → thinking → the agent's answer.
+    const sequence: ChatMessageData[] = [
+      {
+        type: 'chat', isAI: true, content: '',
+        isAgentSwitch: true,
+        switchAgentLabel: turn.switchAgentLabel,
+        switchFromLabel: prevLabel,
+        reasoningSteps: turn.reasoningSteps,
+        avatarSrc: agent?.avatarSrc, avatarIcon: agent?.icon, avatarBgClass: agent?.colorClass,
+      },
+      {
+        type: 'chat', isAI: true, content: '',
+        isThinkingState: true, thinkingDuration: 4, reasoningSteps: turn.reasoningSteps,
+      },
+      {
+        type: 'chat', isAI: true,
+        agentName: turn.switchAgentLabel,
+        avatarSrc: agent?.avatarSrc, avatarIcon: agent?.icon, avatarBgClass: agent?.colorClass,
+        content: turn.output,
+        hidePerformanceDashboard: !turn.showDashboard,
+        agentArtifactCard: turn.artifactCard,
+      },
+    ];
+
+    setIsMockAgentChatActive(true);
+    isMockAgentChatActiveRef.current = true;
+    isStoryFlowActiveRef.current = true;
+
+    const step = (index: number) => {
+      if (!isMockAgentChatActiveRef.current) {
+        if (mockMessageTimeoutRef.current) { clearTimeout(mockMessageTimeoutRef.current); mockMessageTimeoutRef.current = null; }
+        return;
+      }
+      if (index >= sequence.length) {
+        // The answer has fully streamed — settle every switch marker so the
+        // orb hands over to the agent's SVG avatar and the divider waves stop.
+        setMessages(prev => prev.map(m =>
+          m.isAgentSwitch && !m.switchSettled ? { ...m, switchSettled: true } : m
+        ));
+        setIsMockAgentChatActive(false);
+        isStoryFlowActiveRef.current = false;
+        setIsGeneratingOutput(false);
+        clearInputShimmer();
+        setMockChatCompleted(true);
+        if (turn.nextSuggestion) {
+          setDynamicSuggestions([turn.nextSuggestion]);
+          setShowSuggestions(true);
+        } else {
+          setShowFeedbackPrompt(true);
+        }
+        playResponseCue();
+        if (mockMessageTimeoutRef.current) { clearTimeout(mockMessageTimeoutRef.current); mockMessageTimeoutRef.current = null; }
+        return;
+      }
+      const def = sequence[index];
+      // Dividers aren't ChatMessages and never fire onAnimationComplete — advance on a timer.
+      if (def.isAgentSwitch) {
+        setMessages(prev => [...prev, def]);
+        if (mockMessageTimeoutRef.current) clearTimeout(mockMessageTimeoutRef.current);
+        // Let the two-beat divider (Calling in agents… → Switched to <agent>)
+        // and the staged thread-header reveal play out before the thinking dots.
+        mockMessageTimeoutRef.current = setTimeout(() => step(index + 1), 2600);
+        return;
+      }
+      setMessages(prev => [...prev, {
+        ...def,
+        onAnimationComplete: () => {
+          if (mockMessageTimeoutRef.current) clearTimeout(mockMessageTimeoutRef.current);
+          mockMessageTimeoutRef.current = setTimeout(() => step(index + 1), 650);
+        },
+      }]);
+    };
+
+    if (mockMessageTimeoutRef.current) clearTimeout(mockMessageTimeoutRef.current);
+    mockMessageTimeoutRef.current = setTimeout(() => step(0), 500);
+  };
+
+  // Deep-research story — whatever the user sends while the deep-research chip is
+  // active, we swap in the scripted WhatsApp-performance research and drop the
+  // ChatGPT-style plan card into the thread.
+  const addDeepResearchTurn = (userMessage: ChatMessageData) => {
+    const sentMsgIndex = messages.length;
+    const planMessage: ChatMessageData = {
+      type: 'chat',
+      isAI: true,
+      content: '',
+      deepResearchPlan: {
+        title: DEEP_RESEARCH_STORY.title,
+        steps: DEEP_RESEARCH_STORY.steps,
+      },
+    };
+    setMessages((prev) => [...prev, userMessage, planMessage]);
+
+    // Pin the just-sent prompt near the top so the plan reveals below it.
+    setTimeout(() => {
+      document.getElementById(`msg-${sentMsgIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
+  const handleDeepResearchSend = () => {
+    // Leaving deep-research mode; the plan card drives the flow from here.
+    setDeepResearchActive(false);
+    setSelectedDeepResearchCategory(null);
+    setSelectedStarterChip(null);
+    setShowSuggestions(false);
+    setDynamicSuggestions(null);
+
+    addDeepResearchTurn({
+      type: 'chat',
+      isAI: false,
+      content: 'A deep research on my WhatsApp channel performance this quarter',
+    });
+  };
+
+  // Submitting the "Edit" follow-up — post the tweak as a new user turn (carrying
+  // the plan's reply chip) and re-run the same processing card beneath it.
+  const handleDeepResearchFollowup = (followup: string) => {
+    const replyContext = deepResearchEditTitle ?? undefined;
+    setDeepResearchEditTitle(null);
+    addDeepResearchTurn({
+      type: 'chat',
+      isAI: false,
+      content: followup,
+      replyContext,
+    });
+  };
+
+  const handleSendMessage = (message: string) => {
+    // A custom-agent chip in the composer routes the opening turn into that
+    // agent's scripted thread (Switched to <agent> → thinking → reply/report),
+    // so an agent can be triggered from the main input, not just its own page.
+    if (composerAgent && messages.length === 0) {
+      handleStartAgentChat({ id: composerAgent.id, name: composerAgent.name }, message);
+      return;
+    }
+    // Deep-research mode intercepts every send with the scripted research story.
+    if (deepResearchActive) {
+      handleDeepResearchSend();
+      return;
+    }
+    // Follow-up submitted from the "Edit" composer.
+    if (deepResearchEditTitle) {
+      handleDeepResearchFollowup(message);
+      return;
+    }
+
+    // The /campaigns docked chat plays a bespoke agent-relay flow.
+    if (conversationVariant === 'campaigns') {
+      handleCampaignsSend(message);
+      return;
+    }
+
+    const userMessagesCount = messages.filter(m => !m.isAI && m.type === 'chat').length + 1;
+    const lowerCaseMessage = message.toLowerCase().trim();
+
+    // Explicit Valentine demo triggers (scripted strings) — left untouched.
+    const isAutonomousValentinesTrigger = selectedMode === 'autonomous' &&
+      lowerCaseMessage === "can you help me create a valentine's day campaign for perfumes";
+    const isCollaborativeValentinesTrigger = selectedMode === 'collaborative' &&
+      (lowerCaseMessage === "hi" || lowerCaseMessage === "help me create a campaign for valentine's day");
+    const isValentineTrigger = userMessagesCount === 1 &&
+      (isAutonomousValentinesTrigger || isCollaborativeValentinesTrigger);
+
+    // Continuations of an in-progress Valentine flow (waiting for the user's reply).
+    const isAutonomousValentineContinuation = selectedMode === 'autonomous' && autonomousWaitingForInput;
+    const isCollaborativeValentineContinuation = selectedMode === 'collaborative' &&
+      isMockAgentChatActive && !isStoryFlowActiveRef.current;
+
+    // Anything else the user types is anchored to the performance "story". The
+    // first turn plays the opening recap; the next message auto-plays the
+    // follow-up batch ("chapter 2"); anything after that restarts the recap.
+    const isStoryTrigger = !isValentineTrigger &&
+      !isAutonomousValentineContinuation && !isCollaborativeValentineContinuation;
+    const storyPhase: 'story' | 'followups' = isStoryTrigger && hasRunStoryRef.current && !hasRunFollowupsRef.current
+      ? 'followups'
+      : 'story';
+
+    const userMessage: ChatMessageData = {
+      type: 'chat',
+      content: !isStoryTrigger
+        ? message
+        : storyPhase === 'followups' ? script.followups[0].q : script.storyPrompt,
+      navLabel: !isStoryTrigger
+        ? undefined
+        : storyPhase === 'followups' ? script.followups[0].label : script.storyNavLabel,
+      isAI: false,
+      onAnimationComplete: () => {}
+    };
+    // The just-sent message lands at this index — used to pin it near the top
+    // after sending so the start of the incoming response is revealed.
+    const sentMsgIndex = messages.length;
+    setMessages(prev => [...prev, userMessage]);
+    setShowSuggestions(false); // hide follow-up chips once a message is sent
+    resetFeedback(); // clear any feedback prompt/toast on a new send
+    setMockChatCompleted(false); // Reset when user sends a new message
+    setIsGeneratingOutput(true); // Show the persistent bottom loader until this response finishes
+
+    // Slight scroll: bring the user's message toward the top so they can see the
+    // response begin loading below it, then scroll freely from there.
+    setTimeout(() => {
+      document.getElementById(`msg-${sentMsgIndex}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+
+    // Shimmer the input for the whole generation. Mock flows keep it on via
+    // isMockAgentChatActive; non-mock responses clear it when their streaming
+    // finishes (see the AI response's onAnimationComplete below). A long safety
+    // fallback guards against a response that never reports completion.
+    setInputShimmer(true);
+    if (inputShimmerTimerRef.current) clearTimeout(inputShimmerTimerRef.current);
+    inputShimmerTimerRef.current = setTimeout(() => setInputShimmer(false), 30000);
+
+    if (isStoryTrigger) {
+      if (storyPhase === 'followups') hasRunFollowupsRef.current = true;
+      else hasRunStoryRef.current = true;
+      setIsMockAgentChatActive(true);
+      isStoryFlowActiveRef.current = true;
+      setContentApproved(false);
+      setContentGenerated(false);
+      setAutonomousWaitingForInput(false);
+      isMockAgentChatActiveRef.current = true;
+
+      const xAuraAgent = marketingAgents.find(agent => agent.id === 'xaura');
+
+      // Opening recap (with dashboard + artifact) vs. the deeper follow-up batch.
+      const storyMessages: (Omit<ChatMessageData, 'onAnimationComplete'> & { agentId?: string })[] = [
+        {
+          type: 'chat',
+          isAI: true,
+          content: '',
+          isThinkingState: true,
+          thinkingDuration: 3,
+          reasoningSteps: script.storyReasoningSteps,
+        },
+        {
+          agentId: xAuraAgent?.id,
+          type: 'chat',
+          isAI: true,
+          agentName: xAuraAgent?.name,
+          content: script.storyOutput,
+          avatarIcon: xAuraAgent?.icon,
+          avatarBgClass: xAuraAgent?.colorClass,
+          artifact: script.storyArtifact,
+        }
+      ];
+
+      // Follow-up batch: thinking → answer to Q0, then Q1/A1, Q2/A2, Q3/A3.
+      // The user questions are rendered as their own bubbles (navigable turns)
+      // and the answers suppress the dashboard so it isn't repeated each turn.
+      const followupMessages: (Omit<ChatMessageData, 'onAnimationComplete'> & { agentId?: string })[] = [
+        {
+          type: 'chat',
+          isAI: true,
+          content: '',
+          isThinkingState: true,
+          thinkingDuration: 2,
+          reasoningSteps: script.followupReasoningSteps,
+        },
+        {
+          agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name,
+          content: script.followups[0].a, avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass,
+          hidePerformanceDashboard: true,
+          statCards: script.followups[0].statCards, miniChart: script.followups[0].miniChart,
+        },
+        ...script.followups.slice(1).flatMap((f) => ([
+          { type: 'chat' as const, isAI: false, content: f.q, navLabel: f.label },
+          {
+            agentId: xAuraAgent?.id, type: 'chat' as const, isAI: true, agentName: xAuraAgent?.name,
+            content: f.a, avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass,
+            hidePerformanceDashboard: true,
+            statCards: f.statCards, miniChart: f.miniChart,
+          },
+        ])),
+      ];
+
+      const mockMessagesDefinition = storyPhase === 'followups' ? followupMessages : storyMessages;
+
+      mockMessagesDefinitionRef.current = mockMessagesDefinition;
+      
+      const processedAgentIdsForJoinMessage = new Set<string>();
+
+      const addNextMockMessage = (index: number) => {
+        if (!isMockAgentChatActiveRef.current) {
+          if (mockMessageTimeoutRef.current) {
+            clearTimeout(mockMessageTimeoutRef.current);
+            mockMessageTimeoutRef.current = null;
+          }
+          return;
+        }
+
+        if (index >= mockMessagesDefinition.length) {
+          setIsMockAgentChatActive(false);
+          setIsGeneratingOutput(false);
+          clearInputShimmer();
+          setMockChatCompleted(true);
+          // After the opening recap, surface follow-up chips; after thread 2 (followups),
+          // clear chips and float the end-of-conversation feedback prompt instead.
+          setShowSuggestions(storyPhase === 'story');
+          if (storyPhase === 'followups') setShowFeedbackPrompt(true);
+          playResponseCue(); // response finished — audible cue
+          if (mockMessageTimeoutRef.current) {
+            clearTimeout(mockMessageTimeoutRef.current);
+            mockMessageTimeoutRef.current = null;
+          }
+          return;
+        }
+
+        const currentMessageDef = mockMessagesDefinition[index];
+        const messageWithCallback: ChatMessageData = {
+          type: currentMessageDef.type,
+          content: currentMessageDef.content,
+          isAI: currentMessageDef.isAI,
+          agentName: currentMessageDef.agentName,
+          avatarSrc: xAuraAgent?.avatarSrc,
+          avatarIcon: currentMessageDef.avatarIcon,
+          avatarBgClass: currentMessageDef.avatarBgClass,
+          animate: currentMessageDef.animate,
+          animationSpeed: currentMessageDef.animationSpeed,
+          isThinkingState: currentMessageDef.isThinkingState,
+          thinkingDuration: currentMessageDef.thinkingDuration,
+          reasoningSteps: currentMessageDef.reasoningSteps,
+          // Preserve the doc-like artifact so the "Preview" card/split-view stays intact
+          artifact: currentMessageDef.artifact,
+          // Follow-up answers suppress the repeated dashboard; user turns carry a nav label
+          hidePerformanceDashboard: currentMessageDef.hidePerformanceDashboard,
+          navLabel: currentMessageDef.navLabel,
+          // Per-message graphics so follow-up answers match the opening recap visually
+          statCards: currentMessageDef.statCards,
+          miniChart: currentMessageDef.miniChart,
+          onAnimationComplete: () => {
+            if (mockMessageTimeoutRef.current) {
+              clearTimeout(mockMessageTimeoutRef.current);
+            }
+            mockMessageTimeoutRef.current = setTimeout(() => {
+              addNextMockMessage(index + 1);
+            }, 500);
+          }
+        };
+        setMessages(prev => [...prev, messageWithCallback]);
+      };
+
+      addNextMockMessageRef.current = addNextMockMessage;
+
+      if (mockMessageTimeoutRef.current) {
+        clearTimeout(mockMessageTimeoutRef.current);
+        mockMessageTimeoutRef.current = null; 
+      }
+      
+      mockMessageTimeoutRef.current = setTimeout(() => {
+        addNextMockMessage(0);
+      }, 1000);
+      
+      return;
+    }
+
+    if (userMessagesCount === 1 && (isAutonomousValentinesTrigger || isCollaborativeValentinesTrigger)) {
+      setIsMockAgentChatActive(true); // Set state
+      setContentApproved(false); // Reset content approval when starting new conversation
+      setContentGenerated(false); // Reset content generation when starting new conversation
+      setAutonomousWaitingForInput(false); // Reset autonomous waiting state when starting new conversation
+      isMockAgentChatActiveRef.current = true; // Set ref immediately for the first call to addNextMockMessage
+      
+      const xAuraAgent = marketingAgents.find(agent => agent.id === 'xaura');
+      const segmentAgent = marketingAgents.find(agent => agent.id === 'segment-agent');
+      const contentAgent = marketingAgents.find(agent => agent.id === 'content-agent');
+      const schedulerAgent = marketingAgents.find(agent => agent.id === 'scheduler-agent');
+      const insightAgent = marketingAgents.find(agent => agent.id === 'insight-agent');
+
+            // Add agentId to mock messages for easier lookup
+      const mockMessagesDefinition: (Omit<ChatMessageData, 'onAnimationComplete'> & { agentId?: string })[] = 
+        selectedMode === 'autonomous' ? [
+          { 
+            agentId: xAuraAgent?.id, 
+            type: 'chat', 
+            isAI: true, 
+            agentName: xAuraAgent?.name, 
+            content: "I'll help you design a Valentine's Day perfume campaign. To create the most effective campaign, I need some additional information:\n\n<strong>1. Campaign Goals:</strong>\n• What are your primary objectives? (e.g., increase sales, brand awareness, etc.)\n• Do you have specific revenue or sales targets?\n\n<strong>2. Product Details:</strong>\n• Which perfume brands/collections are you promoting?\n• What is the price range of the perfumes?\n• Are there any special Valentine's Day offers or bundles?\n\n<strong>3. Target Audience:</strong>\n• Are you targeting specific age groups?\n• Any specific gender focus (men buying for women, women for men, or both)?\n• Geographic location for the campaign?\n\n<strong>4. Campaign Duration:</strong>\n• When would you like to start the campaign?\n• How long do you want to run it? (typically Valentine's campaigns start 2-3 weeks before February 14th)\n\n<strong>5. Budget and Resources:</strong>\n• Do you have a specific marketing budget?\n• Which marketing channels would you like to use? (email, social media, etc.)\n\nPlease provide as much information as possible so I can help create a targeted and effective Valentine's Day campaign.", 
+            avatarIcon: xAuraAgent?.icon, 
+            avatarBgClass: xAuraAgent?.colorClass,
+            waitForUserInput: true // Special flag to pause and wait for user input
+          },
+          // After user input, continue with autonomous flow
+          { agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name, content: "I'll start by creating audience segments based on the information provided. Let me work with the Segment Expert Agent to create optimal segments for the Valentine's campaign.", avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass },
+          { agentId: segmentAgent?.id, type: 'chat', isAI: true, agentName: segmentAgent?.name, content: "Let me retrieve the segments for this Valentine's Day perfume campaign by providing the campaign summary to the retrieve_segment tool.", avatarIcon: segmentAgent?.icon, avatarBgClass: segmentAgent?.colorClass },
+          { 
+            agentId: segmentAgent?.id, 
+            type: 'chat', 
+            isAI: true, 
+            agentName: segmentAgent?.name, 
+            content: `Based on the segmentation rules and available segments, I'll create targeted micro-segments that incorporate:\n\n• RFM checks (Rule #1)\n• Product and Category Affinity (Enhanced Rules #1 & #2)\n• Price Sensitivity (Enhanced Rule #4)\n• Gender-Specific targeting (Enhanced Rule #5)\n• Channel Interactions (Enhanced Rule #6)\n• Avoiding overlap and campaign fatigue (Rule #2)\n\nLet me structure the segments optimally for the Valentine's campaign.\n\n<table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; table-layout: fixed; border: 1px solid oklch(var(--border)); background-color: oklch(var(--background));">
+                      <thead>
+                        <tr>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 22%;">Segment info</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 30%;">Segment description</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">WhatsApp</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">Email</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">APN</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">Total users</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Premium Perfume Enthusiasts</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users who clicked emails in the last 90 days AND have a high PBL_HI score AND engaged with luxury perfume categories</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">156,850</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">183,237</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">83,631</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>423,718</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Recent Beauty Browsers</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users who opened emails in the last 90 days AND viewed skin or beauty/perfume category pages recently AND have not purchased yet</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">202,362</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">231,664</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">144,306</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>578,332</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Loyal Beauty Shoppers</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users who bought skincare products in the last 90 days AND are repeat buyers based on PBL_buyers tag</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">171,724</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">196,177</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">122,452</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>490,353</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>High Intent New Customers</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">New buyers with high intent in the last 30 days (HI_NB_L30D) AND have opened emails recently AND haven't made a purchase yet</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">155,832</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">178,381</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">110,736</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>444,949</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Welcome Premium Segment</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users in the high-tier Welcome segment AND clicked emails in the last 180 days</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">205,200</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">234,515</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">146,571</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>586,286</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>`, 
+            avatarIcon: segmentAgent?.icon, 
+            avatarBgClass: segmentAgent?.colorClass,
+            animate: true,
+            animationSpeed: 50
+          },
+          { agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name, content: "Now that I have the segments, I'll get insights from previous campaigns to optimize our approach. I'll contact the Insights Agent.", avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass },
+          { 
+            agentId: insightAgent?.id, 
+            type: 'chat', 
+            isAI: true, 
+            agentName: insightAgent?.name, 
+            content: `Based on comprehensive data analysis, here are the key performance drivers for perfume campaigns:\n\n<strong>Email Campaign Best Practices:</strong>\n• Subject Line Optimization: 31-62 characters (+44.03% click rate)\n• Words: 4-5 words (+18.94% click rate)\n• Use punctuation (+2.85% click rate)\n• Avoid emojis (23.78% better click rates)\n\n<strong>Timing & Scheduling:</strong>\n• Best revenue window: 19 PM - 22 PM (+14.61% revenue)\n• Optimal open rates: 15 PM - 19 PM (+2.27%)\n• Best click rates: 12 PM - 15 PM (+19.50%)\n• Schedule for weekends (+12.68% revenue)\n\n<strong>Content Strategy:</strong>\n• Use 'Content Engagement' approach (+37.81% click rate)\n• Implement 'Exclusivity' tone (+150% click rate)\n• Include 'Urgency' elements (+14.04% revenue)\n• Use 'Discounted Promotion' messaging (+12.20% revenue)\n\n<strong>SMS Campaign Optimization:</strong>\n• Timing: 9 AM - 11 AM for clicks (+13.73%)\n• Message length: 234-239 characters\n• Weekend scheduling (+13.80% revenue)\n\n<strong>Revenue Growth Strategy (to achieve 3% increase):</strong>\n• Combine weekend scheduling (+12.68%) with optimal timing\n• Use exclusivity messaging with urgency elements\n• Implement discounted promotions during peak hours\n• Focus on content engagement with clear call-to-actions`, 
+            avatarIcon: insightAgent?.icon, 
+            avatarBgClass: insightAgent?.colorClass 
+          },
+          { agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name, content: "Now I'll work with the Content Agent to create personalized subject lines and content for each segment based on these insights.", avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass },
+                    // Old content agent message - conditionally included based on toggle (only in autonomous mode)
+          ...(disableContentAccordion ? [] : [{ agentId: contentAgent?.id, type: 'chat' as const, isAI: true, agentName: contentAgent?.name, content: "I've prepared communication templates for your campaign across multiple channels.", avatarSrc: contentAgent?.avatarSrc, avatarIcon: contentAgent?.icon, avatarBgClass: contentAgent?.colorClass, isContentAgent: true, isPlanMode: true }]),
+          // New content agent message with segment accordions
+          { 
+            agentId: contentAgent?.id, 
+            type: 'chat', 
+            isAI: true, 
+            agentName: contentAgent?.name, 
+            content: '', // Empty content since we render the accordion component
+            avatarSrc: contentAgent?.avatarSrc,
+            avatarIcon: contentAgent?.icon, 
+            avatarBgClass: contentAgent?.colorClass,
+              isPlanMode: true,
+            isSegmentAccordion: true
+          },
+          { agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name, content: "Let me now work with the Scheduling Agent to optimize the campaign timing for maximum impact.", avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass },
+          { 
+            agentId: schedulerAgent?.id, 
+            type: 'chat', 
+            isAI: true, 
+            agentName: schedulerAgent?.name, 
+            content: 'Scheduler agent response', 
+            avatarIcon: schedulerAgent?.icon, 
+            avatarBgClass: schedulerAgent?.colorClass,
+            isSchedulerAccordion: true
+          },
+          { 
+            agentId: xAuraAgent?.id, 
+            type: 'chat', 
+            isAI: true, 
+            agentName: xAuraAgent?.name, 
+            content: `<strong>Valentine's Day Perfume Campaign Report</strong>\n\n<strong>Executive Summary</strong>\n• Campaign goal: Achieve 3% sales increase over Feb 7–14\n• Reach: Over 2.5 million customers\n• Strategy: Personalized messaging + optimal timing to drive engagement & conversion\n\n<strong>Audience Segments</strong>\n1. Premium Perfume Enthusiasts (423,718 users) - High-value customers with luxury perfume purchase history\n2. Recent Beauty Browsers (578,332 users) - Active browsers in beauty/perfume categories\n3. Loyal Beauty Shoppers (490,353 users) - Repeat beauty category purchasers\n4. High Intent New Customers (444,949 users) - Recent high-intent prospects\n5. Welcome Premium Segment (586,286 users) - Engaged new customers with premium potential\n\n<strong>Campaign Insights – Key Performance Drivers</strong>\n• Optimal revenue window: 19 PM – 22 PM (+14.61% revenue)\n• Weekend scheduling advantage: +12.68% revenue\n• Subject line length (31–62 characters): +44.03% click rate\n• Exclusivity messaging: +150% click rate\n• Urgency elements: +14.04% revenue\n\n<strong>Content Strategy</strong>\nPersonalized subject lines for each segment incorporating exclusivity, urgency, and Valentine's theme within optimal character limits.\n\n<strong>Campaign Schedule</strong>\n• Premium & Loyal Segments: Prime time 19–22 PM with Smart Time Optimization\n• New & Browse Segments: Fixed timing 15 PM weekdays, 19 PM weekends\n• Welcome Segment: Immediate trigger with 19 PM follow-up\n\n<strong>Conclusion</strong>\nCampaign designed to exceed 3% sales increase through strategic timing, personalization, and segment-specific offers. Continuous monitoring and optimization throughout the campaign duration.`, 
+            avatarIcon: xAuraAgent?.icon, 
+            avatarBgClass: xAuraAgent?.colorClass,
+            isExecutiveSummaryWithContent: true
+          }
+        ] : [
+        // Thinking state before xAura responds
+        {
+          type: 'chat',
+          isAI: true,
+          content: '',
+          isThinkingState: true,
+          thinkingDuration: 3,
+          reasoningSteps: [
+            "Analyzing campaign requirements for Valentine's Day",
+            "Identifying key information needed for effective targeting",
+            "Preparing strategic questions to gather campaign details",
+            "Structuring questionnaire for optimal campaign planning"
+          ]
+        },
+        // Add the questionnaire flow to collaborative mode as well
+        { 
+          agentId: xAuraAgent?.id, 
+          type: 'chat', 
+          isAI: true, 
+          agentName: xAuraAgent?.name, 
+          content: "I'll help you design a Valentine's Day perfume campaign. To create the most effective campaign, I need some additional information:\n\n<strong>1. Campaign Goals:</strong>\n• What are your primary objectives? (e.g., increase sales, brand awareness, etc.)\n• Do you have specific revenue or sales targets?\n\n<strong>2. Product Details:</strong>\n• Which perfume brands/collections are you promoting?\n• What is the price range of the perfumes?\n• Are there any special Valentine's Day offers or bundles?\n\n<strong>3. Target Audience:</strong>\n• Are you targeting specific age groups?\n• Any specific gender focus (men buying for women, women for men, or both)?\n• Geographic location for the campaign?\n\n<strong>4. Campaign Duration:</strong>\n• When would you like to start the campaign?\n• How long do you want to run it? (typically Valentine's campaigns start 2-3 weeks before February 14th)\n\n<strong>5. Budget and Resources:</strong>\n• Do you have a specific marketing budget?\n• Which marketing channels would you like to use? (email, social media, etc.)\n\nPlease provide as much information as possible so I can help create a targeted and effective Valentine's Day campaign.", 
+          avatarIcon: xAuraAgent?.icon, 
+          avatarBgClass: xAuraAgent?.colorClass,
+          waitForUserInput: true // Wait for user to type and send something
+        },
+        // After user input, continue with collaborative flow starting with "This looks like a good campaign..."
+        { agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name, content: "This looks like a good project. <strong>Segment specialist</strong>, can you help identify the best audience segments for this campaign?", avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass },
+        // Segment agent rationale - explain approach before proceeding
+        { 
+          agentId: segmentAgent?.id, 
+          type: 'chat', 
+          isAI: true, 
+          agentName: segmentAgent?.name, 
+          content: '', // Content handled by component
+          avatarIcon: segmentAgent?.icon, 
+          avatarBgClass: segmentAgent?.colorClass,
+          isSegmentAgentRationale: true,
+          waitForUserInput: true // Wait for user to click Continue or type response
+        },
+        { 
+          agentId: segmentAgent?.id, 
+          type: 'chat', 
+          isAI: true, 
+          agentName: segmentAgent?.name, 
+          // Enable animation for Segment agent to show thinking animation
+          // Table content will still be handled appropriately by ChatMessage.tsx
+          animate: true, 
+          animationSpeed: 50, 
+          content: `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; table-layout: fixed; border: 1px solid oklch(var(--border)); background-color: oklch(var(--background));">
+                      <thead>
+                        <tr>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 22%;">Segment info</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 30%;">Segment description</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">WhatsApp</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">Email</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">APN</th>
+                          <th style="border: 1px solid oklch(var(--border)); padding: 8px; text-align: left; background-color: oklch(var(--muted)); color: oklch(var(--muted-foreground)); width: 12%;">Total users</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Affinity_based_segment</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users who clicked emails in the last 90 days AND have a high PBL_HI score AND engaged with luxury perfume categories</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">19,537</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">22,321</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">10,820</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>52,678</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>High_AOV_segment</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users who opened emails in the last 90 days AND viewed skin or beauty/perfume category pages recently AND have not purchased yet</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">4,578</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">5,234</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">2,533</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>12,345</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Seasonal_buyers</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users who bought skincare products in the last 90 days AND are repeat buyers based on PBL_buyers tag</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">12,810</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">14,647</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">7,110</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>34,567</strong></td>
+                        </tr>
+                        <tr>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;"><strong>Loyalty_program_members</strong></td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; overflow-wrap: break-word;">Users in the high-tier Welcome segment AND clicked emails in the last 180 days</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">3,304</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">3,777</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;">1,829</td>
+                          <td style="border: 1px solid oklch(var(--border)); padding: 8px; vertical-align: top; text-align: right; overflow-wrap: break-word;"><strong>8,910</strong></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  `.trim(), 
+          avatarIcon: segmentAgent?.icon, 
+          avatarBgClass: segmentAgent?.colorClass,
+          waitForUserInput: true // Wait for user to approve segments
+        },
+        // New question choice message before clarification
+        { agentId: contentAgent?.id, type: 'chat', isAI: true, agentName: contentAgent?.name, content: '', avatarSrc: contentAgent?.avatarSrc, avatarIcon: contentAgent?.icon, avatarBgClass: contentAgent?.colorClass, isContentAgentQuestionChoice: true },
+        { agentId: contentAgent?.id, type: 'chat', isAI: true, agentName: contentAgent?.name, content: "Based on these segments, I'll need some information to craft the most effective content.", avatarSrc: contentAgent?.avatarSrc, avatarIcon: contentAgent?.icon, avatarBgClass: contentAgent?.colorClass, isContentAgentClarification: true },
+        // Content agent rationale – appears after "Generate Content" click
+        { agentId: contentAgent?.id, type: 'chat', isAI: true, agentName: contentAgent?.name, content: '', avatarSrc: contentAgent?.avatarSrc, avatarIcon: contentAgent?.icon, avatarBgClass: contentAgent?.colorClass, isContentAgentRationale: true, waitForUserInput: true },
+        // Content agent accordion response – shown after user clicks "Continue" on rationale
+        { agentId: contentAgent?.id, type: 'chat', isAI: true, agentName: contentAgent?.name, content: 'Content agent response', avatarSrc: contentAgent?.avatarSrc, avatarIcon: contentAgent?.icon, avatarBgClass: contentAgent?.colorClass, isContentAgent: true, isPlanMode: false },
+        // Scheduler agent response in collaborative mode
+        { 
+          agentId: schedulerAgent?.id, 
+          type: 'chat', 
+          isAI: true, 
+          agentName: schedulerAgent?.name, 
+          content: 'Scheduler agent response', 
+          avatarIcon: schedulerAgent?.icon, 
+          avatarBgClass: schedulerAgent?.colorClass,
+          isSchedulerAccordion: true
+        },
+        { agentId: xAuraAgent?.id, type: 'chat', isAI: true, agentName: xAuraAgent?.name, content: "Here\'s a summary of what our team has put together:\n\n1. We\'ve identified <strong>4 high-performing target segments</strong> for your Valentine\'s campaign\n2. <strong>Custom subject lines</strong> have been created for each segment to maximize engagement\n3. A <strong>strategic send schedule</strong> has been designed to optimize open rates\n4. All components are ready for your review\n\nWould you like to make any adjustments before we proceed to implementation?", avatarIcon: xAuraAgent?.icon, avatarBgClass: xAuraAgent?.colorClass }
+      ];
+      
+      // Store the mock messages definition in ref for use in other handlers
+      mockMessagesDefinitionRef.current = mockMessagesDefinition;
+      
+      const processedAgentIdsForJoinMessage = new Set<string>();
+
+      const addNextMockMessage = (index: number) => {
+        // If mock chat is no longer active (e.g., stopped by user or ended), exit.
+        if (!isMockAgentChatActiveRef.current) { // Always check the ref
+          if (mockMessageTimeoutRef.current) { // Ensure any lingering timeout for this function is cleared
+            clearTimeout(mockMessageTimeoutRef.current);
+            mockMessageTimeoutRef.current = null;
+          }
+          return;
+        }
+
+        if (index >= mockMessagesDefinition.length) {
+          setIsMockAgentChatActive(false); // End of sequence (ref will update via useEffect)
+          setIsGeneratingOutput(false);
+          clearInputShimmer();
+          setMockChatCompleted(true); // <-- Set mock chat completed true
+          playResponseCue(); // response finished — audible cue
+          if (mockMessageTimeoutRef.current) { // Clear ref if sequence ends naturally
+            clearTimeout(mockMessageTimeoutRef.current);
+            mockMessageTimeoutRef.current = null;
+          }
+          return;
+        }
+
+        const currentMessageDef = mockMessagesDefinition[index];
+        const agentToProcess = marketingAgents.find(a => a.id === currentMessageDef.agentId);
+
+        if (agentToProcess && !enabledAgents.has(agentToProcess.id) && !processedAgentIdsForJoinMessage.has(agentToProcess.id)) {
+          // 1. Update enabled state
+          setEnabledAgents(prev => new Set(prev).add(agentToProcess.id));
+          
+          // Skip the join message dispatch since xAura is always present
+          // 2. Dispatch join event
+          // window.dispatchEvent(new CustomEvent('agentStatusChange', {
+          //   detail: {
+          //     name: agentToProcess.name,
+          //     status: 'join',
+          //     icon: agentToProcess?.icon,
+          //     colorClass: agentToProcess.colorClass
+          //   }
+          // }));
+          processedAgentIdsForJoinMessage.add(agentToProcess.id);
+
+          // Process the message immediately without delay since there's no join message
+          setTimeout(() => {
+                      const messageWithCallback: ChatMessageData = {
+            type: currentMessageDef.type,
+            content: currentMessageDef.content,
+            isAI: currentMessageDef.isAI,
+            agentName: currentMessageDef.agentName,
+            avatarSrc: agentToProcess?.avatarSrc,
+            avatarIcon: currentMessageDef.avatarIcon,
+            avatarBgClass: currentMessageDef.avatarBgClass,
+            // Transfer animation control properties from the message definition
+            // This is important for messages like tables that shouldn't animate
+            animate: currentMessageDef.animate,
+            animationSpeed: currentMessageDef.animationSpeed,
+            isContentAgent: currentMessageDef.isContentAgent,
+            isContentAgentClarification: currentMessageDef.isContentAgentClarification,
+            isContentAgentQuestionChoice: currentMessageDef.isContentAgentQuestionChoice,
+            isPlanMode: currentMessageDef.isPlanMode,
+            isSegmentAccordion: currentMessageDef.isSegmentAccordion,
+            isSchedulerAccordion: currentMessageDef.isSchedulerAccordion,
+            isSegmentAgentRationale: currentMessageDef.isSegmentAgentRationale,
+            isContentAgentRationale: currentMessageDef.isContentAgentRationale,
+            isExecutiveSummaryWithContent: currentMessageDef.isExecutiveSummaryWithContent,
+            isThinkingState: currentMessageDef.isThinkingState,
+            thinkingDuration: currentMessageDef.thinkingDuration,
+            reasoningSteps: currentMessageDef.reasoningSteps,
+            onAnimationComplete: () => {
+              // Clear previous timeout before setting a new one
+              if (mockMessageTimeoutRef.current) {
+                clearTimeout(mockMessageTimeoutRef.current);
+              }
+              // For autonomous mode, check if this message should wait for user input
+              if (selectedMode === 'autonomous' && currentMessageDef.waitForUserInput) {
+                setAutonomousWaitingForInput(true);
+                return;
+              }
+              // For collaborative mode, also check if this message should wait for user input
+              if (selectedMode === 'collaborative' && currentMessageDef.waitForUserInput) {
+                // Don't set autonomousWaitingForInput, just return to wait for user input
+                return;
+              }
+              // For content agent question choice, we stop the auto flow until user clicks a choice
+              if (currentMessageDef.isContentAgentQuestionChoice) {
+                return;
+              }
+              // For content agent clarification, we stop the auto flow until Generate Content is clicked
+              if (currentMessageDef.isContentAgentClarification) {
+                return;
+              }
+              // For segment agent rationale, we stop the auto flow until Continue is clicked
+              if (currentMessageDef.isSegmentAgentRationale) {
+                return;
+              }
+              // For segment agent table, we stop the auto flow until Approve Segments is clicked
+              if (currentMessageDef.agentName === 'Segment agent' && currentMessageDef.content.includes('<table')) {
+                return;
+              }
+              // For content agent response, we stop the auto flow until Approve Content is clicked
+              if (currentMessageDef.isContentAgent) {
+                return;
+              }
+              mockMessageTimeoutRef.current = setTimeout(() => {
+                addNextMockMessage(index + 1);
+              }, 500); // Original delay
+            }
+          };
+            setMessages(prev => [...prev, messageWithCallback]);
+          }, 100); // Reduced delay since no join message
+        } else {
+          // Agent already enabled or join message already shown, or no agent found for this message
+          const messageWithCallback: ChatMessageData = {
+            type: currentMessageDef.type,
+            content: currentMessageDef.content,
+            isAI: currentMessageDef.isAI,
+            agentName: currentMessageDef.agentName,
+            avatarSrc: agentToProcess?.avatarSrc,
+            avatarIcon: currentMessageDef.avatarIcon,
+            avatarBgClass: currentMessageDef.avatarBgClass,
+            // Transfer animation control properties from the message definition
+            // This ensures tables and other complex content gets displayed properly
+            animate: currentMessageDef.animate,
+            animationSpeed: currentMessageDef.animationSpeed,
+            isContentAgent: currentMessageDef.isContentAgent,
+            isContentAgentClarification: currentMessageDef.isContentAgentClarification,
+            isContentAgentQuestionChoice: currentMessageDef.isContentAgentQuestionChoice,
+            isPlanMode: currentMessageDef.isPlanMode,
+            isSegmentAccordion: currentMessageDef.isSegmentAccordion,
+            isSchedulerAccordion: currentMessageDef.isSchedulerAccordion,
+            isSegmentAgentRationale: currentMessageDef.isSegmentAgentRationale,
+            isContentAgentRationale: currentMessageDef.isContentAgentRationale,
+            isExecutiveSummaryWithContent: currentMessageDef.isExecutiveSummaryWithContent,
+            isThinkingState: currentMessageDef.isThinkingState,
+            thinkingDuration: currentMessageDef.thinkingDuration,
+            reasoningSteps: currentMessageDef.reasoningSteps,
+            onAnimationComplete: () => {
+              // Clear previous timeout before setting a new one
+              if (mockMessageTimeoutRef.current) {
+                clearTimeout(mockMessageTimeoutRef.current);
+              }
+              // For autonomous mode, check if this message should wait for user input
+              if (selectedMode === 'autonomous' && currentMessageDef.waitForUserInput) {
+                setAutonomousWaitingForInput(true);
+                return;
+              }
+              // For collaborative mode, also check if this message should wait for user input
+              if (selectedMode === 'collaborative' && currentMessageDef.waitForUserInput) {
+                // Don't set autonomousWaitingForInput, just return to wait for user input
+                return;
+              }
+              // For content agent question choice, we stop the auto flow until user clicks a choice
+              if (currentMessageDef.isContentAgentQuestionChoice) {
+                return;
+              }
+              // For content agent clarification, we stop the auto flow until Generate Content is clicked
+              if (currentMessageDef.isContentAgentClarification) {
+                return;
+              }
+              // For segment agent rationale, we stop the auto flow until Continue is clicked
+              if (currentMessageDef.isSegmentAgentRationale) {
+                return;
+              }
+              // For segment agent table, we stop the auto flow until Approve Segments is clicked
+              if (currentMessageDef.agentName === 'Segment agent' && currentMessageDef.content.includes('<table')) {
+                return;
+              }
+              // For content agent response, we stop the auto flow until Approve Content is clicked
+              if (currentMessageDef.isContentAgent) {
+                return;
+              }
+              mockMessageTimeoutRef.current = setTimeout(() => {
+                addNextMockMessage(index + 1);
+              }, 500); // Original delay
+            }
+          };
+          setMessages(prev => [...prev, messageWithCallback]);
+        }
+      };
+      
+      // Store the function reference for use elsewhere in the component
+      addNextMockMessageRef.current = addNextMockMessage;
+
+      // Initial delay before starting the sequence
+      // Clear previous timeout before setting a new one
+      if (mockMessageTimeoutRef.current) {
+        clearTimeout(mockMessageTimeoutRef.current);
+        mockMessageTimeoutRef.current = null; 
+      }
+      
+      mockMessageTimeoutRef.current = setTimeout(() => {
+        addNextMockMessage(0);
+      }, 1000);
+
+    } else if (selectedMode === 'autonomous' && autonomousWaitingForInput) {
+      // In autonomous mode and waiting for user input, replace their input with the predefined response
+      // and continue the autonomous flow
+      setAutonomousWaitingForInput(false);
+      
+      // Add the predefined autonomous response
+      const autonomousResponse: ChatMessageData = {
+        type: 'chat',
+        content: "Objective of the campaign is to increase sales for perfumes by 3%. I want to cater to entire audience base with demographic and Affinity bifurcations - feel free to make micro segments. Duration of the campaign is for 7 days from 7th Feb to 14th Feb.",
+        isAI: false,
+        onAnimationComplete: () => {}
+      };
+      
+      // Replace the user's message with the predefined response
+      setMessages(prev => {
+        const updatedMessages = [...prev];
+        updatedMessages[updatedMessages.length - 1] = autonomousResponse;
+        return updatedMessages;
+      });
+      
+      // Continue the autonomous flow from the next message (index 1, since index 0 was the question)
+      setTimeout(() => {
+        addNextMockMessageRef.current(1);
+      }, 1000);
+    } else if (selectedMode === 'collaborative' && isMockAgentChatActive) {
+      // In collaborative mode and waiting for user input, handle different types of waiting states
+      
+      // Check if the questionnaire message (index 1, after thinking state at index 0) is waiting for user input
+      const questionnaireMessage = mockMessagesDefinitionRef.current[1];
+      if (questionnaireMessage && questionnaireMessage.waitForUserInput && !questionnaireMessage.isSegmentAgentRationale) {
+        // Add the predefined collaborative response for questionnaire
+        const collaborativeResponse: ChatMessageData = {
+          type: 'chat',
+          content: "Objective of the campaign is to increase sales for perfumes by 3%. I want to cater to entire audience base with demographic and Affinity bifurcations - feel free to make micro segments. Duration of the campaign is for 7 days from 7th Feb to 14th Feb.",
+          isAI: false,
+          onAnimationComplete: () => {}
+        };
+        
+        // Replace the user's message with the predefined response
+        setMessages(prev => {
+          const updatedMessages = [...prev];
+          updatedMessages[updatedMessages.length - 1] = collaborativeResponse;
+          return updatedMessages;
+        });
+        
+        // Continue the collaborative flow from the next message 
+        // Index 0 is thinking state, Index 1 is questionnaire, so continue from Index 2
+        setTimeout(() => {
+          addNextMockMessageRef.current(2);
+        }, 1000);
+      } else {
+        // Check if we're waiting for segment agent rationale continuation
+        const segmentRationaleMessage = mockMessagesDefinitionRef.current.find(msg => msg.isSegmentAgentRationale);
+        const contentRationaleMessage = mockMessagesDefinitionRef.current.find(msg => msg.isContentAgentRationale);
+
+        if ((segmentRationaleMessage || contentRationaleMessage) && (lowerCaseMessage.includes('continue') || lowerCaseMessage.includes('yes') || lowerCaseMessage.includes('ok'))) {
+          // Find the index of the segment rationale message and continue from the next one
+          const rationaleIndex = segmentRationaleMessage
+            ? mockMessagesDefinitionRef.current.findIndex(msg => msg.isSegmentAgentRationale)
+            : mockMessagesDefinitionRef.current.findIndex(msg => msg.isContentAgentRationale);
+          if (rationaleIndex >= 0) {
+            setTimeout(() => {
+              addNextMockMessageRef.current(rationaleIndex + 1);
+            }, 1000);
+          }
+        }
+      }
+    } else {
+      // If it's not the start of a mock chat, or mock chat is already active and user sends another message, stop it.
+      if (isMockAgentChatActiveRef.current) { // Check the ref here too
+        stopMockConversation();
+      }
+      // Re-assert the bottom loader for this new (generic) response, since stopMockConversation clears it.
+      setIsGeneratingOutput(true);
+      // Re-arm the shimmer for this new response (stopMockConversation clears it).
+      setInputShimmer(true);
+      if (inputShimmerTimerRef.current) clearTimeout(inputShimmerTimerRef.current);
+      inputShimmerTimerRef.current = setTimeout(() => setInputShimmer(false), 30000);
+      setMockChatCompleted(false); // Also reset if conversation is stopped manually
+
+      const xAuraAgent = marketingAgents.find(agent => agent.id === 'xaura');
+
+      // Guard so the AI response is appended only once even if
+      // the thinking state's onComplete fires more than once.
+      let hasResponded = false;
+
+      // 1) Thinking state
+      setTimeout(() => {
+        const thinking: ChatMessageData = {
+          type: 'chat',
+          isAI: true,
+          content: '',
+          isThinkingState: true,
+          thinkingDuration: 3,
+          reasoningSteps: [
+            "Understanding the campaign request",
+            "Identifying information needed for targeting",
+            "Structuring a questionnaire",
+            "Preparing a ready-to-use artifact",
+          ],
+          onAnimationComplete: () => {
+            if (hasResponded) return;
+            hasResponded = true;
+            // 2) AI response with the doc-like artifact
+            const aiResponse: ChatMessageData = {
+              type: 'chat',
+              isAI: true,
+              agentName: xAuraAgent?.name || 'xAura',
+              avatarIcon: xAuraAgent?.icon,
+              avatarBgClass: xAuraAgent?.colorClass,
+              content:
+                "I'll help you design a Valentine's Day perfume campaign. To create the most effective campaign, I need some additional information:\n\n" +
+                "<strong>1. Campaign Goals:</strong>\n• What are your primary objectives? (e.g., increase sales, brand awareness, etc.)\n• Do you have specific revenue or sales targets?\n\n" +
+                "<strong>2. Product Details:</strong>\n• Which perfume brands/collections are you promoting?\n• What is the price range of the perfumes?\n• Are there any special Valentine's Day offers or bundles?\n\n" +
+                "<strong>3. Target Audience:</strong>\n• Are you targeting specific age groups?\n• Any specific gender focus (men buying for women, women for men, or both)?\n• Geographic location for the campaign?\n\n" +
+                "<strong>4. Campaign Duration:</strong>\n• When would you like to start the campaign?\n• How long do you want to run it? (typically Valentine's campaigns start 2-3 weeks before February 14th)\n\n" +
+                "<strong>5. Budget and Resources:</strong>\n• Do you have a specific marketing budget?\n• Which marketing channels would you like to use? (email, social media, etc.)",
+              artifact: {
+                intro: "I've created the Highest Engagement Last Quarter summary in an artifact with all the information you provided, formatted and ready to use",
+                title: "Highest Engagement Last Quarter",
+                subtitle: "WhatsApp Document",
+              },
+              onAnimationComplete: () => {
+                // Output finished streaming — stop the input shimmer and bottom loader.
+                if (inputShimmerTimerRef.current) clearTimeout(inputShimmerTimerRef.current);
+                setInputShimmer(false);
+                setIsGeneratingOutput(false);
+                playResponseCue(); // response finished — audible cue
+              },
+            };
+            setMessages(prev => [...prev, aiResponse]);
+          },
+        };
+        setMessages(prev => [...prev, thinking]);
+      }, 600);
+    }
+  };
+
+  useEffect(() => {
+    const handleAgentStatus = (event: CustomEvent<{
+      name: string;
+      status: 'join' | 'leave';
+      icon: React.ElementType | undefined;
+      colorClass: string;
+    }>) => {
+      setMessages(prev => [...prev, {
+        type: 'system',
+        content: '',
+        agentName: event.detail.name,
+        systemType: event.detail.status === 'join' ? 'join' : 'leave',
+        agentIcon: event.detail.icon,
+        agentColorClass: event.detail.colorClass
+      }]);
+    };
+
+    window.addEventListener('agentStatusChange' as any, handleAgentStatus as EventListener);
+    return () => {
+      window.removeEventListener('agentStatusChange' as any, handleAgentStatus as EventListener);
+    };
+  }, []);
+
+  // Header for the compact widget view
+  const WidgetViewHeader = () => (
+    <div
+      className={cn(
+        "flex items-start shrink-0 w-full border-b border-[var(--color-line-input)]",
+        !isExpanded && (isDragging ? "cursor-grabbing" : "cursor-grab")
+      )}
+      onMouseDown={!isExpanded ? handleDragMouseDown : undefined}
+    >
+      {/* Left: menu + icon + title */}
+      <div className="flex flex-col items-start justify-center pl-[16px] py-[16px] shrink-0 w-[287px]">
+        <div className="flex gap-[8px] items-center w-full">
+          {/* Menu icon — minimized mode only. Always opens the LHS drawer,
+              including while a Chats/Bookmarks page is open. */}
+          <button
+            type="button"
+            className="flex items-center justify-center size-[32px] rounded-[8px] hover:bg-[var(--color-surface-1)] transition-colors shrink-0"
+            aria-label="Menu"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => setShowMinOverlay(true)}
+          >
+            <Menu className="w-[16px] h-[16px] text-[var(--color-slate)]" />
+          </button>
+          {/* Logo + title group (4px gap per Figma) */}
+          <div className="flex gap-[4px] items-center min-w-0">
+            {/* xAura animated logo — purple disc behind the gif so the
+                circular clip reads as a full circle (per Figma node 16367:9415) */}
+            <div className="flex items-center justify-center rounded-full overflow-hidden shrink-0 size-[24px] bg-[var(--color-plum)]">
+              <img
+                src="/xaura-logo.gif"
+                alt="xAura"
+                className="size-full object-cover"
+              />
+            </div>
+            <span
+              className="font-bold text-[16px] leading-[20px] text-[var(--color-ink)] whitespace-nowrap"
+              style={{ fontFamily: "Manrope, sans-serif" }}
+            >
+              xAura
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: expand + close buttons.
+          py-[16px] matches the left group's vertical padding so the icons line up
+          with the menu icon + xAura title (parent is items-start). */}
+      <div className="flex flex-1 py-[16px] items-center justify-end pr-[24px] gap-[4px]">
+        <button
+          onClick={() => requestExpand(true)}
+          className="flex items-center justify-center p-[8px] rounded-[8px] hover:bg-[var(--color-surface-1)] transition-colors"
+          aria-label="Expand"
+        >
+          <Maximize2 className="w-[16px] h-[16px] text-[var(--color-slate)]" />
+        </button>
+        <button
+          onClick={() => onCloseInterface?.()}
+          className="flex items-center justify-center p-[8px] rounded-[8px] hover:bg-[var(--color-surface-1)] transition-colors"
+          aria-label="Close"
+        >
+          <X className="w-[16px] h-[16px] text-[var(--color-slate)]" />
+        </button>
+      </div>
+    </div>
+  );
+
+  // Header for the expanded view
+  const ExpandedViewHeader = () => (
+    <div className="px-4 py-3 border-b border-border flex items-center justify-between bg-background shadow-sm flex-shrink-0 h-[64px]">
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col pl-3">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-semibold text-foreground">xAura</h1>
+          </div>
+          <p className="text-xs text-muted-foreground leading-tight">Your assistant for data-driven success</p>
+        </div>
+      </div>
+      <div className="flex items-center space-x-1">
+        <Button variant="ghost" className="text-muted-foreground hover:bg-transparent hover:text-muted-foreground">
+          <Plus className="w-4 h-4 mr-2" />
+          New chat
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-1.5 hover:bg-muted rounded-md"
+          title="Agents"
+          onClick={() => setActiveSidebar(prev => prev === 'agents' ? null : 'agents')}
+        >
+          <Bot className="w-5 h-5 text-muted-foreground" />
+        </Button>
+        <div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="p-1.5 hover:bg-muted rounded-md"
+            title="Preferences"
+          >
+            <Settings2 className="w-8 h-8 text-muted-foreground" />
+          </Button>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="p-1.5 hover:bg-muted rounded-md"
+          title="Chat history"
+          onClick={() => setActiveSidebar(prev => prev === 'bookmarks' ? null : 'bookmarks')}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-muted-foreground">
+            <path d="M12 2a10 10 0 0 1 7.38 16.75"></path>
+            <path d="M12 6v6l4 2"></path>
+            <path d="M2.5 8.875a10 10 0 0 0-.5 3"></path>
+            <path d="M2.83 16a10 10 0 0 0 2.43 3.4"></path>
+            <path d="M4.636 5.235a10 10 0 0 1 .891-.857"></path>
+            <path d="M8.644 21.42a10 10 0 0 0 7.631-.38"></path>
+          </svg>
+        </Button>
+        <Button variant="ghost" size="icon" className="p-1.5 hover:bg-muted rounded-md" title="Toggle theme">
+          <ThemeToggle />
+        </Button>
+        <Button variant="ghost" size="icon" className="p-1.5 hover:bg-muted rounded-md" onClick={() => requestExpand(false)} title="Minimize">
+          <Minimize2 className="w-5 h-5 text-muted-foreground" />
+        </Button>
+        <Button variant="ghost" size="icon" className="p-1.5 hover:bg-muted rounded-md" onClick={onCloseInterface} title="Close">
+          <X className="w-5 h-5 text-muted-foreground" />
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Common props for sidebar components
+  interface SidebarProps {
+    onClose: () => void; // Function to close the current sidebar
+  }
+
+  // Sidebar for Saved Content and Chat History
+  const AppSidebar: React.FC<SidebarProps> = ({ onClose }) => {
+    // Placeholder data for recent chats - replace with actual data fetching
+    const recentChats = [
+      { id: "0", chatId: "5341", title: "Template generated", date: "07 April 2025, 05:42 PM" },
+      { id: "1", chatId: "2847", title: "Unlock 50% OFF on New Courses! Limited Ti...", date: "02 September 2024, 01:03 PM" },
+      { id: "2", chatId: "1629", title: "Grab 50% Discount on New Courses! Start L...", date: "02 September 2024, 01:03 PM" },
+    ];
+
+    return (
+      <div className="w-[324px] h-full flex flex-col bg-background border-r border-border flex-shrink-0">
+        <Tabs defaultValue="chat-history" className="flex flex-col h-full">
+          <div className="p-4 flex items-center justify-between border-b border-border">
+            <TabsList className="grid grid-cols-2 w-full bg-muted p-1 rounded-md">
+              <TabsTrigger value="chat-history" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Chat history</TabsTrigger>
+              <TabsTrigger value="saved-content" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Bookmarks</TabsTrigger>
+            </TabsList>
+            <Button variant="ghost" size="icon" onClick={onClose} className="ml-2 hover:bg-muted">
+              <X className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </div>
+
+          <TabsContent value="chat-history" className="flex-1 overflow-y-auto p-4 flex flex-col">
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground mb-2">last 30 days</div>
+              {recentChats.map((chat) => (
+                <div key={chat.id} className={cn(
+                  "group p-2 rounded-md cursor-pointer flex items-start justify-between",
+                  "hover:bg-muted",
+                  openChatId === chat.id && "bg-muted"
+                )}>
+                  <div className="flex-1 min-w-0">
+                    <span className="block text-sm text-foreground truncate font-medium">
+                      {chat.title}
+                    </span>
+                    <span className="block text-xs text-muted-foreground mt-0.5">
+                      {chat.date}
+                    </span>
+                  </div>
+                  <DropdownMenu open={openChatId === chat.id} onOpenChange={(open) => setOpenChatId(open ? chat.id : null)}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-5 w-5 opacity-0 group-hover:opacity-100 hover:bg-transparent"
+                        aria-label="Chat options"
+                      >
+                        <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem onClick={() => handleCopyChatId(chat.chatId)} className="hover:bg-muted hover:text-foreground focus:bg-muted focus:text-foreground">
+                        Copy chat ID
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleShareChat} className="hover:bg-muted hover:text-foreground focus:bg-muted focus:text-foreground">
+                        Share chat
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleDeleteChat} className="text-destructive hover:bg-muted hover:text-destructive focus:bg-muted focus:text-destructive">
+                        Delete chat
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              ))}
+              {recentChats.length === 0 && (
+                   <p className="text-xs text-muted-foreground italic text-center pt-10">No chat history yet.</p>
+              )}
+            </div>
+
+            {/* Dev Options Panel - Aligned to bottom */}
+            <div className="mt-auto pt-4 border-t border-border">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="text-sm font-medium text-foreground font-mono">&lt;dev_options&gt;</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleDevOptions}
+                  className={cn(
+                    "h-6 w-6 p-0 hover:bg-muted",
+                    showDevOptions && "bg-muted"
+                  )}
+                  title="Toggle Dev Panel"
+                >
+                  <Settings2 className="h-3 w-3 text-muted-foreground" />
+                </Button>
+              </div>
+              
+              {showDevOptions && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <label htmlFor="disable-animation" className="text-xs font-medium text-foreground">
+                        Disable Animation
+                      </label>
+                      <span className="text-[10px] text-muted-foreground">
+                        Messages load instantly
+                      </span>
+                    </div>
+                    <Switch
+                      id="disable-animation"
+                      checked={disableAnimation}
+                      onCheckedChange={handleDisableAnimationToggle}
+                      className="scale-75"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <label htmlFor="disable-content-accordion" className="text-xs font-medium text-foreground">
+                        Disable old content accordion
+                      </label>
+                      <span className="text-[10px] text-muted-foreground">
+                        Hides legacy accordion only
+                      </span>
+                    </div>
+                    <Switch
+                      id="disable-content-accordion"
+                      checked={disableContentAccordion}
+                      onCheckedChange={handleDisableContentAccordionToggle}
+                      className="scale-75"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <label htmlFor="prompt-template-exists" className="text-xs font-medium text-foreground">
+                        Prompt Template Exists
+                      </label>
+                      <span className="text-[10px] text-muted-foreground">
+                        Enabling this shows pre-made prompt templates in content agent response
+                      </span>
+                    </div>
+                    <Switch
+                      id="prompt-template-exists"
+                      checked={promptTemplateExists}
+                      onCheckedChange={handlePromptTemplateExistsToggle}
+                      className="scale-75"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+          <TabsContent value="saved-content" className="flex-1 overflow-y-auto p-4">
+            <div className="flex flex-col items-center justify-center h-full text-muted-foreground pt-16">
+              <div className="relative mb-4">
+                <Bookmark className="w-20 h-20 text-grey-soft" />
+                <div className="absolute -top-1 -right-1 bg-background p-1 rounded-full shadow-md">
+                  <PlusCircle className="w-8 h-8 text-royal" />
+                </div>
+              </div>
+              <p className="text-sm font-semibold">Nothing bookmarked yet</p>
+              <p className="text-xs text-center mt-1">Save content from your chats to find it easily later.</p>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    );
+  };
+
+  // Props for the AgentsSidebar, extending common SidebarProps
+  interface AgentsSidebarProps extends SidebarProps {
+    enabledAgents: Set<string>;
+    onAgentToggle: (agentId: string) => void;
+  }
+
+  // Sidebar for managing Marketing Agents
+  const AgentsSidebar: React.FC<AgentsSidebarProps> = ({ onClose, enabledAgents, onAgentToggle }) => {
+    return (
+      <div className="w-[324px] h-full flex flex-col bg-background border-r border-border flex-shrink-0">
+        <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+          <h2 className="text-base font-medium text-foreground">Marketing agents</h2>
+          <Button variant="ghost" size="icon" onClick={onClose} className="hover:bg-muted">
+             <X className="w-4 h-4 text-muted-foreground" />
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+          {marketingAgents.map((agent) => {
+            const Icon = agent.icon;
+            const isEnabled = enabledAgents.has(agent.id);
+            return (
+              <div key={agent.id} className="flex items-start gap-4 p-3 rounded-lg border border-border bg-card transition-colors hover:bg-muted/50">
+                 <div className="mt-1 flex-shrink-0 w-10 h-10"> {/* Simplified container for positioning */} 
+                  {/* Priority: avatarSrc (SVG) > Icon (Lucide) > GIF fallback */}
+                  {agent.avatarSrc ? (
+                    <Avatar className="h-full w-full rounded-lg"> {/* Squircle shape on Avatar */}
+                      <AvatarImage src={agent.avatarSrc} alt={agent.name} className="object-cover" />
+                      <AvatarFallback>{agent.initials}</AvatarFallback>
+                    </Avatar>
+                  ) : Icon ? (
+                    <div className={cn(
+                       "p-2 rounded-lg flex items-center justify-center h-full w-full", 
+                       agent.colorClass?.replace('dark:', '') // Safely access colorClass
+                      )}
+                    >
+                       <Icon className="w-5 h-5" />
+                    </div>
+                  ) : (
+                    // Fallback for agents without avatarSrc or icon
+                    <Avatar className="h-full w-full rounded-lg"> {/* Squircle shape on Avatar */}
+                      <AvatarImage src="/avatarGIF.gif" alt={agent.name} className="object-cover" />
+                      <AvatarFallback>{agent.initials}</AvatarFallback>
+                    </Avatar>
+                  )}
+                 </div>
+                 <div className="flex-1 min-w-0">
+                   <div className="flex items-center justify-between">
+                     <h3 className="font-semibold text-sm text-card-foreground truncate">{agent.name}</h3>
+                     {agent.id === "xaura" ? (
+                       <>
+                         {/* Switch for xAura intentionally removed as per request */}
+                       </>
+                     ) : (
+                       <Switch
+                         checked={isEnabled}
+                         onCheckedChange={() => onAgentToggle(agent.id)}
+                         aria-label={`Toggle ${agent.name}`}
+                       />
+                     )}
+                   </div>
+                   <p className="text-xs text-muted-foreground mt-1">{agent.description}</p>
+                 </div>
+               </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {/* Mode Switch Confirmation Popup */}
+      <ModeSwitchConfirmation
+        isOpen={showModeSwitchConfirmation}
+        onConfirm={confirmModeSwitch}
+        onCancel={cancelModeSwitch}
+        targetMode={pendingMode || 'collaborative'}
+      />
+      
+      {/* Overlay for expanded view background, click to minimize */}
+      {isExpanded && <div className={cn("fixed inset-0 z-40 animate-in fade-in duration-300", atmoActive ? "bg-transparent" : "bg-black/10 backdrop-blur-sm")} onClick={() => requestExpand(false)}></div>}
+
+      {/* 
+        Main container: Switches between expanded and widget styles.
+        NOTE: \`overflow-hidden\` is crucial here in conjunction with \`rounded-xl\` 
+        to ensure child elements (like the header) are clipped by the parent's border radius.
+      */}
+      <div 
+        ref={chatWindowRef} // Attach ref here
+        className={cn(
+          isExpanded
+            // When atmosphere is on, go transparent so the page gradient shows
+            // through the frosted nav surfaces (homepage reflect).
+            ? cn("fixed z-50 inset-0 flex flex-col overflow-hidden", atmoActive ? "bg-transparent" : "bg-background")
+            // For widget view, if position is null, it uses these classes. If position is set, inline style takes over for pos.
+            : cn(
+                "w-[470px] bg-background border border-border shadow-lg rounded-xl flex flex-col overflow-hidden relative",
+                // Docked (and not dragged) → fill the parent column height and stay within the viewport.
+                docked && !position ? "h-full max-h-full" : "h-[776px]"
+              ),
+            !isExpanded && position && "fixed z-50" // Ensure it's fixed and on top when dragged
+        )}
+        style={!isExpanded && position ? {
+            top: `${position.y}px`,
+            left: `${position.x}px`,
+            width: '470px', // Keep width/height consistent
+            height: '776px',
+        } : {}}
+      >
+        {/* Widget (minimized) header sits above everything */}
+        {!isExpanded && <WidgetViewHeader />}
+
+        {/* Minimized-view LHS overlay — opened from the widget header menu icon */}
+        {!isExpanded && showMinOverlay && (
+          <MinViewLhsOverlay
+            activeChatId={null}
+            onClose={() => setShowMinOverlay(false)}
+            onNewChat={handleNewChat}
+            onOpenCustomAgents={openCustomAgents}
+            onOpenChats={() => setActivePage('chats')}
+            onOpenBookmarks={() => setActivePage('bookmarks')}
+            onOpenReports={() => setActivePage('reports')}
+            onOpenScheduler={() => setActivePage('scheduler')}
+          />
+        )}
+
+        {/* Feedback modal (👍 happy / 👎 improvement) — overlays the whole chat window */}
+        {feedbackModal && (
+          <FeedbackModal
+            sentiment={feedbackModal}
+            onClose={() => setFeedbackModal(null)}
+            onSubmit={handleFeedbackSubmit}
+          />
+        )}
+
+        {/* Settings modal — opened from the Settings button at the bottom of the LHS rail */}
+        <SettingsModal
+          isOpen={settingsModalOpen}
+          onClose={() => setSettingsModalOpen(false)}
+        />
+
+        {/* Create-agent modal — opened from the composer's "+" → "Add to agent" →
+            "Create a new agent". The new agent is attached to the composer as a chip. */}
+        <CreateCustomAgentModal
+          open={composerCreateOpen}
+          onClose={() => setComposerCreateOpen(false)}
+          onSubmit={(data) => {
+            const agent = createCustomAgent(data);
+            setComposerAgent({ id: agent.id, name: agent.name });
+            setComposerCreateOpen(false);
+          }}
+        />
+
+
+        {/* Main content area: Layout changes based on view mode */}
+        <div
+          className={cn(
+          "flex flex-1 overflow-hidden",
+          isExpanded ? "flex-row pt-0" : "flex-col"
+        )}>
+          {/* Full-height LHS sidebar (expanded view) — single component animates between full and icon-rail */}
+          {isExpanded && activeSidebar === 'bookmarks' && (
+            <LhsSidebar
+              collapsed={lhsCollapsed}
+              chats={lhsChats}
+              activeChatId={activeLhsChatId}
+              busyChatId={busyLhsChatId}
+              onNewChat={handleNewChat}
+              onOpenCustomAgents={openCustomAgents}
+              onOpenChats={() => setActivePage('chats')}
+              onOpenBookmarks={() => setActivePage('bookmarks')}
+              onOpenReports={() => setActivePage('reports')}
+              onOpenScheduler={() => setActivePage('scheduler')}
+              onSelectChat={handleSelectChat}
+              onOpenSettings={() => setSettingsModalOpen(true)}
+              onToggleCollapse={() => setLhsCollapsed(prev => !prev)}
+            />
+          )}
+          {/* Conditional rendering of AgentsSidebar in expanded view */}
+          {isExpanded && activeSidebar === 'agents' && (
+            <AgentsSidebar
+              onClose={() => setActiveSidebar(null)}
+              enabledAgents={enabledAgents}
+              onAgentToggle={handleAgentToggle}
+            />
+          )}
+
+          {/* Chat + artifact region — flex-1 after the LHS. contentRowRef lives here
+              so the artifact width is a % of THIS region (excludes the LHS). That
+              keeps chat + artifact stable when the sidebar expands/collapses and
+              prevents the artifact from overflowing onto the chat. */}
+          <div ref={contentRowRef} className="flex flex-row flex-1 min-w-0 overflow-hidden">
+          {/* Right column: header + chat (expanded) / chat only (widget) */}
+          <div className={cn(
+            "flex flex-col flex-1 min-h-0",
+            // When the artifact is fully expanded, hide the entire chat column
+            // (header + conversation) so the artifact reaches the LHS nav.
+            isExpanded && showArtifactPreview && artifactFullExpanded
+              ? "hidden"
+              : isExpanded && showArtifactPreview ? "min-w-[460px]" : "min-w-0"
+          )}>
+          {isExpanded && (
+            <RhsHeader
+              chatName={activePage === 'home' ? (chatTitleOverride ?? chatName) : null}
+              showSidebarToggle={false}
+              sidebarCollapsed={lhsCollapsed}
+              onToggleSidebar={() => setLhsCollapsed(prev => !prev)}
+              isBookmarked={isChatBookmarked}
+              onToggleBookmark={() => setIsChatBookmarked(prev => !prev)}
+              onDeleteChat={handleNewChat}
+              onMinimize={() => requestExpand(false)}
+              onClose={onCloseInterface}
+              hideClose={showArtifactPreview}
+            />
+          )}
+
+          {/* Chat messages and input area.
+              Edge-to-edge: the chat surface fills the RHS column with no gutter,
+              border, or rounding — it merges with the bordered LHS into one dashboard. */}
+          <div className="flex flex-col flex-1 overflow-hidden min-h-0">
+          <ChatCardBeam enabled={isExpanded} active={false}>
+          <div className="relative flex flex-1 overflow-hidden min-h-0 min-w-0 bg-[var(--color-surface-0)]">
+          {/* Chats / Bookmarks full page — overlays the conversation when active.
+              Renders in both expanded and minimized (mobile) views. */}
+          {activePage !== 'home' && (
+            <div className="absolute inset-0 z-20 overflow-hidden bg-[var(--color-surface-0)]">
+              {activePage === 'reports' ? (
+                <ReportsPage
+                  reports={generatedReports}
+                  compact={!isExpanded}
+                  onSelectReport={(report) => {
+                    // Leave the reports overlay and open the doc previewer full-bleed
+                    // (no chat beside it — there's no conversation to show).
+                    setActivePage('home');
+                    openDeepResearchArtifact({ ...report.doc }, { fullExpanded: true, fromReports: true });
+                  }}
+                />
+              ) : activePage === 'scheduler' ? (
+                <SchedulerPage
+                  initialSchedules={scheduledReports}
+                  templates={scheduleTemplates}
+                  availableReports={generatedReports}
+                  compact={!isExpanded}
+                  onSelectSchedule={(schedule) => {
+                    // Leave the scheduler overlay and open the report in the doc
+                    // previewer full-bleed (same as opening a report).
+                    setActivePage('home');
+                    openDeepResearchArtifact({ ...schedule.doc }, { fullExpanded: true, fromReports: true });
+                  }}
+                />
+              ) : activePage === 'custom-agents' ? (
+                (() => {
+                  const selectedAgent = customAgents.find((a) => a.id === selectedAgentId) ?? null;
+                  return selectedAgent ? (
+                    <CustomAgentDetail
+                      agent={selectedAgent}
+                      compact={!isExpanded}
+                      onBack={() => setSelectedAgentId(null)}
+                      onEditAgent={(id, data) => updateCustomAgent(id, { ...data, updatedAt: 'now' })}
+                      onDeleteAgent={deleteCustomAgent}
+                      onUpdateAgent={updateCustomAgent}
+                      onStartChat={(message) =>
+                        handleStartAgentChat({ id: selectedAgent.id, name: selectedAgent.name }, message)
+                      }
+                      chats={agentChats.filter((c) => c.agentId === selectedAgent.id)}
+                      onSelectChat={handleSelectChat}
+                    />
+                  ) : (
+                    <CustomAgentsPage
+                      agents={customAgents}
+                      compact={!isExpanded}
+                      onCreate={createCustomAgent}
+                      onOpenAgent={(id) => setSelectedAgentId(id)}
+                      onEditAgent={(id, data) => updateCustomAgent(id, { ...data, updatedAt: 'now' })}
+                      onDeleteAgent={deleteCustomAgent}
+                    />
+                  );
+                })()
+              ) : (
+                <ChatListPage
+                  title={activePage === 'chats' ? 'Chats' : 'Bookmarks'}
+                  searchPlaceholder={activePage === 'chats' ? 'Search chats' : 'Search bookmarks'}
+                  chats={activePage === 'chats' ? allRecents : bookmarkedChats}
+                  showNewChat={activePage === 'chats'}
+                  onNewChat={handleNewChat}
+                  onSelectChat={handleSelectChat}
+                  compact={!isExpanded}
+                />
+              )}
+            </div>
+          )}
+          {/* Conversation column — fills the chat area. In expanded view the artifact
+              is now its own top-level third column (not a nested split). Widget view
+              still hides the chat when the artifact takes over full-screen. */}
+          <div
+            className={cn(
+              "relative z-10 flex flex-col overflow-hidden min-w-0 min-h-0 w-full flex-1",
+              !isExpanded && showArtifactPreview && "hidden",
+              // Full-screen artifact hides the chat in expanded view too.
+              isExpanded && showArtifactPreview && artifactFullExpanded && "hidden"
+            )}
+          >
+            {/* Scrollable chat messages area */}
+            <div
+              className={cn(
+                "relative z-0 flex-1 flex flex-col overflow-y-auto hover-scroll",
+                isExpanded ? "px-[28px]" : "p-[16px]"
+              )}
+              ref={chatContainerRef}
+            >
+              {/* Top fade edge — pins just under the navbar so messages fade out
+                  as they scroll up, for a smooth scroll-under-header effect.
+                  Only reveals once the chat is actually scrolled, so the resting
+                  first message keeps its padding and isn't faded from the start. */}
+              {isExpanded && messages.length > 0 && (
+                <div
+                  className={cn(
+                    "sticky top-0 z-10 h-[32px] -mb-[32px] w-full pointer-events-none bg-gradient-to-b from-[var(--color-surface-0)] to-transparent transition-opacity duration-200",
+                    isChatScrolled ? "opacity-100" : "opacity-0"
+                  )}
+                />
+              )}
+              {/* Centered container for chat content - 768px width as per Figma */}
+              <div className={cn(
+                "flex flex-col items-center w-full min-h-full",
+                isExpanded && messages.length > 0 ? "pt-[20px]" : "",
+                messages.length === 0 ? "justify-center" : ""
+              )}>
+                <div className={cn(
+                  "flex flex-col items-start space-y-[24px] w-full",
+                  isExpanded ? "max-w-[768px]" : "max-w-full",
+                  messages.length > 0 ? "pb-8" : ""
+                )}>
+                {messages.length === 0 && !isGeneratingOutput && (
+                  <div className="w-full flex flex-col items-center">
+                    <div className={cn("w-full flex flex-col gap-[32px] items-center", isExpanded ? "max-w-[768px]" : "max-w-full")}>
+                      {/* Greeting — single line ("Good evening, UD"). */}
+                      <div className="flex flex-col gap-[6px] items-center">
+                        <GreetingShimmer text={`${getGreeting()}, UD`} />
+                      </div>
+                      <div className="w-full flex flex-col gap-[16px] items-center">
+                        <ChatInput
+                          onSend={handleSendMessage}
+                          isMockAgentChatActive={isMockAgentChatActive}
+                          onStopMockConversation={stopMockConversation}
+                          isQuestionnaireActive={false}
+                          selectedContextChip={deepResearchActive ? selectedDeepResearchCategory : selectedStarterChip}
+                          onClearSelectedContextChip={
+                            deepResearchActive
+                              ? () => setSelectedDeepResearchCategory(null)
+                              : () => setSelectedStarterChip(null)
+                          }
+                          onInputValueChange={setLiveInputValue}
+                          onDeepResearchChange={(active) => {
+                            setDeepResearchActive(active);
+                            // Reset selection context whenever the mode toggles so
+                            // we always start on the category pills.
+                            setSelectedStarterChip(null);
+                            setSelectedDeepResearchCategory(null);
+                          }}
+                          agents={customAgents.map((a) => ({ id: a.id, name: a.name }))}
+                          selectedAgentChip={composerAgent}
+                          onSelectAgentChip={setComposerAgent}
+                          onCreateAgentFromComposer={() => setComposerCreateOpen(true)}
+                        />
+                        {/* Deep research: category pills first (like the default
+                            starter pills). */}
+                        {deepResearchActive && !selectedDeepResearchCategory && (
+                          <div className="flex flex-wrap gap-[8px] items-center justify-center w-full">
+                            {deepResearchPromptGroups.map((group) => {
+                              const GroupIcon = deepResearchGroupIcons[group.header];
+                              return (
+                              <button
+                                key={group.header}
+                                type="button"
+                                className="fig-chip flex items-center justify-center gap-[6px] px-[10px] py-[6px] rounded-[8px] whitespace-nowrap shrink-0"
+                                onClick={() => setSelectedDeepResearchCategory(group.header)}
+                              >
+                                {GroupIcon && (
+                                  <GroupIcon className="size-[14px] text-[var(--color-slate)] shrink-0" />
+                                )}
+                                <span
+                                  className="font-normal text-[12px] leading-[16px] text-[var(--color-ink)] tracking-[0.36px]"
+                                  style={{ fontFamily: "Manrope, sans-serif" }}
+                                >
+                                  {group.header}
+                                </span>
+                              </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/* Deep research: the selected category's prompts (like the
+                            default selected-chip prompt list). */}
+                        {deepResearchActive && selectedDeepResearchCategory && (
+                          <div className="w-full flex flex-col gap-[8px]">
+                            <p
+                              className="px-[2px] font-semibold text-[13px] leading-[18px] text-[var(--color-grey)] tracking-[0.42px]"
+                              style={{ fontFamily: "Manrope, sans-serif" }}
+                            >
+                              {selectedDeepResearchCategory}
+                            </p>
+                            {(deepResearchPromptGroups.find((g) => g.header === selectedDeepResearchCategory)?.chips ?? []).map((chip) => (
+                              <button
+                                key={chip.label}
+                                type="button"
+                                className="w-full text-left p-[12px] rounded-[8px] cursor-pointer bg-card border border-[var(--color-line)] hover:bg-[var(--color-surface-0)] transition-colors"
+                                onClick={() => handleSendMessage(chip.prompt)}
+                              >
+                                <p
+                                  className="text-[13px] leading-[18px] text-[var(--color-slate)]"
+                                  style={{ fontFamily: "Manrope, sans-serif" }}
+                                >
+                                  {chip.label}
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        {!deepResearchActive && matchedTypedTrigger && (
+                          <div key={matchedTypedTrigger.trigger} className="w-full flex flex-col">
+                            {matchedTypedTrigger.suggestions.map((suggestion, index) => {
+                              const prefix = suggestion.slice(0, matchedTypedTrigger.trigger.length);
+                              const rest = suggestion.slice(matchedTypedTrigger.trigger.length);
+                              const isLast = index === matchedTypedTrigger.suggestions.length - 1;
+                              return (
+                                <button
+                                  key={`typed-${index}`}
+                                  type="button"
+                                  className="suggest-drop-in group relative w-full text-left px-[12px] py-[12px] rounded-[8px] cursor-pointer hover:bg-[oklch(0_0_0_/_0.06)] transition-colors"
+                                  style={{ animationDelay: `${index * 45}ms` }}
+                                  onClick={() => handleSendMessage(suggestion)}
+                                >
+                                  {/* Full-width divider between rows; hidden on hover so the
+                                      hover box reads cleanly (matches the chats list style). */}
+                                  {!isLast && (
+                                    <span
+                                      aria-hidden
+                                      className="pointer-events-none absolute bottom-0 left-0 right-0 h-px bg-[var(--color-line)] group-hover:hidden"
+                                    />
+                                  )}
+                                  <p
+                                    className="text-[13px] leading-[18px]"
+                                    style={{ fontFamily: "Manrope, sans-serif" }}
+                                  >
+                                    <span className="text-[var(--color-grey)]">{prefix}</span>
+                                    <span className="text-[var(--color-ink)]">{rest}</span>
+                                  </p>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {!deepResearchActive && !matchedTypedTrigger && !selectedStarterChip && (
+                          <div className="flex flex-wrap gap-[8px] items-center justify-center w-full">
+                            {starterChips.map((chipLabel, index) => {
+                              const ChipIcon = starterChipIcons[chipLabel];
+                              return (
+                                <button
+                                  key={index}
+                                  type="button"
+                                  className="fig-chip flex items-center justify-center gap-[6px] px-[10px] py-[6px] rounded-[8px] whitespace-nowrap shrink-0"
+                                  onClick={() => setSelectedStarterChip(chipLabel)}
+                                >
+                                  {ChipIcon && (
+                                    <ChipIcon className="size-[14px] text-[var(--color-slate)] shrink-0" />
+                                  )}
+                                  <span
+                                    className="font-normal text-[12px] leading-[16px] text-[var(--color-ink)] tracking-[0.36px]"
+                                    style={{ fontFamily: "Manrope, sans-serif" }}
+                                  >
+                                    {chipLabel}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {!deepResearchActive && !matchedTypedTrigger && selectedStarterChip && (
+                          <div className="w-full flex flex-col gap-[8px]">
+                            <p
+                              className="px-[2px] font-semibold text-[13px] leading-[18px] text-[var(--color-grey)] tracking-[0.42px]"
+                              style={{ fontFamily: "Manrope, sans-serif" }}
+                            >
+                              {starterPromptHeaderByChip[selectedStarterChip] ?? "Suggested prompts"}
+                            </p>
+                            {(starterPromptsByChip[selectedStarterChip] ?? []).map((suggestion, index) => (
+                              <button
+                                key={`${selectedStarterChip}-${index}`}
+                                type="button"
+                                className="w-full text-left p-[12px] rounded-[8px] cursor-pointer bg-card border border-[var(--color-line)] hover:bg-[var(--color-surface-0)] transition-colors"
+                                onClick={() => handleSendMessage(suggestion)}
+                              >
+                                <p
+                                  className="text-[13px] leading-[18px] text-[var(--color-slate)]"
+                                  style={{ fontFamily: "Manrope, sans-serif" }}
+                                >
+                                  {suggestion}
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    id={`msg-${index}`}
+                    // scroll-margin keeps the message clear of the top edge when we
+                    // scrollIntoView({block:'start'}) on send. Expanded must also clear
+                    // the 32px sticky top-fade; widget just needs breathing room.
+                    className={cn(
+                      "w-full",
+                      isExpanded ? "scroll-mt-[44px]" : "scroll-mt-[16px]",
+                      // Tighten the agent-turn intro. The messages share a 24px
+                      // space-y, but the header → "Thought for Xs" → answer
+                      // sequence reads as one unit. Overriding the space-y here
+                      // (the header's mb-8 + the thought's py-2-top already add
+                      // 16px; the thought's py-2-bottom + the answer's py-2-top
+                      // add 16px) lands the two gaps at 16px and 24px.
+                      message.isThinkingState && messages[index - 1]?.isAgentSwitch && "!mt-0",
+                      messages[index - 1]?.isThinkingState && "!mt-[8px]",
+                    )}
+                  >
+                  {message.isAgentSwitch ? (
+                    // Per Figma (node 16530:16033): the wavy "Switched to <agent>"
+                    // divider, then the avatar + name + saying header below it,
+                    // stacked with a 16px gap, introducing this agent's thread.
+                    <div className="flex w-full flex-col gap-[16px] mb-[8px] animate-in fade-in duration-500">
+                      <AgentSwitchDivider
+                        agentLabel={message.switchAgentLabel || ''}
+                        avatarSrc={message.avatarSrc}
+                        icon={message.avatarIcon}
+                        colorClass={message.avatarBgClass}
+                        settled={!!message.switchSettled}
+                      />
+                      <AgentThreadHeader
+                        name={message.switchAgentLabel || ''}
+                        avatarSrc={message.avatarSrc}
+                        saying={message.switchSaying}
+                        theme={message.switchOrbTheme}
+                        fromName={message.switchFromLabel}
+                        settled={!!message.switchSettled}
+                        // Only the most recent hand-off keeps the live WebGL orb —
+                        // older headers fall back to the static SVG so a single
+                        // WebGL context exists at a time.
+                        live={index === messages.reduce((acc, m, i) => (m.isAgentSwitch ? i : acc), -1)}
+                        // Hold the header until the "Calling in agents… → Switched
+                        // to" divider above has settled so the hand-off reads as a
+                        // sequence rather than everything landing at once.
+                        revealDelay={1700}
+                      />
+                    </div>
+                  ) : message.deepResearchDoc ? (
+                    // Finished report — full-width doc preview replacing the card.
+                    <DeepResearchDoc
+                      title={message.deepResearchDoc.title}
+                      citations={message.deepResearchDoc.citations}
+                      summaryHeading={message.deepResearchDoc.summaryHeading}
+                      paragraphs={message.deepResearchDoc.paragraphs}
+                      skeletonMs={message.deepResearchDoc.skeletonMs}
+                      onExpand={() => openDeepResearchArtifact(message.deepResearchDoc!)}
+                      onThumbsUp={message.deepResearchDoc.docFeedback ? () => setFeedbackModal('up') : undefined}
+                      onThumbsDown={message.deepResearchDoc.docFeedback ? () => setFeedbackModal('down') : undefined}
+                    />
+                  ) : message.deepResearchPlan ? (
+                    // Constrained width — the plan/progress card shouldn't span the
+                    // full chat column.
+                    <div className="w-full max-w-[600px]">
+                      <DeepResearchPlan
+                        title={message.deepResearchPlan.title}
+                        steps={message.deepResearchPlan.steps}
+                        onEdit={() => {
+                          // Switch the composer into "follow up" edit mode.
+                          setDeepResearchEditTitle(message.deepResearchPlan!.title);
+                        }}
+                        onComplete={() => {
+                          // Replace this plan card with the finished doc preview.
+                          // Agent report flows carry their own target doc.
+                          const resultDoc = message.planResultDoc ?? DEEP_RESEARCH_DOC;
+                          setMessages((prev) =>
+                            prev.map((m, i) =>
+                              i === index
+                                ? { type: 'chat', isAI: true, content: '', deepResearchDoc: resultDoc }
+                                : m
+                            )
+                          );
+                        }}
+                      />
+                    </div>
+                  ) : message.type === 'system' ? (
+                    <SystemMessage
+                      type={message.systemType || 'join'}
+                      agentName={message.agentName || ''}
+                      agentIcon={message.agentIcon}
+                      agentColorClass={message.agentColorClass}
+                    />
+                  ) : (
+                    <>
+                    {message.replyContext && (
+                      // Reply chip above a user turn (e.g. the plan an edit follows up on).
+                      <div className="flex w-full justify-end mb-[6px]">
+                        <span
+                          className="flex items-center gap-[6px] text-[13px] leading-[18px] text-[var(--color-grey)]"
+                          style={{ fontFamily: "Manrope, sans-serif" }}
+                        >
+                          <CornerDownRight className="h-[14px] w-[14px] shrink-0" />
+                          <span className="truncate max-w-[280px]">{message.replyContext}</span>
+                        </span>
+                      </div>
+                    )}
+                    <ChatMessage
+                      messageId={`msg-${index}`}
+                      isExpanded={isExpanded}
+                      isAI={message.isAI ?? false}
+                      content={message.content}
+                      agentName={message.agentName}
+                      avatarSrc={message.avatarSrc}
+                      avatarIcon={message.avatarIcon}
+                      avatarBgClass={message.avatarBgClass}
+                      animate={disableAnimation ? false : message.animate}
+                      animationSpeed={message.animationSpeed}
+                      isLastMessage={index === messages.length - 1}
+                      hideFeedback={message.hideFeedback}
+                      showExecuteFlowCTA={
+                        index === messages.length - 1 &&
+                        mockChatCompleted &&
+                        message.agentName === "xAura" &&
+                        message.content.startsWith("Here's a summary of what our team has put together:") &&
+                        !isMockAgentChatActive
+                      }
+                      onExecuteFlow={handleFlowExecutionMessage}
+                      isContentAgent={message.isContentAgent}
+                      isContentAgentClarification={message.isContentAgentClarification}
+                      isContentAgentQuestionChoice={message.isContentAgentQuestionChoice}
+                      isFlowExecutionProgress={message.isFlowExecutionProgress}
+                      onFlowExecutionComplete={message.onFlowExecutionComplete}
+                      isPlanMode={message.isPlanMode}
+                      isSegmentAccordion={message.isSegmentAccordion}
+                      isSchedulerAccordion={message.isSchedulerAccordion}
+                      isSegmentAgentRationale={message.isSegmentAgentRationale}
+                      isContentAgentRationale={message.isContentAgentRationale}
+                      isExecutiveSummaryWithContent={message.isExecutiveSummaryWithContent}
+                      showPerformanceDashboard={
+                        (message.isAI ?? false) &&
+                        !message.isThinkingState &&
+                        !message.hidePerformanceDashboard
+                      }
+                      statCards={message.statCards}
+                      miniChart={message.miniChart}
+                      agentArtifactCard={message.agentArtifactCard}
+                      onThumbsUp={() => setFeedbackModal('up')}
+                      onThumbsDown={() => setFeedbackModal('down')}
+                      onContinueSegment={() => {
+                        if (message.isSegmentAgentRationale) {
+                          const idx = mockMessagesDefinitionRef.current.findIndex(msg => msg.isSegmentAgentRationale);
+                          if (idx >= 0) addNextMockMessageRef.current(idx + 1);
+                        } else if (message.isContentAgentRationale) {
+                          const idx = mockMessagesDefinitionRef.current.findIndex(msg => msg.isContentAgentRationale);
+                          if (idx >= 0) addNextMockMessageRef.current(idx + 1);
+                        }
+                      }}
+                      onRefineThis={() => {
+                        if (message.isContentAgentRationale) {
+                          // Find the ContentAgentClarification message and add it after the current rationale
+                          const clarificationMessage = mockMessagesDefinitionRef.current.find(msg => msg.isContentAgentClarification);
+                          const contentAgent = marketingAgents.find(agent => agent.id === 'content-agent');
+                          if (clarificationMessage) {
+                            // Add the clarification message as a new message with proper avatar
+                            setMessages(prevMessages => [...prevMessages, {
+                              ...clarificationMessage,
+                              avatarSrc: contentAgent?.avatarSrc,
+                              avatarIcon: contentAgent?.icon,
+                              avatarBgClass: contentAgent?.colorClass,
+                              animate: true,
+                              onAnimationComplete: () => {}
+                            }]);
+                          }
+                        }
+                      }}
+                      onAnswerQuestions={() => {
+                        if (message.isContentAgentQuestionChoice) {
+                          const idx = mockMessagesDefinitionRef.current.findIndex(msg => msg.isContentAgentQuestionChoice);
+                          if (idx >= 0) addNextMockMessageRef.current(idx + 1);
+                        }
+                      }}
+                      onSkipAndGenerate={() => {
+                        if (message.isContentAgentQuestionChoice) {
+                          const idx = mockMessagesDefinitionRef.current.findIndex(msg => msg.isContentAgentQuestionChoice);
+                          // Skip to rationale message (idx + 2 to skip the clarification message)
+                          if (idx >= 0) addNextMockMessageRef.current(idx + 2);
+                        }
+                      }}
+                      onGenerateContent={() => {
+                        if (message.isContentAgentClarification) {
+                          setContentGenerated(true);
+                          // Find the index of the clarification message in the mock messages
+                          const clarificationIndex = mockMessagesDefinitionRef.current.findIndex(msg => msg.isContentAgentClarification);
+                          if (clarificationIndex >= 0) {
+                            // Continue the flow from the next message after clarification
+                            addNextMockMessageRef.current(clarificationIndex + 1);
+                          }
+                        }
+                      }}
+                      showGenerateContentCTA={
+                        index === messages.length - 1 &&
+                        message.isContentAgentClarification &&
+                        !contentGenerated
+                      }
+                      showQuestionChoiceCTAs={
+                        index === messages.length - 1 &&
+                        message.isContentAgentQuestionChoice &&
+                        !contentGenerated
+                      }
+                      showApproveContentCTA={
+                        index === messages.length - 1 &&
+                        message.isContentAgent &&
+                        !contentApproved
+                      }
+                      onApproveContent={handleApproveContent}
+                      showApproveSegmentsCTA={
+                        index === messages.length - 1 &&
+                        message.agentName === 'Segment agent' &&
+                        message.content.includes('<table') &&
+                        !segmentsApproved
+                      }
+                      onApproveSegments={handleApproveSegments}
+                      onUpdateContent={handleUpdateContent}
+                      onDiscardChanges={handleDiscardChanges}
+                      updatedContent={message.updatedContent}
+                      onAnimationComplete={message.onAnimationComplete}
+                      promptTemplateExists={promptTemplateExists}
+                      isThinkingState={message.isThinkingState}
+                      thinkingDuration={message.thinkingDuration}
+                      reasoningSteps={message.reasoningSteps}
+                      artifact={message.artifact}
+                      onDownloadArtifact={() => {}}
+                      onPreviewArtifact={handleOpenArtifactPreview}
+                    />
+                    </>
+                  )}
+                  </div>
+                ))}
+                {/* Suggested follow-up prompts after the first output — tapping any starts thread 2 */}
+                {showSuggestions && !isGeneratingOutput && messages.length > 0 && (
+                  <div className="w-full flex flex-col items-start gap-[8px] py-2 animate-in fade-in slide-in-from-bottom-1 duration-300">
+                    {(dynamicSuggestions ?? script.suggestedPrompts).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => handleSendMessage(p)}
+                        className="group flex w-fit max-w-full items-start gap-[10px] text-left rounded-[10px] border border-[var(--color-line)] bg-card px-[12px] py-[8px] hover:bg-[var(--color-surface-0)] hover:border-[var(--color-line-strong)] transition-colors"
+                      >
+                        <CornerDownRight className="size-[16px] text-[var(--color-grey)] shrink-0 mt-[1px]" strokeWidth={1.75} />
+                        <span className="text-[13px] leading-[18px] text-[var(--color-slate)]" style={{ fontFamily: 'Manrope, sans-serif' }}>{p}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* Loader is shown as a floating pill above the input (both views) — see below. */}
+                <div ref={messagesEndRef} />
+                </div>
+              </div>
+            </div>
+
+            {/* Vertical line-nav for jumping between conversation turns. Shown in
+                expanded view regardless of whether L1 is collapsed or expanded,
+                and hidden only while the artifact preview is open (no room beside
+                the split-view). */}
+            {isExpanded && !showArtifactPreview && navItems.length > 0 && (
+              <LineNav items={navItems} containerRef={chatContainerRef} />
+            )}
+
+
+            {messages.length > 0 && (
+              <div className={cn(
+                "relative flex-shrink-0",
+                // Match the messages scroll area's horizontal padding so the input
+                // lines up with the conversation (28px expanded, 16px widget).
+                isExpanded ? "px-[28px]" : "px-[16px] pt-[8px] pb-[16px]"
+              )}>
+                {/* Feedback popover / success toast — pinned to the chat's right edge,
+                    on the line just above the input field (not over its face). */}
+                {feedbackNudgeVisible && (
+                  <div className="absolute right-[24px] bottom-full mb-[28px] z-40 flex justify-end max-w-[calc(100%-48px)]">
+                    {showFeedbackToast ? (
+                      <div className="feedback-nudge-in inline-flex items-center gap-[8px] rounded-full border border-[var(--color-line)] bg-card px-[14px] py-[8px] shadow-[0px_8px_20px_-6px_oklch(0.21_0.034_263.436_/_0.22)]">
+                        <CheckCircle2 className="size-[16px] text-[var(--color-success)] shrink-0" />
+                        <span className="text-[13px] text-[var(--color-ink)] whitespace-nowrap" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          Feedback sent successfully. Thank you
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="feedback-nudge-in inline-flex items-center gap-[10px] rounded-[12px] border border-[var(--color-line)] bg-card px-[16px] py-[10px] shadow-[0px_8px_24px_-6px_oklch(0.21_0.034_263.436_/_0.22)]">
+                        <span className="text-[14px] text-[var(--color-ink)] whitespace-nowrap" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                          Was your xAura experience helpful?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setFeedbackModal('up')}
+                          aria-label="Helpful"
+                          className="flex items-center justify-center p-[6px] rounded-md text-[var(--color-grey)] hover:bg-[color-mix(in_oklab,var(--color-success)_10%,transparent)] hover:text-success transition-colors"
+                        >
+                          <ThumbsUp className="size-[16px]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setFeedbackModal('down')}
+                          aria-label="Not helpful"
+                          className="flex items-center justify-center p-[6px] rounded-md text-[var(--color-grey)] hover:bg-destructive/10 hover:text-destructive transition-colors"
+                        >
+                          <ThumbsDown className="size-[16px]" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowFeedbackPrompt(false)}
+                          aria-label="Dismiss"
+                          className="flex items-center justify-center p-[6px] rounded-md text-[var(--color-grey)] hover:bg-[var(--color-surface-1)] transition-colors"
+                        >
+                          <X className="size-[16px]" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* Centered container for chat input - 768px width as per Figma */}
+                <div className={cn(
+                  "flex items-center justify-center w-full bg-transparent outline-none",
+                  isExpanded ? "pb-2 pt-0" : ""
+                )}>
+                  <div className={cn(
+                    "relative",
+                    isExpanded ? "w-full max-w-[768px]" : "w-full"
+                  )}>
+                    {/* Floating "still loading" pill, centered just above the input (both views) */}
+                    {isGeneratingOutput && (
+                      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-[10px] z-20">
+                        <GeneratingLoader pill />
+                      </div>
+                    )}
+
+                    {/* Scroll-to-latest — centered, floating 16px above the input
+                        (Claude-style). Anchored to the input so the gap is exact. */}
+                    {showScrollButton && !isGeneratingOutput && !feedbackNudgeVisible && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              onClick={scrollToBottom}
+                              size="icon"
+                              className="absolute left-1/2 -translate-x-1/2 bottom-full mb-[16px] h-9 w-9 rounded-full shadow-lg z-30 bg-card border-[1.5px] hover:bg-surface-0"
+                              style={{ borderColor: 'var(--color-line-input)' }}
+                              aria-label="Scroll to latest"
+                            >
+                              <ArrowDown className="h-4 w-4 text-slate" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="border-0 bg-foreground text-background text-[12px] leading-[16px] px-[8px] py-[4px]" style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 500 }}>
+                            <p>Scroll to latest</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+
+                    <ChatInput
+                      onSend={handleSendMessage}
+                      isMockAgentChatActive={isMockAgentChatActive}
+                      shimmer={inputShimmer || isGeneratingOutput}
+                      // "Edit" on a plan card → follow-up composer with a reply chip.
+                      replyContext={deepResearchEditTitle}
+                      onClearReplyContext={() => setDeepResearchEditTitle(null)}
+                      onStopMockConversation={stopMockConversation}
+                      isQuestionnaireActive={(() => {
+                        const lastMessage = messages[messages.length - 1];
+                        
+                        // If the last message is a content agent response, input should be enabled
+                        if (lastMessage?.isContentAgent) {
+                          return false; // Content agent response phase - input enabled
+                        }
+                        
+                        // Check if we're currently in the clarification phase (questionnaire form)
+                        if (lastMessage?.isContentAgentClarification) {
+                          return true; // Currently filling out questionnaire - input disabled
+                        }
+                        
+                        // Check if we're in rationale phase (creative proposal)
+                        if (lastMessage?.isContentAgentRationale) {
+                          // Rationale phase is a response phase, not an input phase
+                          // User should be able to type messages during creative proposals
+                          return false; // Input enabled during rationale phase
+                        }
+                        
+                        // All other cases - input enabled
+                        return false;
+                      })()}
+                      selectedContextChip={null}
+                      placeholder={deepResearchEditTitle ? "Follow up with questions or adjustments" : "Write a message"}
+                      agents={customAgents.map((a) => ({ id: a.id, name: a.name }))}
+                      selectedAgentChip={composerAgent}
+                      onSelectAgentChip={setComposerAgent}
+                      onCreateAgentFromComposer={() => setComposerCreateOpen(true)}
+                    />
+                    {/* Footer text below input — widget view only (expanded uses card footer) */}
+                    {!isExpanded && (
+                      <div className="flex flex-col items-center gap-1 mt-2">
+                        <p className="text-[12px] text-foreground-muted text-center">
+                          xAura can make mistakes. Please double check responses
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Persistent card footer (expanded view) — per Figma */}
+            {isExpanded && (
+              <div className="flex flex-col items-center justify-center gap-1 py-[8px] w-full shrink-0">
+                <p
+                  className="text-[12px] text-[var(--color-grey)] text-center w-full max-w-[768px] px-[28px]"
+                  style={{ fontFamily: "Manrope, sans-serif", fontWeight: 400 }}
+                >
+                  xAura can make mistakes. Please double check responses
+                </p>
+              </div>
+            )}
+          </div>
+          {/* Artifact — WIDGET view only: full-bleed take-over of the floating window.
+              (Expanded view renders the artifact as a top-level third column below.) */}
+          {/* COMMENTED OUT (kept for later): widget-view artifact take-over. */}
+          {false && !isExpanded && showArtifactPreview && (
+            <div className="relative z-10 shrink-0 h-full w-full">
+              <ArtifactPreview
+                onClose={handleCloseArtifactPreview}
+                bare
+              />
+            </div>
+          )}
+          </div>
+          </ChatCardBeam>
+          </div>
+          </div>
+          {/* Artifact — EXPANDED view: opens as a top-level third column,
+              so the layout reads LHS | chat | artifact (Claude-style).
+              Drag the left handle to resize; releases snap to 42 / 50 / 60%. */}
+          {isExpanded && showArtifactPreview && (
+            <div
+              className={cn(
+                // Not shrink-0: when the LHS expands and space tightens, the artifact
+                // shrinks (down to its min) so the chat keeps its minimum width.
+                // ml-auto pins the panel to the right edge: once the chat column is
+                // hidden, the artifact stays right-anchored and its width grows toward
+                // the LEFT (no snap-to-left flicker, no rightward growth).
+                "relative z-10 ml-auto h-full border-l border-[var(--color-line)] bg-card",
+                artifactFullExpanded ? "min-w-0" : "min-w-[360px]",
+                artifactClosing
+                  ? "opacity-0 transition-all duration-300 ease-in-out"
+                  : "animate-in slide-in-from-right-8 fade-in duration-300",
+                // Smoothly grow/shrink the panel width when toggling expand (leftward)
+                // or when the LHS reflows — but not mid-drag, where width tracks the cursor.
+                !artifactResizing && !artifactClosing && "transition-[width] duration-300 ease-in-out"
+              )}
+              style={{ width: artifactClosing ? 0 : artifactFullExpanded ? '100%' : `${artifactWidth}%` }}
+            >
+              {/* Drag handle straddling the divider — hidden while full screen */}
+              {!artifactFullExpanded && (
+                <div
+                  onMouseDown={startArtifactResize}
+                  className="group/resize absolute left-0 top-0 z-20 h-full w-[10px] -ml-[5px] flex items-center justify-center cursor-col-resize"
+                  aria-label="Resize artifact"
+                  role="separator"
+                >
+                  <div className={cn(
+                    "h-[36px] w-[3px] rounded-full bg-[var(--color-line-strong)] transition-opacity",
+                    artifactResizing ? "opacity-100" : "opacity-0 group-hover/resize:opacity-100"
+                  )} />
+                </div>
+              )}
+              <ArtifactPreview
+                onClose={handleCloseArtifactPreview}
+                onToggleExpand={() => setArtifactFullExpanded((v) => !v)}
+                isExpanded={artifactFullExpanded}
+                hideExpandToggle={artifactFromReports}
+                bare
+                doc={activeArtifact?.kind === 'deepResearch' ? activeArtifact.doc : undefined}
+              />
+            </div>
+          )}
+          </div>
+        </div>
+      </div>
+
+      {/* Transparent overlay during artifact resize — captures the pointer so
+          nothing underneath (charts, iframes) interferes with the drag. */}
+      {artifactResizing && <div className="fixed inset-0 z-[200] cursor-col-resize" />}
+    </>
+  );
+};
+
+export default ChatInterface;
+
+// Greeting shimmer plays its gradient sweep only ONCE per browser session.
+// After the first sweep (or on any later mount in the same session) it renders
+// as plain static text so it doesn't re-shimmer every time you hit the empty state.
+const GREETING_SHIMMER_KEY = 'greeting-shimmer-played';
+
+function GreetingShimmer({ text }: { text: string }) {
+  const [play, setPlay] = useState(() => {
+    try { return sessionStorage.getItem(GREETING_SHIMMER_KEY) !== '1'; } catch { return true; }
+  });
+
+  useEffect(() => {
+    if (!play) return;
+    // Let one sweep run (~2s), then lock it static for the rest of the session.
+    const t = setTimeout(() => {
+      try { sessionStorage.setItem(GREETING_SHIMMER_KEY, '1'); } catch { /* ignore */ }
+      setPlay(false);
+    }, 2600);
+    return () => clearTimeout(t);
+  }, [play]);
+
+  const cls = 'font-semibold text-[24px] leading-[30px] text-center tracking-[0.42px] whitespace-nowrap';
+  const fontStyle: React.CSSProperties = { fontFamily: 'Manrope, sans-serif' };
+
+  if (!play) {
+    return <p className={cls} style={{ ...fontStyle, color: 'var(--color-slate)' }}>{text}</p>;
+  }
+
+  return (
+    <GradientShimmer
+      as="p"
+      className={cls}
+      style={fontStyle}
+      baseColor="var(--color-slate)"
+      gradient={[
+        { position: 0.2, color: 'var(--color-royal)' },  /* shimmer-blue */
+        { position: 0.4, color: 'var(--color-pink)' },  /* shimmer-pink */
+        { position: 0.6, color: 'var(--color-orange)' },  /* shimmer-orange */
+        { position: 0.8, color: 'var(--color-steel)' },  /* shimmer-teal */
+      ]}
+      duration={2}
+      pauseBetween={99999}
+    >
+      {text}
+    </GradientShimmer>
+  );
+}
+
+type ChatCardBeamProps = {
+  enabled: boolean;
+  active: boolean;
+  children: React.ReactNode;
+};
+
+/** border-beam md — rotating inner edge shimmer (not pulse-inner breathe). */
+function ChatCardBeam({ enabled, active, children }: ChatCardBeamProps) {
+  const beamRef = useRef<HTMLDivElement>(null);
+  const [beamId, setBeamId] = useState<string | null>(null);
+
+  // Read the generated beam id once; the wrapper is always rendered so that
+  // toggling `enabled` (widget ⇄ full screen) never changes the element type
+  // above the conversation — otherwise React remounts every message and the
+  // typing animations replay. We only inject the beam CSS / activate when enabled.
+  useLayoutEffect(() => {
+    const id = beamRef.current?.getAttribute('data-beam') ?? null;
+    if (id) setBeamId(id);
+  }, []);
+
+  return (
+    <>
+      {enabled && beamId ? <style>{welcomeCardBeamStyleBlock(beamId)}</style> : null}
+      <BorderBeam
+        ref={beamRef}
+        size="md"
+        theme="light"
+        colorVariant="colorful"
+        staticColors={true}
+        borderRadius={0}
+        strength={0.72}
+        brightness={1.55}
+        saturation={1.85}
+        duration={3.2}
+        active={enabled && active}
+        className="welcome-card-beam flex flex-1 min-h-0 min-w-0"
+      >
+        {children}
+      </BorderBeam>
+    </>
+  );
+}

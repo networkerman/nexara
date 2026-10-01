@@ -1,0 +1,10 @@
+/**
+ * ========================================
+ * SUPERSEDED — do not use.
+ * ========================================
+ * The color system now lives as centralized OKLCH tokens in src/index.css
+ * (:root + .dark) and is documented in COLORS.md. This standalone file is not
+ * imported anywhere and is kept only as a historical pointer.
+ *
+ * See: COLORS.md  and  src/index.css
+ */

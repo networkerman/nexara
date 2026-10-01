@@ -1,0 +1,21 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/xaura/:path*",
+      "destination": "/xaura/index.html"
+    },
+    {
+      "source": "/:dir(AgentAvatars|AgentIcons|campaign-assets|email-templates|lovable-uploads)/:path*",
+      "destination": "/xaura/:dir/:path*"
+    },
+    {
+      "source": "/:file(0785dbdb98283582a8b0202ef58f71632f23c34d\\.svg|2aff65cf3c9290610d88f915b30217965c4b3987\\.svg|57cd21b2a3e1626a44fc6fb9f96d46f4fa363921\\.svg|6c7b537e62fab324add3b17c7c452de4485d2025\\.svg|82db23e85fb627f00c32aa0b527dbb8e1e30e779\\.svg|8c76dfbe4a3c6f7cf58059aef6ab42c6d127cea1\\.png|a4d4d1338bfcb0ecd56317f606b4972524747edb\\.svg|artifact-expand\\.wav|avatarGIF\\.gif|avatarGIFTransparent\\.gif|avatarGIFold\\.gif|b5f0745d733a09f214e3e4f72dd53f56b817533d\\.svg|background\\.png|c897e9e395b1402e5d80cb50848901cbc81f656a\\.svg|c9b6efd9e7a5ed4ac8994a5f7fbbd3a45e5eaa37\\.svg|copy\\.ogg|d06dd5aaa33f5e152216a51be9d4cd7fc8bede80\\.svg|f77ddde1f71287fa594df996cb969532eef3dbff\\.svg|favicon\\.ico|gif1frameavatar\\.png|gif1frameavatarOLD\\.png|heart-favicon\\.png|mock-wa-img\\.png|nav-toggle\\.ogg|objective-loader\\.gif|response-ready\\.wav|thinking-loader\\.gif|user-avatar\\.png|xaura-logo\\.gif)",
+      "destination": "/xaura/:file"
+    },
+    {
+      "source": "/:path*",
+      "destination": "/index.html"
+    }
+  ]
+}
