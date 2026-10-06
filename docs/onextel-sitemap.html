@@ -1,0 +1,78 @@
+<title>OneXtel + xAura Sitemap</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Michroma&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: header, legend, two zones (Console | AI layer), each a grid of section cards with nested screens */
+:root{--bg:#F6F7FA;--card:#fff;--fg:#1E2A5E;--muted:#5B6488;--line:#E2E8F0;--red:#C23B34;--ai:#3B5BDB;--ai-bg:#EEF2FF;--soon:#9AA1B9;
+--display:'Michroma',system-ui,sans-serif;--body:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0F1430;--card:#171E40;--fg:#E6E9F5;--muted:#A3AAC8;--line:#2A3363;--red:#F06A62;--ai:#8FA8FF;--ai-bg:#1E2754;--soon:#6B7396;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0F1430;--card:#171E40;--fg:#E6E9F5;--muted:#A3AAC8;--line:#2A3363;--red:#F06A62;--ai:#8FA8FF;--ai-bg:#1E2754;--soon:#6B7396;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:14px/1.5 var(--body);padding-inline:16px;padding-block:32px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font:400 26px/1.3 var(--display);margin:0;text-wrap:balance}h1 b{color:var(--red);font-weight:400}
+.lede{color:var(--muted);max-width:68ch;margin:6px 0 0}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted)}
+.pill{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);vertical-align:1px}
+.pill.ai{background:var(--ai-bg);color:var(--ai);border-color:transparent}.pill.soon{color:var(--soon);border-style:dashed}
+.zone h2{font:400 15px var(--display);letter-spacing:.06em;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+.zone h2 .dot{width:10px;height:10px;border-radius:2px;background:var(--red)}.zone.ai h2 .dot{background:var(--ai)}
+.zone>p{margin:0 0 14px;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;min-width:0}
+.zone.ai .sec{border-top:3px solid var(--ai)}.zone.console .sec{border-top:3px solid var(--red)}
+.sec h3{margin:0;font-size:15px;font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.route{font:12px var(--mono);color:var(--muted)}
+.sec .what{color:var(--muted);font-size:12.5px;margin:2px 0 8px}
+ul{margin:0;padding-left:16px}li{margin:3px 0;font-size:13px}li::marker{color:var(--line)}
+li ul{margin-top:2px}li li{font-size:12.5px;color:var(--muted)}
+.flow{font-size:12.5px;color:var(--muted)}.flow b{color:var(--fg);font-weight:500}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.notes div{min-width:0}.notes h4{margin:0 0 4px;font-size:13px}.notes p{margin:0;color:var(--muted);font-size:12.5px}
+</style>
+<div class="wrap">
+<header>
+<h1>One<b>X</b>tel console + <span style="color:var(--ai)">xAura</span> AI layer</h1>
+<p class="lede">Sitemap of the new CPaaS app as built today in the combined prototype. The console is organised by outcome (campaigns, journeys, audiences) rather than by channel. xAura sits on top as a multi-agent copilot and a Decisioning Engine that picks the next best action per customer.</p>
+</header>
+
+<div class="legend"><span><span class="pill">route</span> URL path</span><span><span class="pill ai">AI</span> xAura touchpoint</span><span><span class="pill soon">Phase 2</span> placeholder / coming soon</span></div>
+
+
+<section class="zone console">
+<h2><span class="dot"></span>CONSOLE · ONEXTEL</h2>
+<p>Left rail, top to bottom. Every page uses the same shell: collapsible dark rail, top bar with title, Ask xAura, Live status, notifications bell and avatar.</p>
+<div class="grid">
+<div class="sec"><h3>Home <span class="route">/</span></h3><p class="what">Daily ops dashboard · Today / 7d / 30d</p><ul><li>KPIs: Delivered, Contacts, Active campaigns, Awaited</li><li>Delivery Health chart</li><li>Channel Status: SMS, WhatsApp, RCS <span class="pill soon">Email, Voice</span></li><li>Active campaigns · Recent alerts</li></ul></div>
+<div class="sec"><h3>Campaigns <span class="route">/campaigns</span></h3><p class="what">All broadcast sends, any channel</p><ul><li>Campaign table: channel + status filters, KPIs</li><li>Channel picker modal</li><li>Create wizard<ul><li>Setup → Audience → Content → Schedule</li></ul></li><li>Repush failed / awaited recipients</li></ul></div>
+<div class="sec"><h3>Journeys <span class="route">/journeys</span></h3><p class="what">Trigger-based multi-step automation</p><ul><li>List: KPIs + status table</li><li>Canvas with node palette<ul><li>Triggers: Segment entry, API, Schedule, Event</li><li>Messaging: SMS, WhatsApp, RCS, Email</li><li>Logic: Condition, A/B split, Wait, Inaction</li><li>Actions: Tag, Add to segment, End</li></ul></li></ul></div>
+<div class="sec"><h3>Audiences <span class="route">/audiences</span></h3><p class="what">Who you message</p><ul><li>Segments: dynamic, static, system</li><li>All contacts</li><li>Import<ul><li>Upload → Map columns → Review</li></ul></li><li>Suppression: TRAI DND, Opted out, Blacklisted</li></ul></div>
+<div class="sec"><h3>Content <span class="route">/content</span></h3><p class="what">Templates per channel + compliance</p><ul><li>SMS · WhatsApp · RCS · Email <span class="pill soon">Voice</span></li><li>Gallery and saved templates</li><li>Create template: Setup → Build → Review</li><li>DLT template registry</li><li>Media gallery</li></ul></div>
+<div class="sec"><h3>Analytics <span class="route">/analytics</span></h3><p class="what">Performance across the funnel</p><ul><li>Overview · Campaign · Channel comparison</li><li>Journey analytics · Audience insights</li></ul></div>
+<div class="sec"><h3>Reports <span class="route">/reports</span></h3><p class="what">Operational and delivery reporting</p><ul><li>Overview · Delivery health · Engagement</li><li>Telco · Exports</li></ul></div>
+<div class="sec"><h3>Channels <span class="route">/channels</span></h3><p class="what">Connect and route each channel</p><ul><li>SMS: sender IDs, DLT entity</li><li>WhatsApp: numbers, quality, routing (round robin / sender affinity)</li><li>RCS: agents, fallback</li><li><span class="pill soon">Voice, Email</span></li></ul></div>
+<div class="sec"><h3>Governance <span class="route">/governance</span></h3><p class="what">Enterprise controls</p><ul><li>Roles &amp; permissions: roles, users, matrix</li><li>Maker-checker approval queue</li><li>Audit log</li></ul></div>
+<div class="sec"><h3>Credits <span class="route">/credits</span></h3><p class="what">Wallet and billing</p><ul><li>Balance &amp; usage · Invoices</li><li>Promo / referral credits · Usage alerts</li></ul></div>
+<div class="sec"><h3>Account Health <span class="route">/account-health</span></h3><p class="what">Is this account in good standing</p><ul><li>Overview · Delivery</li><li>Compliance: DLT, VAPT, TRAI NDNC</li><li>Integrations · Account</li></ul></div>
+<div class="sec"><h3>Settings <span class="route">/settings</span></h3><p class="what">Hub of setting cards</p><ul><li>Team · Billing · Integrations · Config</li><li>Developers <span class="route">/settings/developers</span><ul><li>API keys (live / test), Sandbox, Code examples, Webhooks</li></ul></li></ul></div>
+<div class="sec"><h3>Sign-up flow <span class="route">pre-auth</span></h3><p class="what">New account path</p><p class="flow"><b>/signup</b> or <b>/login</b> → <b>/onboarding</b> (personal, company, size, role) → <b>/welcome</b> → <b>/pricing</b> (Free, Pro, OneXtel, Enterprise) → Campaigns</p></div>
+</div>
+</section>
+
+<section class="zone ai">
+<h2><span class="dot"></span>AI LAYER · XAURA</h2>
+<p>Served under /xaura. A copilot with its own sidebar, plus AI-native versions of engagement screens to show where AI enters day-to-day work.</p>
+<div class="grid">
+<div class="sec"><h3>Copilot chat <span class="route">/xaura</span></h3><p class="what">Ask anything about campaigns and customers</p><ul><li>Modes: Collaborative (step by step) or Autonomous (end to end)</li><li>Starter prompts: Revenue monitoring, Seasonal trend, CTR, QBR report, Channel anomalies</li><li>Deep research: editable plan → long-form report</li><li>Artifacts: performance dashboards, executive summary, WhatsApp text / media / carousel previews</li></ul></div>
+<div class="sec"><h3>Agents</h3><p class="what">Specialists that join a thread</p><ul><li>xAura: plans and optimises campaigns</li><li>Content: writes copy per segment</li><li>Segment: finds and sizes audiences</li><li>Scheduler: best send time</li><li>Insight: performance analysis</li><li>Journey: multi-step, multi-channel flows</li><li>Custom agents: create and configure your own</li></ul></div>
+<div class="sec"><h3>Copilot sidebar</h3><p class="what">Workspace around the chat</p><ul><li>New chat · Chats · Search</li><li>Reports (customisable) · Scheduled · Bookmarks</li><li>Decisioning engine · OneXtel console</li><li>Settings</li></ul></div>
+<div class="sec"><h3>Decisioning Engine <span class="route">/decisioning-engine</span></h3><p class="what">Set objectives; the engine decides who gets what, when and where</p><ul><li>States: empty → processing → ready with AI-found opportunities</li><li>Setup: brand wiki, event mapping, guardrails → review</li><li>Preview board · Configuration</li><li>Objective: Goal → Audience → Content → Preview → Launch</li><li>Objective performance dashboard</li></ul></div>
+<div class="sec"><h3>AI campaigns <span class="route">/xaura/campaigns</span></h3><p class="what">Campaign list with AI built in</p><ul><li>Ask xAura docked as a side panel</li><li>Create with AI nudge</li><li>Decisioning discovery nudge</li><li>Agents overlay</li></ul></div>
+<div class="sec"><h3>AI journeys <span class="route">/xaura/journeys</span></h3><p class="what">Journeys started from a goal or a prompt</p><ul><li>Templates: window shoppers, cart abandonment, upsell, churn, welcome</li><li>Journey AI modal: describe it, get a canvas</li><li>Builder <span class="route">/journeys/new</span></li></ul></div>
+</div>
+</section>
+
+<section class="notes" aria-label="Notes for UX">
+<div><h4>Open question: one shell</h4><p>Today xAura has its own shell. The target is xAura as a panel available on every console page, as on the AI campaigns screen.</p></div>
+<div><h4>Overlaps to resolve</h4><p>Campaigns and Journeys exist in both layers. The console versions are the product. The xAura versions show the AI entry points to carry over.</p></div>
+<div><h4>Not wired yet</h4><p>Settings sub-pages other than Developers, the notification drawer, and on-site / personalisation items in the Engage menu.</p></div>
+</section>
+</div>
